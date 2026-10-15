@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProApp Store - ขายโปรแกรม HTML สำเร็จรูป</title>
+<meta name="description" content="แหล่งรวมโปรแกรมและเว็บแอป HTML สำเร็จรูป พร้อมคลิปสอนใช้งาน">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--primary:#2563eb;--primary-dark:#1d4ed8;--accent:#f59e0b;--bg:#f8fafc;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--radius:14px}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Prompt',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+.container{max-width:1200px;margin:0 auto;padding:0 1.25rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.7rem 1.3rem;border-radius:10px;font-weight:600;border:2px solid transparent;cursor:pointer;font-family:inherit;font-size:.95rem;transition:.2s}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-outline{background:#fff;color:var(--primary);border-color:var(--primary)}.btn-outline:hover{background:#eff6ff}
+.btn-line{background:#06c755;color:#fff}.btn-line:hover{background:#05a948}
+/* Navbar */
+nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{font-size:1.3rem;font-weight:700;color:var(--primary)}
+.nav-links{display:flex;gap:1.5rem;font-weight:500}
+.nav-links a:hover{color:var(--primary)}
+@media(max-width:768px){.nav-links{display:none}}
+/* Hero */
+.hero{background:linear-gradient(135deg,#1e3a8a,var(--primary));color:#fff;padding:5rem 0;text-align:center}
+.hero h1{font-size:clamp(1.8rem,5vw,3rem);line-height:1.3;margin-bottom:1rem}
+.hero p{font-size:1.1rem;opacity:.9;max-width:650px;margin:0 auto 2rem}
+.hero-actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+section{padding:4rem 0}
+.section-title{text-align:center;font-size:1.9rem;margin-bottom:.5rem}
+.section-sub{text-align:center;color:var(--muted);margin-bottom:2.5rem}
+/* Steps */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem}
+.step{background:#fff;border-radius:var(--radius);padding:1.75rem;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.step-num{width:48px;height:48px;border-radius:50%;background:#dbeafe;color:var(--primary);font-weight:700;font-size:1.3rem;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem}
+.step p{color:var(--muted);font-size:.92rem}
+/* Toolbar */
+.toolbar{display:flex;flex-wrap:wrap;gap:1rem;justify-content:space-between;align-items:center;margin-bottom:2rem}
+.search{flex:1;min-width:240px;max-width:400px;padding:.75rem 1rem;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:1rem}
+.chips{display:flex;gap:.5rem;flex-wrap:wrap}
+.chip{padding:.45rem 1rem;border-radius:999px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:.9rem}
+.chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+/* Product grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem}
+.card{background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.06);display:flex;flex-direction:column;cursor:pointer;transition:.25s}
+.card:hover{transform:translateY(-4px);box-shadow:0 12px 24px rgba(0,0,0,.1)}
+.card-img{position:relative;aspect-ratio:16/10;background:#e2e8f0}
+.card-img img{width:100%;height:100%;object-fit:cover}
+.badge{position:absolute;top:10px;left:10px;background:var(--accent);color:#fff;font-size:.8rem;font-weight:600;padding:.2rem .7rem;border-radius:999px}
+.card-body{padding:1.25rem;display:flex;flex-direction:column;flex:1}
+.card-cat{font-size:.8rem;color:var(--primary);font-weight:600}
+.card-title{font-size:1.15rem;margin:.2rem 0 .4rem}
+.card-desc{font-size:.9rem;color:var(--muted);flex:1;margin-bottom:1rem}
+.card-foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:1rem}
+.price{font-size:1.3rem;font-weight:700;color:#059669}
+.price-old{font-size:.9rem;color:var(--muted);text-decoration:line-through;margin-left:.4rem;font-weight:400}
+.empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:3rem}
+/* Reviews */
+.reviews{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem}
+.review{background:#fff;border-radius:var(--radius);padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.stars{color:var(--accent);margin-bottom:.5rem}
+.review-name{margin-top:1rem;font-weight:600;font-size:.9rem}
+/* FAQ */
+.faq{max-width:800px;margin:0 auto}
+.faq details{background:#fff;border-radius:10px;margin-bottom:.75rem;padding:1rem 1.25rem;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.faq summary{font-weight:600;cursor:pointer}
+.faq details p{margin-top:.75rem;color:var(--muted)}
+/* Contact & Footer */
+.contact-box{background:linear-gradient(135deg,#1e3a8a,var(--primary));color:#fff;border-radius:20px;padding:3rem 2rem;text-align:center}
+.contact-links{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:1.5rem}
+footer{background:#0f172a;color:#94a3b8;text-align:center;padding:2rem 1rem;font-size:.9rem}
+/* Modal */
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.7);display:none;align-items:flex-start;justify-content:center;z-index:100;overflow-y:auto;padding:2rem 1rem}
+.modal.open{display:flex}
+.modal-box{background:#fff;border-radius:var(--radius);max-width:900px;width:100%;position:relative;overflow:hidden}
+.modal-box.pay{max-width:460px}
+.modal-close{position:absolute;top:12px;right:12px;width:38px;height:38px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:1.3rem;cursor:pointer;z-index:2}
+.gallery-main{aspect-ratio:16/9;background:#0f172a}
+.gallery-main img{width:100%;height:100%;object-fit:contain}
+.thumbs{display:flex;gap:.5rem;padding:.75rem;overflow-x:auto;background:#f1f5f9}
+.thumbs img{width:90px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;opacity:.6;border:2px solid transparent;flex-shrink:0}
+.thumbs img.active{opacity:1;border-color:var(--primary)}
+.modal-body{padding:1.75rem}
+.modal-body h2{font-size:1.6rem;margin-bottom:.5rem}
+.modal-body h3{font-size:1.15rem;margin:1.5rem 0 .75rem}
+.desc-text{white-space:pre-line;color:#334155}
+.features{list-style:none}
+.features li{padding:.3rem 0}
+.features li::before{content:"✔ ";color:#059669;font-weight:700}
+.video{aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#000}
+.video iframe{width:100%;height:100%;border:0}
+.modal-actions{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.5rem;align-items:center}
+.modal-actions .price{margin-right:auto}
+.pay-body{padding:2rem;text-align:center}
+.pay-body img.qr{width:240px;margin:1rem auto;border:1px solid var(--border);border-radius:10px}
+.pay-steps{text-align:left;background:#f1f5f9;border-radius:10px;padding:1rem 1.25rem 1rem 2.25rem;margin:1rem 0;font-size:.92rem}
+</style>
+</head>
+<body>
+
+<!-- ===== Navbar ===== -->
+<nav>
+  <div class="container nav-inner">
+    <a href="#" class="logo" data-shop>ProApp Store</a>
+    <div class="nav-links">
+      <a href="#products">โปรแกรม</a>
+      <a href="#how">วิธีสั่งซื้อ</a>
+      <a href="#reviews">รีวิว</a>
+      <a href="#faq">คำถามที่พบบ่อย</a>
+      <a href="#contact">ติดต่อ</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== Hero ===== -->
+<header class="hero">
+  <div class="container">
+    <h1>โปรแกรม HTML สำเร็จรูป<br>พร้อมใช้งาน พร้อมคลิปสอน</h1>
+    <p id="tagline">เว็บแอปคุณภาพ ใช้งานง่าย เปิดได้ทันทีบนเบราว์เซอร์ ไม่ต้องติดตั้ง เหมาะสำหรับร้านค้า ธุรกิจ และงานส่วนตัว</p>
+    <div class="hero-actions">
+      <a href="#products" class="btn btn-outline">ดูโปรแกรมทั้งหมด</a>
+      <a href="#contact" class="btn btn-line">สอบถามทาง LINE</a>
+    </div>
+  </div>
+</header>
+
+<!-- ===== วิธีสั่งซื้อ ===== -->
+<section id="how">
+  <div class="container">
+    <h2 class="section-title">สั่งซื้อง่ายใน 3 ขั้นตอน</h2>
+    <p class="section-sub">ได้รับโปรแกรมรวดเร็ว พร้อมคู่มือการใช้งาน</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><h3>เลือกโปรแกรม</h3><p>ดูรายละเอียด รูปตัวอย่าง และคลิปสอน หรือกดทดลองใช้ก่อนซื้อ</p></div>
+      <div class="step"><div class="step-num">2</div><h3>สแกนจ่าย พร้อมเพย์</h3><p>กดปุ่ม "ซื้อเลย" แล้วสแกน QR ยอดเงินจะขึ้นอัตโนมัติ</p></div>
+      <div class="step"><div class="step-num">3</div><h3>ส่งสลิป รับโปรแกรม</h3><p>ส่งสลิปทาง LINE แล้วรับไฟล์โปรแกรมพร้อมคู่มือ</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== รายการโปรแกรม ===== -->
+<section id="products" style="background:#fff">
+  <div class="container">
+    <h2 class="section-title">โปรแกรมทั้งหมด</h2>
+    <p class="section-sub">คลิกที่โปรแกรมเพื่อดูรายละเอียด รูปตัวอย่าง และวิดีโอสอน</p>
+    <div class="toolbar">
+      <input type="search" id="search" class="search" placeholder="ค้นหาโปรแกรม...">
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="grid" id="grid"><p class="empty">กำลังโหลดรายการโปรแกรม...</p></div>
+  </div>
+</section>
+
+<!-- ===== รีวิว (ตัวอย่าง - เปลี่ยนเป็นรีวิวจริงจากลูกค้า) ===== -->
+<section id="reviews">
+  <div class="container">
+    <h2 class="section-title">รีวิวจากลูกค้า</h2>
+    <p class="section-sub">ความประทับใจจากผู้ใช้งานจริง</p>
+    <div class="reviews">
+      <div class="review"><div class="stars">★★★★★</div><p>"ข้อความรีวิวจากลูกค้าคนที่ 1"</p><p class="review-name">- ชื่อลูกค้า</p></div>
+      <div class="review"><div class="stars">★★★★★</div><p>"ข้อความรีวิวจากลูกค้าคนที่ 2"</p><p class="review-name">- ชื่อลูกค้า</p></div>
+      <div class="review"><div class="stars">★★★★★</div><p>"ข้อความรีวิวจากลูกค้าคนที่ 3"</p><p class="review-name">- ชื่อลูกค้า</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FAQ (แก้คำถาม-คำตอบได้ตามต้องการ) ===== -->
+<section id="faq" style="background:#fff">
+  <div class="container">
+    <h2 class="section-title">คำถามที่พบบ่อย</h2>
+    <p class="section-sub">มีคำถามเพิ่มเติม ทักมาทาง LINE ได้เลย</p>
+    <div class="faq">
+      <details><summary>ซื้อแล้วได้รับโปรแกรมอย่างไร?</summary><p>หลังส่งสลิปทาง LINE เราจะส่งไฟล์โปรแกรมพร้อมคู่มือให้ทาง LINE หรืออีเมล ภายใน 24 ชั่วโมง</p></details>
+      <details><summary>ต้องติดตั้งอะไรเพิ่มไหม?</summary><p>ไม่ต้องครับ โปรแกรมเป็นไฟล์ HTML เปิดใช้งานผ่านเบราว์เซอร์ได้ทันที เช่น Chrome, Edge</p></details>
+      <details><summary>ใช้บนมือถือได้ไหม?</summary><p>โปรแกรมส่วนใหญ่รองรับมือถือ ดูรายละเอียดในหน้าโปรแกรมแต่ละตัว หรือกดทดลองใช้ก่อนได้</p></details>
+      <details><summary>มีบริการหลังการขายไหม?</summary><p>มีครับ สอบถามวิธีใช้งานได้ทาง LINE และมีคลิปสอนใช้งานประกอบ</p></details>
+      <details><summary>ขอปรับแต่งโปรแกรมเพิ่มได้ไหม?</summary><p>ได้ครับ ทักมาคุยรายละเอียดได้ ราคาขึ้นอยู่กับงานที่ต้องการ</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ===== ติดต่อ ===== -->
+<section id="contact">
+  <div class="container">
+    <div class="contact-box">
+      <h2>สนใจโปรแกรม หรือต้องการสอบถาม?</h2>
+      <p>ติดต่อเราได้ทุกช่องทาง ตอบกลับไว</p>
+      <div class="contact-links" id="contactLinks"></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; <span id="year"></span> <span data-shop>ProApp Store</span>. สงวนลิขสิทธิ์</p>
+</footer>
+
+<!-- ===== Modal ===== -->
+<div class="modal" id="modal"><div class="modal-box" id="modalBox"></div></div>
+
+<script>
+/* ================================================================
+   ตั้งค่าร้านของคุณที่นี่ (แก้ตรงนี้ที่เดียว)
+   ================================================================ */
+const CONFIG = {
+  shopName: "Anuman app html Store",
+sheetCsvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8tV_ZVrsbe6xPtak-5NTpCtHaVbvOIMgtKVMEQI2WJRNioiKAwXw-eIEmNuAzGI1R5_Y9lae5HBTp/pub?gid=0&single=true&output=csv",
+ lineId: "Anuman999",             // LINE OA ID (มี @ นำหน้า)
+  facebookUrl: "https://facebook.com/anuman999",
+  email: "anuman99999@gmail.com",
+  phone: "",                         // เช่น "0812345678" (เว้นว่างถ้าไม่ต้องการแสดง)
+  promptpay: "0812345678",           // เบอร์พร้อมเพย์ หรือเลขบัตรประชาชน
+  promptpayName: "ชื่อ-นามสกุล เจ้าของบัญชี",
+  qrImage: ""                        // ถ้ามีรูป QR ของตัวเอง ใส่ลิงก์ที่นี่ (จะใช้แทน QR อัตโนมัติ)
+};
+
+/* สินค้าตัวอย่าง (แสดงเมื่อยังไม่ได้ใส่ sheetCsvUrl) */
+const SAMPLE_PRODUCTS = [
+  { id:"pos-lite", name:"ระบบขายหน้าร้าน POS Lite", category:"ธุรกิจ", price:"490", sale_price:"390", badge:"ขายดี",
+    short_desc:"คิดเงิน ตัดสต็อก ออกใบเสร็จ ใช้งานง่ายบนเบราว์เซอร์",
+    description:"โปรแกรมขายหน้าร้านสำหรับร้านค้าขนาดเล็ก\nบันทึกข้อมูลในเครื่อง ไม่ต้องใช้อินเทอร์เน็ต",
+    features:"คิดเงินและทอนเงินอัตโนมัติ|จัดการสต็อกสินค้า|พิมพ์ใบเสร็จ|สรุปยอดขายรายวัน",
+    images:"https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80|https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&q=80",
+    youtube:"", demo:"" },
+  { id:"booking", name:"ระบบจองคิวออนไลน์", category:"ธุรกิจ", price:"390", sale_price:"", badge:"ใหม่",
+    short_desc:"จัดการตารางนัดลูกค้า เหมาะกับคลินิก ร้านนวด ร้านเสริมสวย",
+    description:"ระบบจองคิวที่ลูกค้าเลือกวันและเวลาได้เอง พร้อมหน้าจัดการคิวสำหรับร้าน",
+    features:"ปฏิทินเลือกวันเวลา|ป้องกันจองซ้ำ|หน้าจัดการคิว",
+    images:"https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200&q=80",
+    youtube:"", demo:"" },
+  { id:"portfolio", name:"เว็บพอร์ตโฟลิโอ Portfolio Pro", category:"เทมเพลตเว็บ", price:"190", sale_price:"", badge:"",
+    short_desc:"เทมเพลตเว็บแสดงผลงานส่วนตัว ดีไซน์ทันสมัย แก้ไขง่าย",
+    description:"เทมเพลตเว็บไซต์แสดงผลงาน รองรับมือถือ แก้ข้อความและรูปได้ง่าย",
+    features:"รองรับมือถือ|แก้ไขง่าย|โหลดเร็ว",
+    images:"https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&q=80",
+    youtube:"", demo:"" }
+];
+
+/* ================================================================
+   ส่วนการทำงาน (ไม่จำเป็นต้องแก้)
+   ================================================================ */
+let products = [];
+let currentCat = "ทั้งหมด";
+const $ = s => document.querySelector(s);
+
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function safeUrl(u){ u = String(u || "").trim(); return (/^https?:\/\//i.test(u) || /^[\w\-./]+$/.test(u)) ? u : ""; }
+function fixImage(u){
+  u = u.trim();
+  if (u.includes("drive.google.com")) {
+    const m = u.match(/\/d\/([\w-]+)/) || u.match(/[?&]id=([\w-]+)/);
+    if (m) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1200`;
+  }
+  return u;
+}
+function youtubeId(u){ const m = String(u || "").match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/); return m ? m[1] : ""; }
+function splitList(s){ return String(s || "").split("|").map(x => x.trim()).filter(Boolean); }
+function toNum(s){ return Number(String(s || "").replace(/[^\d.]/g, "")) || 0; }
+function money(n){ return "฿" + Number(n).toLocaleString("th-TH"); }
+function finalPrice(p){ return (p.salePrice > 0 && p.salePrice < p.price) ? p.salePrice : p.price; }
+
+function parseCSV(text){
+  const rows = []; let row = [], field = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i+1] === '"') { field += '"'; i++; } else q = false; }
+      else field += c;
+    } else if (c === '"') q = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+    else if (c !== "\r") field += c;
+  }
+  if (field || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+function normalize(p, i){
+  const images = splitList(p.images).map(fixImage).map(safeUrl).filter(Boolean);
+  return {
+    id: String(p.id || i + 1).trim(),
+    name: p.name || "",
+    category: (p.category || "อื่นๆ").trim(),
+    price: toNum(p.price),
+    salePrice: toNum(p.sale_price),
+    badge: p.badge || "",
+    short: p.short_desc || "",
+    desc: p.description || "",
+    features: splitList(p.features),
+    images: images.length ? images : ["https://placehold.co/1200x750?text=No+Image"],
+    youtube: youtubeId(p.youtube),
+    demo: safeUrl(p.demo)
+  };
+}
+
+async function loadProducts(){
+  let raw = SAMPLE_PRODUCTS;
+  if (CONFIG.sheetCsvUrl) {
+    try {
+      const res = await fetch(CONFIG.sheetCsvUrl);
+      const rows = parseCSV(await res.text());
+      const head = rows.shift().map(h => h.trim().toLowerCase());
+      raw = rows.map(r => Object.fromEntries(head.map((h, i) => [h, (r[i] || "").trim()]))).filter(o => o.name);
+    } catch (e) {
+      console.error(e);
+      $("#grid").innerHTML = '<p class="empty">โหลดรายการโปรแกรมไม่สำเร็จ กรุณารีเฟรชหน้าเว็บ</p>';
+      return;
+    }
+  }
+  products = raw.map(normalize);
+  renderChips(); renderGrid(); openFromHash();
+}
+
+function renderChips(){
+  const cats = ["ทั้งหมด", ...new Set(products.map(p => p.category))];
+  $("#chips").innerHTML = cats.map(c => `<button class="chip ${c === currentCat ? "active" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`).join("");
+}
+
+function priceHTML(p){
+  const sale = p.salePrice > 0 && p.salePrice < p.price;
+  return sale ? `<span class="price">${money(p.salePrice)}<span class="price-old">${money(p.price)}</span></span>`
+              : `<span class="price">${money(p.price)}</span>`;
+}
+
+function renderGrid(){
+  const q = $("#search").value.trim().toLowerCase();
+  const list = products.filter(p =>
+    (currentCat === "ทั้งหมด" || p.category === currentCat) &&
+    (p.name + " " + p.short + " " + p.category).toLowerCase().includes(q));
+  $("#grid").innerHTML = list.length ? list.map(p => `
+    <article class="card" data-id="${esc(p.id)}">
+      <div class="card-img">
+        <img src="${esc(p.images[0])}" alt="${esc(p.name)}" loading="lazy">
+        ${p.badge ? `<span class="badge">${esc(p.badge)}</span>` : ""}
+      </div>
+      <div class="card-body">
+        <span class="card-cat">${esc(p.category)}</span>
+        <h3 class="card-title">${esc(p.name)}</h3>
+        <p class="card-desc">${esc(p.short)}</p>
+        <div class="card-foot">${priceHTML(p)}<span class="btn btn-primary" style="padding:.45rem 1rem">ดูรายละเอียด</span></div>
+      </div>
+    </article>`).join("") : '<p class="empty">ไม่พบโปรแกรมที่ค้นหา</p>';
+}
+
+function openModal(){ $("#modal").classList.add("open"); document.body.style.overflow = "hidden"; }
+function closeModal(){
+  $("#modal").classList.remove("open"); document.body.style.overflow = "";
+  history.replaceState(null, "", location.pathname + location.search);
+}
+
+function openDetail(id){
+  const p = products.find(x => x.id === id); if (!p) return;
+  const box = $("#modalBox"); box.className = "modal-box";
+  box.innerHTML = `
+    <button class="modal-close" data-close>&times;</button>
+    <div class="gallery-main"><img id="mainImg" src="${esc(p.images[0])}" alt="${esc(p.name)}"></div>
+    ${p.images.length > 1 ? `<div class="thumbs">${p.images.map((src, i) => `<img src="${esc(src)}" class="${i ? "" : "active"}" data-thumb alt="">`).join("")}</div>` : ""}
+    <div class="modal-body">
+      <span class="card-cat">${esc(p.category)}</span>
+      <h2>${esc(p.name)}</h2>
+      <p class="desc-text">${esc(p.desc || p.short)}</p>
+      ${p.features.length ? `<h3>ความสามารถของโปรแกรม</h3><ul class="features">${p.features.map(f => `<li>${esc(f)}</li>`).join("")}</ul>` : ""}
+      ${p.youtube ? `<h3>วิดีโอสอนใช้งาน</h3><div class="video"><iframe src="https://www.youtube.com/embed/${p.youtube}" title="วิดีโอสอนใช้งาน" loading="lazy" allowfullscreen></iframe></div>` : ""}
+      <div class="modal-actions">
+        ${priceHTML(p)}
+        ${p.demo ? `<a class="btn btn-outline" href="${esc(p.demo)}" target="_blank" rel="noopener">ทดลองใช้ (Demo)</a>` : ""}
+        <button class="btn btn-primary" data-buy="${esc(p.id)}">ซื้อเลย</button>
+      </div>
+    </div>`;
+  openModal();
+  history.replaceState(null, "", "#p-" + encodeURIComponent(p.id));
+}
+
+function openPay(id){
+  const p = products.find(x => x.id === id); if (!p) return;
+  const amount = finalPrice(p);
+  const qr = CONFIG.qrImage || `https://promptpay.io/${encodeURIComponent(CONFIG.promptpay)}/${amount}.png`;
+  const msg = `สวัสดีครับ ต้องการซื้อโปรแกรม "${p.name}" ราคา ${money(amount)} แนบสลิปการโอนครับ`;
+  const lineUrl = `https://line.me/R/oaMessage/${encodeURIComponent(CONFIG.lineId)}/?${encodeURIComponent(msg)}`;
+  const box = $("#modalBox"); box.className = "modal-box pay";
+  box.innerHTML = `
+    <button class="modal-close" data-close>&times;</button>
+    <div class="pay-body">
+      <h2>ชำระเงิน</h2>
+      <p>${esc(p.name)}</p>
+      <div class="price">${money(amount)}</div>
+      <img class="qr" src="${esc(qr)}" alt="QR พร้อมเพย์">
+      <p style="font-size:.9rem;color:var(--muted)">พร้อมเพย์: ${esc(CONFIG.promptpayName)}</p>
+      <ol class="pay-steps">
+        <li>สแกน QR ด้วยแอปธนาคาร ${CONFIG.qrImage ? `และกรอกยอด ${money(amount)}` : "(ยอดเงินขึ้นอัตโนมัติ)"}</li>
+        <li>กดปุ่มด้านล่างเพื่อส่งสลิปทาง LINE</li>
+        <li>รับไฟล์โปรแกรมพร้อมคู่มือภายใน 24 ชม.</li>
+      </ol>
+      <a class="btn btn-line" style="width:100%" href="${esc(lineUrl)}" target="_blank" rel="noopener">ส่งสลิปทาง LINE</a>
+      <button class="btn btn-outline" style="width:100%;margin-top:.5rem" data-back="${esc(p.id)}">ย้อนกลับ</button>
+    </div>`;
+}
+
+function openFromHash(){
+  if (location.hash.startsWith("#p-")) openDetail(decodeURIComponent(location.hash.slice(3)));
+}
+
+function renderContact(){
+  const links = [];
+  if (CONFIG.lineId) links.push(`<a class="btn btn-line" target="_blank" rel="noopener" href="https://line.me/R/ti/p/${encodeURIComponent(CONFIG.lineId)}">LINE: ${esc(CONFIG.lineId)}</a>`);
+  if (CONFIG.facebookUrl) links.push(`<a class="btn btn-outline" target="_blank" rel="noopener" href="${esc(CONFIG.facebookUrl)}">Facebook</a>`);
+  if (CONFIG.email) links.push(`<a class="btn btn-outline" href="mailto:${esc(CONFIG.email)}">${esc(CONFIG.email)}</a>`);
+  if (CONFIG.phone) links.push(`<a class="btn btn-outline" href="tel:${esc(CONFIG.phone)}">โทร ${esc(CONFIG.phone)}</a>`);
+  $("#contactLinks").innerHTML = links.join("");
+}
+
+/* ===== Events ===== */
+$("#search").addEventListener("input", renderGrid);
+$("#chips").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  currentCat = b.dataset.cat; renderChips(); renderGrid();
+});
+$("#grid").addEventListener("click", e => {
+  const c = e.target.closest(".card"); if (c) openDetail(c.dataset.id);
+});
+$("#modal").addEventListener("click", e => {
+  if (e.target.id === "modal" || e.target.closest("[data-close]")) return closeModal();
+  const t = e.target.closest("[data-thumb]");
+  if (t) {
+    $("#mainImg").src = t.src;
+    document.querySelectorAll("[data-thumb]").forEach(x => x.classList.toggle("active", x === t));
+  }
+  const buy = e.target.closest("[data-buy]"); if (buy) openPay(buy.dataset.buy);
+  const back = e.target.closest("[data-back]"); if (back) openDetail(back.dataset.back);
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+/* ===== Start ===== */
+document.querySelectorAll("[data-shop]").forEach(el => el.textContent = CONFIG.shopName);
+document.title = CONFIG.shopName + " - ขายโปรแกรม HTML สำเร็จรูป";
+$("#year").textContent = new Date().getFullYear();
+renderContact();
+loadProducts();
+</script>
+</body>
+</html>
