@@ -381,7 +381,7 @@ function openPay(id){
   const amount = finalPrice(p);
   const qr = `https://promptpay.io/${encodeURIComponent(CONFIG.promptpay)}/${amount}.png`;
   const msg = `สวัสดีครับ ต้องการซื้อโปรแกรม "${p.name}" ราคา ${money(amount)} แนบสลิปการโอนครับ`;
-  const lineUrl1 = `https://line.me/R/ti/p/${encodeURIComponent(CONFIG.lineId)}`;
+  const lineUrl = `https://line.me/ti/p/@${CONFIG.lineId}`;
   const box = $("#modalBox"); box.className = "modal-box pay";
   box.innerHTML = `
     <button class="modal-close" data-close>&times;</button>
