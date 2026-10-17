@@ -207,15 +207,14 @@ footer{background:#0f172a;color:#94a3b8;text-align:center;padding:2rem 1rem;font
    ================================================================ */
 const CONFIG = {
   shopName: "Anuman app html Store",
-sheetCsvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8tV_ZVrsbe6xPtak-5NTpCtHaVbvOIMgtKVMEQI2WJRNioiKAwXw-eIEmNuAzGI1R5_Y9lae5HBTp/pub?gid=0&single=true&output=csv",
-lineId: "PxX6_hU9sN",         // LINE OA ID
+sheetCsvUrl: "",
 facebookUrl: "https://www.facebook.com/share/1MiCGBpQj1/",
 email: "anuman99999@gmail.com",
 phone: "0642706493",
-promptpay: "",                  // เว้นว่างไว้ ไม่ต้องใส่เลขเลย
+promptpay: "0642706493"                // เว้นว่างไว้ ไม่ต้องใส่เลขเลย
 promptpayName: "อนุมาน เกตปมา",
 qrImage: "line-qr.png",
-arImage: "line-qr.png",
+arImage: "promptpay-qr.png",
 };
 
 /* สินค้าตัวอย่าง (แสดงเมื่อยังไม่ได้ใส่ sheetCsvUrl) */
@@ -378,9 +377,9 @@ function openDetail(id){
 function openPay(id){
   const p = products.find(x => x.id === id); if (!p) return;
   const amount = finalPrice(p);
-  const qr = CONFIG.qrImage || `https://promptpay.io/${encodeURIComponent(CONFIG.promptpay)}/${amount}.png`;
+  const qr = `https://promptpay.io/${encodeURIComponent(CONFIG.promptpay)}/${amount}.png`;
   const msg = `สวัสดีครับ ต้องการซื้อโปรแกรม "${p.name}" ราคา ${money(amount)} แนบสลิปการโอนครับ`;
-  const lineUrl = `https://line.me/R/oaMessage/${encodeURIComponent(CONFIG.lineId)}/?${encodeURIComponent(msg)}`;
+  const lineUrl1 = `https://line.me/R/ti/p/${encodeURIComponent(CONFIG.lineId)}`;
   const box = $("#modalBox"); box.className = "modal-box pay";
   box.innerHTML = `
     <button class="modal-close" data-close>&times;</button>
