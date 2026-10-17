@@ -379,7 +379,7 @@ function openDetail(id){
 function openPay(id){
   const p = products.find(x => x.id === id); if (!p) return;
   const amount = finalPrice(p);
-  const qr = CONFIG.qrImage || `https://promptpay.io/${encodeURIComponent(CONFIG.promptpay)}/${amount}.png`;
+ const qr = CONFIG.promptpayImage || `https://promptpay.io/${encodeURIComponent(CONFIG.promptpay)}/${amount}.png`;
   const msg = `สวัสดีครับ ต้องการซื้อโปรแกรม "${p.name}" ราคา ${money(amount)} แนบสลิปการโอนครับ`;
   const lineUrl = `https://line.me/R/oaMessage/${encodeURIComponent(CONFIG.lineId)}/?${encodeURIComponent(msg)}`;
   const box = $("#modalBox"); box.className = "modal-box pay";
