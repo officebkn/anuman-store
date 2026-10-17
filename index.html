@@ -209,7 +209,7 @@ const CONFIG = {
 
   shopName: "Anuman app html Store",
  sheetCsvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8tV_ZVrsbe6xPtak-5NTpCtHaVbvOIMgtKVMEQI2WJRNioiKAwXw-eIEmNuAzGI1R5_Y9lae5HBTp/pub?gid=0&single=true&output=csv",
-  lineId: "0642706493",
+  lineId: "PxX6_hU9sN",
   facebookUrl: "https://www.facebook.com/share/1MiCGBpQj1/",
   email: "anuman99999@gmail.com",
   phone: "0642706493",
@@ -381,7 +381,7 @@ function openPay(id){
   const amount = finalPrice(p);
   const qr = CONFIG.arImage || `https://promptpay.io/${encodeURIComponent(CONFIG.promptpay)}/${amount}.png`;
   const msg = `สวัสดีครับ ต้องการซื้อโปรแกรม "${p.name}" ราคา ${money(amount)} แนบสลิปการโอนครับ`;
-  const lineUrl = `https://line.me/ti/p/@${CONFIG.lineId}`;
+  const lineUrl = `https://line.me/ti/p/${CONFIG.lineId}`;
   const box = $("#modalBox"); box.className = "modal-box pay";
   box.innerHTML = `
     <button class="modal-close" data-close>&times;</button>
