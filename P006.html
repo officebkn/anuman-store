@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>ระบบจัดการหอพัก</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Sarabun', 'Tahoma', sans-serif; }
+  .modal { animation: fadeIn 0.2s; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  #printFrame { display: none; }
+</style>
+</head>
+<body class="bg-slate-100">
+
+<div id="app"></div>
+<iframe id="printFrame"></iframe>
+
+<script>
+// ============ STORAGE ============
+const KEYS = {
+  rooms: 'dorm_rooms',
+  tenants: 'dorm_tenants',
+  bills: 'dorm_bills',
+  payments: 'dorm_payments',
+  settings: 'dorm_settings',
+};
+
+const db = {
+  get: (k) => JSON.parse(localStorage.getItem(k) || '[]'),
+  set: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
+  getOne: (k, d = {}) => JSON.parse(localStorage.getItem(k) || JSON.stringify(d)),
+};
+
+function initData() {
+  if (db.get(KEYS.rooms).length === 0) {
+    const rooms = Array.from({ length: 50 }, (_, i) => ({
+      id: 'R' + (i + 1), number: String(101 + i),
+      type: 'monthly', price: 3500, status: 'vacant',
+    }));
+    db.set(KEYS.rooms, rooms);
+  }
+  if (!localStorage.getItem(KEYS.settings)) {
+    db.set(KEYS.settings, {
+      housingName: 'หอพักของฉัน', ownerName: 'เจ้าของหอ',
+      ownerPhone: '***-***-****', ownerAddress: '',
+      electricityRate: 7, waterRate: 20,
+    });
+  }
+}
+initData();
+
+let state = {
+  page: 'dashboard',
+  rooms: db.get(KEYS.rooms), tenants: db.get(KEYS.tenants),
+  bills: db.get(KEYS.bills), payments: db.get(KEYS.payments),
+  settings: db.get(KEYS.settings),
+};
+
+// ============ ICONS ============
+const icons = {
+  home: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>',
+  door: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>',
+  users: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
+  bill: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+  money: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+  chart: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>',
+  contract: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+  settings: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
+  alert: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
+  printer: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>',
+};
+
+// ============ HELPERS ============
+const fmt = (n) => Number(n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtInt = (n) => Number(n || 0).toLocaleString('th-TH');
+const today = () => new Date().toISOString().split('T')[0];
+const uid = () => Date.now() + Math.random().toString(36).slice(2, 7);
+const getBillPaid = (billId) => state.payments.filter(p => p.billId === billId).reduce((s, p) => s + p.amount, 0);
+const isBillPaid = (bill) => getBillPaid(bill.id) >= bill.total;
+const getTenant = (id) => state.tenants.find(t => t.id === id);
+const getRoom = (id) => state.rooms.find(r => r.id === id);
+
+// ============ PRINT HELPER ============
+function printDocument(htmlContent) {
+  const frame = document.getElementById('printFrame');
+  const doc = frame.contentDocument || frame.contentWindow.document;
+  
+  doc.open();
+  doc.write(`
+    <!DOCTYPE html>
+    <html><head>
+      <meta charset="UTF-8">
+      <title>พิมพ์เอกสาร</title>
+      <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+      <style>
+        * { box-sizing: border-box; }
+        body { 
+          font-family: 'Sarabun', 'Tahoma', 'Angsana New', sans-serif; 
+          padding: 40px; 
+          color: #222;
+          font-size: 14px;
+          line-height: 1.6;
+        }
+        h1 { text-align: center; font-size: 24px; margin-bottom: 5px; font-weight: 700; }
+        h2 { text-align: center; font-size: 18px; color: #555; margin-top: 0; font-weight: 600; }
+        h3 { font-size: 16px; margin-top: 20px; margin-bottom: 10px; font-weight: 700; }
+        .info { display: flex; justify-content: space-between; margin: 15px 0; }
+        .info div { font-size: 14px; line-height: 1.8; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 14px; }
+        th, td { border: 1px solid #999; padding: 8px 10px; text-align: left; }
+        th { background: #f0f0f0; font-weight: 600; }
+        .right { text-align: right; }
+        .total { font-weight: 700; font-size: 16px; }
+        .sig { display: flex; justify-content: space-between; margin-top: 60px; }
+        .sig div { text-align: center; width: 200px; }
+        .sig .line { border-bottom: 1px dotted #333; height: 50px; }
+        .note { font-size: 12px; color: #666; margin-top: 30px; text-align: center; }
+        ol { padding-left: 25px; }
+        ol li { margin-bottom: 5px; line-height: 1.8; }
+        hr { border: none; border-top: 2px solid #333; margin: 15px 0; }
+        @media print { 
+          body { padding: 20px; }
+          @page { margin: 1.5cm; }
+        }
+      </style>
+    </head><body>
+      ${htmlContent}
+    </body></html>
+  `);
+  doc.close();
+  
+  setTimeout(() => {
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+  }, 800);
+}
+
+// ============ PRINT FUNCTIONS ============
+function printBill(billId) {
+  const b = state.bills.find(x => x.id === billId);
+  if (!b) return;
+  const t = getTenant(b.tenantId);
+  const r = getRoom(b.roomId);
+  const s = state.settings;
+  const paid = getBillPaid(b.id);
+  const remain = b.total - paid;
+  const elecUnits = (b.elecNew || 0) - (b.elecOld || 0);
+  const waterUnits = (b.waterNew || 0) - (b.waterOld || 0);
+
+  const html = `
+    <h1>🏠 ${s.housingName}</h1>
+    <h2>บิลเรียกเก็บเงิน</h2>
+    <hr>
+    <div class="info">
+      <div>
+        <strong>ชื่อหอพัก:</strong> ${s.housingName}<br>
+        <strong>เจ้าของ:</strong> ${s.ownerName}<br>
+        <strong>โทร:</strong> ${s.ownerPhone}<br>
+        ${s.ownerAddress ? `<strong>ที่อยู่:</strong> ${s.ownerAddress}<br>` : ''}
+      </div>
+      <div style="text-align:right;">
+        <strong>เลขที่บิล:</strong> ${b.id}<br>
+        <strong>วันที่ออกบิล:</strong> ${today()}<br>
+        <strong>วันครบกำหนด:</strong> ${b.dueDate || '-'}<br>
+        <strong>ประจำเดือน:</strong> ${b.month || '-'}<br>
+      </div>
+    </div>
+    <hr>
+    <div class="info">
+      <div>
+        <strong>ชื่อผู้เช่า:</strong> ${t?.name || '-'}<br>
+        <strong>เลขบัตร ปชช.:</strong> ${t?.idCard || '-'}<br>
+        <strong>เบอร์โทร:</strong> ${t?.phone || '-'}<br>
+        <strong>ที่อยู่:</strong> ${t?.address || '-'}<br>
+      </div>
+      <div style="text-align:right;">
+        <strong>ห้องเลขที่:</strong> ${r?.number || '-'}<br>
+        <strong>ประเภท:</strong> ${r?.type === 'daily' ? 'รายวัน' : 'รายเดือน'}<br>
+      </div>
+    </div>
+    <table>
+      <tr><th style="width:50px;">ลำดับ</th><th>รายการ</th><th>รายละเอียด</th><th class="right" style="width:120px;">จำนวนเงิน (บาท)</th></tr>
+      <tr><td>1</td><td>ค่าเช่า</td><td>ค่าเช่าห้อง ${r?.number} ประจำเดือน ${b.month}</td><td class="right">${fmt(b.rent)}</td></tr>
+      <tr><td>2</td><td>ค่าไฟฟ้า</td><td>มิเตอร์ ${b.elecOld || 0} → ${b.elecNew || 0} (${fmtInt(elecUnits)} หน่วย × ${s.electricityRate} ฿)</td><td class="right">${fmt(b.electricity)}</td></tr>
+      <tr><td>3</td><td>ค่าน้ำประปา</td><td>มิเตอร์ ${b.waterOld || 0} → ${b.waterNew || 0} (${fmtInt(waterUnits)} หน่วย × ${s.waterRate} ฿)</td><td class="right">${fmt(b.water)}</td></tr>
+      <tr><td colspan="3" class="right total">รวมทั้งสิ้น</td><td class="right total">${fmt(b.total)}</td></tr>
+      ${paid > 0 ? `<tr><td colspan="3" class="right">ชำระแล้ว</td><td class="right" style="color:green;">- ${fmt(paid)}</td></tr>` : ''}
+      ${remain > 0 ? `<tr><td colspan="3" class="right" style="color:red;"><strong>ค้างชำระ</strong></td><td class="right" style="color:red; font-weight:bold;">${fmt(remain)}</td></tr>` : ''}
+    </table>
+    <p class="note">กรุณาชำระภายในวันที่ ${b.dueDate || '-'} | ขอบคุณที่ไว้วางใจ</p>
+  `;
+  printDocument(html);
+}
+
+function printReceipt(paymentId) {
+  const p = state.payments.find(x => x.id === paymentId);
+  if (!p) return;
+  const b = state.bills.find(x => x.id === p.billId);
+  if (!b) return;
+  const t = getTenant(b.tenantId);
+  const r = getRoom(b.roomId);
+  const s = state.settings;
+  const totalPaid = getBillPaid(b.id);
+  const remain = b.total - totalPaid;
+
+  const html = `
+    <h1>🏠 ${s.housingName}</h1>
+    <h2>ใบเสร็จรับเงิน</h2>
+    <hr>
+    <div class="info">
+      <div>
+        <strong>ชื่อหอพัก:</strong> ${s.housingName}<br>
+        <strong>เจ้าของ:</strong> ${s.ownerName}<br>
+        <strong>โทร:</strong> ${s.ownerPhone}<br>
+        ${s.ownerAddress ? `<strong>ที่อยู่:</strong> ${s.ownerAddress}<br>` : ''}
+      </div>
+      <div style="text-align:right;">
+        <strong>เลขที่ใบเสร็จ:</strong> ${p.id}<br>
+        <strong>วันที่รับเงิน:</strong> ${p.date}<br>
+      </div>
+    </div>
+    <hr>
+    <p style="font-size:15px; margin: 15px 0; line-height:2;">
+      รับเงินจาก <strong>${t?.name || '-'}</strong> &nbsp;
+      เลขบัตร ปชช. <strong>${t?.idCard || '-'}</strong><br>
+      ที่อยู่ <strong>${t?.address || '-'}</strong><br>
+      ห้องเลขที่ <strong>${r?.number || '-'}</strong> &nbsp;
+      ประจำเดือน <strong>${b.month || '-'}</strong>
+    </p>
+    <table>
+      <tr><th style="width:50px;">ลำดับ</th><th>รายการ</th><th class="right" style="width:120px;">จำนวนเงิน (บาท)</th></tr>
+      <tr><td>1</td><td>ค่าเช่าห้อง ${r?.number} เดือน ${b.month}</td><td class="right">${fmt(b.rent)}</td></tr>
+      <tr><td>2</td><td>ค่าไฟฟ้า</td><td class="right">${fmt(b.electricity)}</td></tr>
+      <tr><td>3</td><td>ค่าน้ำประปา</td><td class="right">${fmt(b.water)}</td></tr>
+      <tr><td colspan="2" class="right total">ยอดรวมทั้งสิ้น</td><td class="right total">${fmt(b.total)}</td></tr>
+      <tr><td colspan="2" class="right" style="color:green;"><strong>จำนวนเงินที่รับชำระครั้งนี้</strong></td><td class="right" style="color:green; font-weight:bold; font-size:18px;">${fmt(p.amount)}</td></tr>
+      <tr><td colspan="2" class="right">ชำระสะสมแล้ว</td><td class="right">${fmt(totalPaid)}</td></tr>
+      ${remain > 0 ? `<tr><td colspan="2" class="right" style="color:red;">คงเหลือค้างชำระ</td><td class="right" style="color:red;">${fmt(remain)}</td></tr>` : `<tr><td colspan="2" class="right" style="color:green;">สถานะ</td><td class="right" style="color:green; font-weight:bold;">ชำระครบแล้ว ✓</td></tr>`}
+    </table>
+    ${p.note ? `<p style="font-size:13px; margin-top:10px;"><strong>หมายเหตุ:</strong> ${p.note}</p>` : ''}
+    <div class="sig">
+      <div>
+        <div class="line"></div>
+        <p><strong>ผู้ชำระเงิน</strong></p>
+        <p>(${t?.name || '-'})</p>
+      </div>
+      <div>
+        <div class="line"></div>
+        <p><strong>ผู้รับเงิน</strong></p>
+        <p>(${s.ownerName})</p>
+      </div>
+    </div>
+    <p class="note">เอกสารนี้ออกโดยระบบอัตโนมัติ | ${s.housingName} | โทร ${s.ownerPhone}</p>
+  `;
+  printDocument(html);
+}
+
+function printContract(tenantId) {
+  const t = getTenant(tenantId);
+  if (!t) return;
+  const r = getRoom(t.roomId);
+  const s = state.settings;
+
+  const html = `
+    <h1>สัญญาเช่าห้องพัก</h1>
+    <h2>${s.housingName}</h2>
+    <p style="text-align:center; margin-bottom:20px;">ทำที่: ${s.ownerAddress || s.housingName} &nbsp;&nbsp; วันที่: ${t.startDate || today()}</p>
+
+    <p style="font-size:14px; line-height:2;">
+      สัญญาฉบับนี้ทำขึ้นระหว่าง <strong>${s.ownerName}</strong> (ต่อไปนี้เรียกว่า "ผู้ให้เช่า")
+      ที่อยู่ ${s.ownerAddress || '-'} โทร ${s.ownerPhone}
+    </p>
+    <p style="font-size:14px; line-height:2;">
+      กับ <strong>${t.name}</strong> (ต่อไปนี้เรียกว่า "ผู้เช่า")
+      เลขบัตรประชาชน <strong>${t.idCard || '-'}</strong>
+      ที่อยู่ปัจจุบัน <strong>${t.address || '-'}</strong>
+      เบอร์โทรศัพท์ <strong>${t.phone || '-'}</strong>
+    </p>
+
+    <p style="font-size:14px; line-height:2;">ทั้งสองฝ่ายได้ตกลงทำสัญญากันดังมีข้อความต่อไปนี้:</p>
+
+    <table style="margin-top:10px;">
+      <tr><th colspan="2" style="text-align:center; background:#e0e0e0;">รายละเอียดการเช่า</th></tr>
+      <tr><td style="width:200px;"><strong>1. ห้องพักเลขที่</strong></td><td>${r?.number || '-'}</td></tr>
+      <tr><td><strong>2. ประเภทการเช่า</strong></td><td>${r?.type === 'daily' ? 'รายวัน' : 'รายเดือน'}</td></tr>
+      <tr><td><strong>3. ค่าเช่า</strong></td><td>${fmt(r?.price || 0)} บาท/${r?.type === 'daily' ? 'วัน' : 'เดือน'}</td></tr>
+      <tr><td><strong>4. วันเริ่มสัญญา</strong></td><td>${t.startDate || '-'}</td></tr>
+      <tr><td><strong>5. เงินมัดจำ</strong></td><td>${fmt(t.deposit || 0)} บาท</td></tr>
+      <tr><td><strong>6. ค่าไฟฟ้า</strong></td><td>หน่วยละ ${s.electricityRate} บาท (ตามมิเตอร์)</td></tr>
+      <tr><td><strong>7. ค่าน้ำประปา</strong></td><td>หน่วยละ ${s.waterRate} บาท (ตามมิเตอร์)</td></tr>
+      <tr><td><strong>8. กำหนดชำระ</strong></td><td>ภายในวันที่ 5 ของทุกเดือน</td></tr>
+    </table>
+
+    <h3>เงื่อนไขและข้อตกลง</h3>
+    <ol>
+      <li>ผู้เช่าตกลงชำระค่าเช่า ค่าไฟฟ้า ค่าน้ำประปา ตามกำหนดทุกเดือน หากชำระล่าช้าเกิน 7 วัน ผู้ให้เช่ามีสิทธิ์คิดค่าปรับ</li>
+      <li>ผู้เช่าต้องดูแลรักษาทรัพย์สินในห้องเช่าให้อยู่ในสภาพดี หากเสียหายผู้เช่าต้องรับผิดชอบ</li>
+      <li>ห้ามผู้เช่านำสิ่งของผิดกฎหมาย สารเสพติด หรือสิ่งอันตรายเข้ามาในหอพัก</li>
+      <li>ห้ามผู้เช่านำบุคคลภายนอกมาพักอาศัยค้างคืนโดยไม่ได้รับอนุญาต</li>
+      <li>ผู้เช่าต้องรักษาความสงบเรียบร้อย ไม่ส่งเสียงดังรบกวนผู้เช่าท่านอื่น</li>
+      <li>หากผู้เช่าประสงค์จะย้ายออก ต้องแจ้งล่วงหน้าไม่น้อยกว่า 30 วัน</li>
+      <li>เงินมัดจำจะคืนให้เมื่อผู้เช่าย้ายออกและห้องอยู่ในสภาพเรียบร้อย หักค่าเสียหาย (ถ้ามี)</li>
+      <li>ผู้ให้เช่ามีสิทธิ์บอกเลิกสัญญาหากผู้เช่าผิดเงื่อนไขข้อใดข้อหนึ่ง</li>
+    </ol>
+
+    <p style="font-size:14px; margin-top:20px;">
+      สัญญาฉบับนี้ทำขึ้นเป็น 2 ฉบับ มีข้อความถูกต้องตรงกัน ทั้งสองฝ่ายได้อ่านและเข้าใจข้อความโดยตลอดแล้ว
+      จึงลงลายมือชื่อไว้เป็นหลักฐานต่อหน้าพยาน
+    </p>
+
+    <div class="sig" style="margin-top:40px;">
+      <div>
+        <div class="line"></div>
+        <p><strong>ลงชื่อผู้ให้เช่า</strong></p>
+        <p>(${s.ownerName})</p>
+        <p>วันที่: ${t.startDate || today()}</p>
+      </div>
+      <div>
+        <div class="line"></div>
+        <p><strong>ลงชื่อผู้เช่า</strong></p>
+        <p>(${t.name})</p>
+        <p>วันที่: ${t.startDate || today()}</p>
+      </div>
+    </div>
+
+    <div class="sig" style="margin-top:20px;">
+      <div>
+        <div class="line"></div>
+        <p><strong>ลงชื่อพยาน</strong></p>
+        <p>(................................)</p>
+      </div>
+      <div>
+        <div class="line"></div>
+        <p><strong>ลงชื่อพยาน</strong></p>
+        <p>(................................)</p>
+      </div>
+    </div>
+  `;
+  printDocument(html);
+}
+
+// ============ RENDER ============
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = `<div class="flex min-h-screen">${renderSidebar()}<main class="flex-1 p-6 overflow-auto">${renderPage()}</main></div>`;
+  bindSidebar();
+  bindPage();
+}
+
+// ============ SIDEBAR ============
+function renderSidebar() {
+  const menus = [
+    { id: 'dashboard', label: 'หน้าหลัก', icon: icons.home },
+    { id: 'rooms', label: 'จัดการห้อง', icon: icons.door },
+    { id: 'tenants', label: 'ผู้เช่า', icon: icons.users },
+    { id: 'bills', label: 'บิลค่าเช่า', icon: icons.bill },
+    { id: 'payments', label: 'บันทึกชำระ', icon: icons.money },
+    { id: 'reports', label: 'รายงาน', icon: icons.chart },
+    { id: 'contracts', label: 'สัญญาเช่า', icon: icons.contract },
+    { id: 'settings', label: 'ตั้งค่า', icon: icons.settings },
+  ];
+  return `
+    <aside class="w-64 bg-slate-800 text-white min-h-screen p-4 flex flex-col">
+      <h1 class="text-xl font-bold mb-6">🏠 ระบบหอพัก</h1>
+      <nav class="space-y-1 flex-1">
+        ${menus.map(m => `<button data-page="${m.id}" class="menu-btn w-full flex items-center gap-3 p-3 rounded-lg text-left ${state.page === m.id ? 'bg-indigo-600' : 'hover:bg-slate-700'}">${m.icon} <span>${m.label}</span></button>`).join('')}
+      </nav>
+    </aside>`;
+}
+function bindSidebar() {
+  document.querySelectorAll('.menu-btn').forEach(b => b.onclick = () => { state.page = b.dataset.page; render(); });
+}
+
+function renderPage() {
+  switch (state.page) {
+    case 'dashboard': return renderDashboard();
+    case 'rooms': return renderRooms();
+    case 'tenants': return renderTenants();
+    case 'bills': return renderBills();
+    case 'payments': return renderPayments();
+    case 'reports': return renderReports();
+    case 'contracts': return renderContracts();
+    case 'settings': return renderSettings();
+  }
+}
+function bindPage() {
+  switch (state.page) {
+    case 'rooms': bindRooms(); break;
+    case 'tenants': bindTenants(); break;
+    case 'bills': bindBills(); break;
+    case 'payments': bindPayments(); break;
+    case 'contracts': bindContracts(); break;
+    case 'settings': bindSettings(); break;
+  }
+}
+
+// ============ DASHBOARD ============
+function renderDashboard() {
+  const vacant = state.rooms.filter(r => r.status === 'vacant').length;
+  const occupied = state.rooms.filter(r => r.status === 'occupied').length;
+  const unpaidBills = state.bills.filter(b => !isBillPaid(b)).length;
+  const totalIncome = state.payments.reduce((s, p) => s + p.amount, 0);
+  const totalExpected = state.bills.reduce((s, b) => s + b.total, 0);
+  const totalPaid = state.bills.reduce((s, b) => s + getBillPaid(b.id), 0);
+  const overdueBills = state.bills.filter(b => !isBillPaid(b) && b.dueDate < today());
+
+  return `
+    <h2 class="text-2xl font-bold mb-6">📊 แดชบอร์ด</h2>
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="bg-white p-6 rounded-xl shadow"><div class="flex items-center justify-between"><div><p class="text-gray-500 text-sm">ห้องว่าง</p><p class="text-3xl font-bold mt-2 text-green-600">${vacant}</p></div><div class="bg-green-500 text-white p-3 rounded-full">${icons.door}</div></div></div>
+      <div class="bg-white p-6 rounded-xl shadow"><div class="flex items-center justify-between"><div><p class="text-gray-500 text-sm">มีผู้เช่า</p><p class="text-3xl font-bold mt-2 text-blue-600">${occupied}</p></div><div class="bg-blue-500 text-white p-3 rounded-full">${icons.users}</div></div></div>
+      <div class="bg-white p-6 rounded-xl shadow"><div class="flex items-center justify-between"><div><p class="text-gray-500 text-sm">บิลค้างชำระ</p><p class="text-3xl font-bold mt-2 text-red-600">${unpaidBills}</p></div><div class="bg-red-500 text-white p-3 rounded-full">${icons.alert}</div></div></div>
+      <div class="bg-white p-6 rounded-xl shadow"><div class="flex items-center justify-between"><div><p class="text-gray-500 text-sm">รายได้รวม (บาท)</p><p class="text-3xl font-bold mt-2 text-indigo-600">${fmt(totalIncome)}</p></div><div class="bg-indigo-500 text-white p-3 rounded-full">${icons.money}</div></div></div>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="bg-white p-6 rounded-xl shadow">
+        <h3 class="font-bold mb-4">💰 สรุปการเงิน</h3>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between"><span>ยอดบิลทั้งหมด</span><span class="font-semibold">${fmt(totalExpected)} ฿</span></div>
+          <div class="flex justify-between"><span>รับชำระแล้ว</span><span class="font-semibold text-green-600">${fmt(totalPaid)} ฿</span></div>
+          <div class="flex justify-between"><span>ค้างชำระ</span><span class="font-semibold text-red-600">${fmt(totalExpected - totalPaid)} ฿</span></div>
+        </div>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow">
+        <h3 class="font-bold mb-4 text-red-600">⚠️ บิลเกินกำหนด (${overdueBills.length})</h3>
+        <div class="space-y-2 max-h-48 overflow-auto">
+          ${overdueBills.length === 0 ? '<p class="text-gray-400 text-sm">ไม่มีบิลเกินกำหนด</p>' :
+            overdueBills.slice(0, 10).map(b => {
+              const t = getTenant(b.tenantId); const r = getRoom(b.roomId);
+              return `<div class="text-sm border-l-4 border-red-500 pl-2"><div>ห้อง ${r?.number||'-'} - ${t?.name||'-'}</div><div class="text-red-600">ค้าง ${fmt(b.total - getBillPaid(b.id))} ฿ (ครบ ${b.dueDate})</div></div>`;
+            }).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ============ ROOMS ============
+function renderRooms() {
+  return `
+    <div class="flex justify-between mb-6">
+      <h2 class="text-2xl font-bold"> จัดการห้อง (${state.rooms.length})</h2>
+      <button id="addRoomBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">+ เพิ่มห้อง</button>
+    </div>
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+      <table class="w-full"><thead class="bg-slate-100"><tr>
+        <th class="p-3 text-left">เลขห้อง</th><th class="p-3 text-left">ประเภท</th><th class="p-3 text-left">ราคา</th><th class="p-3 text-left">สถานะ</th><th class="p-3 text-left">ผู้เช่า</th><th class="p-3 text-center">จัดการ</th>
+      </tr></thead><tbody>
+        ${state.rooms.map(r => {
+          const t = state.tenants.find(t => t.roomId === r.id && t.status === 'active');
+          return `<tr class="border-t hover:bg-slate-50">
+            <td class="p-3 font-semibold">${r.number}</td>
+            <td class="p-3">${r.type === 'daily' ? 'รายวัน' : 'รายเดือน'}</td>
+            <td class="p-3">${fmt(r.price)} ฿</td>
+            <td class="p-3"><span class="px-2 py-1 rounded text-xs ${r.status === 'occupied' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}">${r.status === 'occupied' ? 'มีผู้เช่า' : 'ว่าง'}</span></td>
+            <td class="p-3">${t ? t.name : '-'}</td>
+            <td class="p-3 text-center">
+              <button data-edit="${r.id}" class="edit-room text-blue-600 hover:underline mr-2">แก้ไข</button>
+              <button data-del="${r.id}" class="del-room text-red-600 hover:underline">ลบ</button>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody></table>
+    </div>
+    <div id="roomModal"></div>`;
+}
+function bindRooms() {
+  document.getElementById('addRoomBtn').onclick = () => openRoomForm();
+  document.querySelectorAll('.edit-room').forEach(b => b.onclick = () => openRoomForm(b.dataset.edit));
+  document.querySelectorAll('.del-room').forEach(b => b.onclick = () => {
+    if (confirm('ลบห้องนี้?')) { state.rooms = state.rooms.filter(r => r.id !== b.dataset.del); db.set(KEYS.rooms, state.rooms); render(); }
+  });
+}
+function openRoomForm(id) {
+  const room = id ? state.rooms.find(r => r.id === id) : { number: '', type: 'monthly', price: 3500 };
+  const modal = document.getElementById('roomModal');
+  modal.innerHTML = `
+    <div class="modal fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-xl p-6 w-96">
+        <h3 class="text-xl font-bold mb-4">${id ? 'แก้ไขห้อง' : 'เพิ่มห้อง'}</h3>
+        <div class="space-y-3">
+          <input id="rNumber" value="${room.number}" placeholder="เลขห้อง" class="w-full border p-2 rounded">
+          <select id="rType" class="w-full border p-2 rounded"><option value="monthly" ${room.type==='monthly'?'selected':''}>รายเดือน</option><option value="daily" ${room.type==='daily'?'selected':''}>รายวัน</option></select>
+          <input id="rPrice" type="number" value="${room.price}" placeholder="ราคา" class="w-full border p-2 rounded">
+        </div>
+        <div class="flex gap-2 mt-4">
+          <button id="saveRoom" class="flex-1 bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700">บันทึก</button>
+          <button id="cancelRoom" class="flex-1 bg-gray-200 p-2 rounded hover:bg-gray-300">ยกเลิก</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('cancelRoom').onclick = () => modal.innerHTML = '';
+  document.getElementById('saveRoom').onclick = () => {
+    const data = { number: document.getElementById('rNumber').value, type: document.getElementById('rType').value, price: Number(document.getElementById('rPrice').value) };
+    if (!data.number) { alert('กรุณากรอกเลขห้อง'); return; }
+    if (id) { state.rooms = state.rooms.map(r => r.id === id ? { ...r, ...data } : r); }
+    else { state.rooms.push({ id: 'R' + uid(), ...data, status: 'vacant' }); }
+    db.set(KEYS.rooms, state.rooms); modal.innerHTML = ''; render();
+  };
+}
+
+// ============ TENANTS ============
+function renderTenants() {
+  return `
+    <div class="flex justify-between mb-6">
+      <h2 class="text-2xl font-bold">👥 ผู้เช่า (${state.tenants.length})</h2>
+      <button id="addTenantBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">+ เพิ่มผู้เช่า</button>
+    </div>
+    <div class="bg-white rounded-xl shadow overflow-x-auto">
+      <table class="w-full"><thead class="bg-slate-100"><tr>
+        <th class="p-3 text-left">ชื่อ</th><th class="p-3 text-left">บัตร ปชช.</th><th class="p-3 text-left">โทร</th><th class="p-3 text-left">ที่อยู่</th><th class="p-3 text-left">ห้อง</th><th class="p-3 text-left">วันที่เข้า</th><th class="p-3 text-left">สถานะ</th><th class="p-3 text-center">จัดการ</th>
+      </tr></thead><tbody>
+        ${state.tenants.map(t => {
+          const r = getRoom(t.roomId);
+          return `<tr class="border-t hover:bg-slate-50">
+            <td class="p-3 font-semibold">${t.name}</td>
+            <td class="p-3">${t.idCard || '-'}</td>
+            <td class="p-3">${t.phone || '-'}</td>
+            <td class="p-3 text-xs max-w-[200px] truncate" title="${t.address || ''}">${t.address || '-'}</td>
+            <td class="p-3">${r?.number || '-'}</td>
+            <td class="p-3">${t.startDate || '-'}</td>
+            <td class="p-3"><span class="px-2 py-1 rounded text-xs ${t.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}">${t.status === 'active' ? 'อาศัยอยู่' : 'ออกแล้ว'}</span></td>
+            <td class="p-3 text-center">
+              <button data-edit="${t.id}" class="edit-tenant text-blue-600 hover:underline mr-2">แก้ไข</button>
+              <button data-del="${t.id}" class="del-tenant text-red-600 hover:underline">ลบ</button>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody></table>
+    </div>
+    <div id="tenantModal"></div>`;
+}
+function bindTenants() {
+  document.getElementById('addTenantBtn').onclick = () => openTenantForm();
+  document.querySelectorAll('.edit-tenant').forEach(b => b.onclick = () => openTenantForm(b.dataset.edit));
+  document.querySelectorAll('.del-tenant').forEach(b => b.onclick = () => {
+    if (confirm('ลบผู้เช่านี้ออก?')) {
+      const t = state.tenants.find(x => x.id === b.dataset.del);
+      if (t && t.status === 'active') { const r = getRoom(t.roomId); if (r) r.status = 'vacant'; db.set(KEYS.rooms, state.rooms); }
+      state.tenants = state.tenants.filter(x => x.id !== b.dataset.del); db.set(KEYS.tenants, state.tenants); render();
+    }
+  });
+}
+function openTenantForm(id) {
+  const t = id ? state.tenants.find(x => x.id === id) : { name: '', idCard: '', phone: '', address: '', roomId: '', startDate: today(), deposit: 0, status: 'active' };
+  const vacantRooms = state.rooms.filter(r => r.status === 'vacant' || r.id === t.roomId);
+  const modal = document.getElementById('tenantModal');
+  modal.innerHTML = `
+    <div class="modal fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-xl p-6 w-[550px] max-h-[90vh] overflow-auto">
+        <h3 class="text-xl font-bold mb-4">${id ? 'แก้ไขผู้เช่า' : 'เพิ่มผู้เช่า'}</h3>
+        <div class="space-y-3">
+          <input id="tName" value="${t.name}" placeholder="ชื่อ-นามสกุล *" class="w-full border p-2 rounded">
+          <input id="tIdCard" value="${t.idCard || ''}" placeholder="เลขบัตรประชาชน" class="w-full border p-2 rounded">
+          <input id="tPhone" value="${t.phone || ''}" placeholder="เบอร์โทร" class="w-full border p-2 rounded">
+          <textarea id="tAddress" placeholder="ที่อยู่ตามบัตรประชาชน (บ้านเลขที่ ซอย ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์)" rows="3" class="w-full border p-2 rounded">${t.address || ''}</textarea>
+          <select id="tRoom" class="w-full border p-2 rounded">
+            <option value="">-- เลือกห้อง --</option>
+            ${vacantRooms.map(r => `<option value="${r.id}" ${t.roomId === r.id ? 'selected' : ''}>ห้อง ${r.number} (${fmt(r.price)} ฿)</option>`).join('')}
+          </select>
+          <input id="tStart" type="date" value="${t.startDate || ''}" class="w-full border p-2 rounded">
+          <input id="tDeposit" type="number" value="${t.deposit || 0}" placeholder="เงินมัดจำ" class="w-full border p-2 rounded">
+          <select id="tStatus" class="w-full border p-2 rounded">
+            <option value="active" ${t.status === 'active' ? 'selected' : ''}>อาศัยอยู่</option>
+            <option value="inactive" ${t.status === 'inactive' ? 'selected' : ''}>ออกแล้ว</option>
+          </select>
+        </div>
+        <div class="flex gap-2 mt-4">
+          <button id="saveTenant" class="flex-1 bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700">บันทึก</button>
+          <button id="cancelTenant" class="flex-1 bg-gray-200 p-2 rounded hover:bg-gray-300">ยกเลิก</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('cancelTenant').onclick = () => modal.innerHTML = '';
+  document.getElementById('saveTenant').onclick = () => {
+    const data = {
+      name: document.getElementById('tName').value, idCard: document.getElementById('tIdCard').value,
+      phone: document.getElementById('tPhone').value, address: document.getElementById('tAddress').value,
+      roomId: document.getElementById('tRoom').value, startDate: document.getElementById('tStart').value,
+      deposit: Number(document.getElementById('tDeposit').value), status: document.getElementById('tStatus').value,
+    };
+    if (!data.name || !data.roomId) { alert('กรุณากรอกชื่อและเลือกห้อง'); return; }
+    if (id) {
+      const old = state.tenants.find(x => x.id === id);
+      if (old.roomId !== data.roomId) {
+        const oldRoom = getRoom(old.roomId); if (oldRoom) oldRoom.status = 'vacant';
+        const newRoom = getRoom(data.roomId); if (newRoom) newRoom.status = 'occupied';
+      } else { const room = getRoom(data.roomId); if (room) room.status = data.status === 'active' ? 'occupied' : 'vacant'; }
+      state.tenants = state.tenants.map(x => x.id === id ? { ...x, ...data } : x);
+    } else {
+      const room = getRoom(data.roomId); if (room) room.status = 'occupied';
+      state.tenants.push({ id: 'T' + uid(), ...data });
+    }
+    db.set(KEYS.rooms, state.rooms); db.set(KEYS.tenants, state.tenants); modal.innerHTML = ''; render();
+  };
+}
+
+// ============ BILLS ============
+function renderBills() {
+  return `
+    <div class="flex justify-between mb-6">
+      <h2 class="text-2xl font-bold">📄 บิลค่าเช่า (${state.bills.length})</h2>
+      <button id="addBillBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">+ สร้างบิล</button>
+    </div>
+    <div class="bg-white rounded-xl shadow overflow-x-auto">
+      <table class="w-full"><thead class="bg-slate-100"><tr>
+        <th class="p-3 text-left">ห้อง</th><th class="p-3 text-left">ผู้เช่า</th><th class="p-3 text-left">เดือน</th>
+        <th class="p-3 text-right">ค่าเช่า</th><th class="p-3 text-right">ค่าไฟ</th><th class="p-3 text-right">ค่าน้ำ</th>
+        <th class="p-3 text-right">รวม</th><th class="p-3 text-right">จ่ายแล้ว</th><th class="p-3 text-center">สถานะ</th><th class="p-3 text-center">จัดการ</th>
+      </tr></thead><tbody>
+        ${state.bills.slice().reverse().map(b => {
+          const t = getTenant(b.tenantId); const r = getRoom(b.roomId);
+          const paid = getBillPaid(b.id);
+          const status = paid >= b.total ? 'paid' : (b.dueDate < today() ? 'overdue' : 'unpaid');
+          const st = { paid: 'ชำระแล้ว', overdue: 'เกินกำหนด', unpaid: 'ค้างชำระ' };
+          const sc = { paid: 'bg-green-100 text-green-700', overdue: 'bg-red-100 text-red-700', unpaid: 'bg-yellow-100 text-yellow-700' };
+          return `<tr class="border-t hover:bg-slate-50">
+            <td class="p-3 font-semibold">${r?.number||'-'}</td><td class="p-3">${t?.name||'-'}</td><td class="p-3">${b.month||'-'}</td>
+            <td class="p-3 text-right">${fmt(b.rent)}</td><td class="p-3 text-right">${fmt(b.electricity)}</td><td class="p-3 text-right">${fmt(b.water)}</td>
+            <td class="p-3 text-right font-semibold">${fmt(b.total)}</td><td class="p-3 text-right text-green-600">${fmt(paid)}</td>
+            <td class="p-3 text-center"><span class="px-2 py-1 rounded text-xs ${sc[status]}">${st[status]}</span></td>
+            <td class="p-3 text-center whitespace-nowrap">
+              <button data-print="${b.id}" class="print-bill text-indigo-600 hover:underline mr-1" title="พิมพ์บิล">${icons.printer} บิล</button>
+              <button data-del="${b.id}" class="del-bill text-red-600 hover:underline">ลบ</button>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody></table>
+    </div>
+    <div id="billModal"></div>`;
+}
+function bindBills() {
+  document.getElementById('addBillBtn').onclick = () => openBillForm();
+  document.querySelectorAll('.print-bill').forEach(b => b.onclick = () => printBill(b.dataset.print));
+  document.querySelectorAll('.del-bill').forEach(b => b.onclick = () => {
+    if (confirm('ลบบิลนี้?')) { state.bills = state.bills.filter(x => x.id !== b.dataset.del); db.set(KEYS.bills, state.bills); render(); }
+  });
+}
+function openBillForm() {
+  const activeTenants = state.tenants.filter(t => t.status === 'active');
+  const modal = document.getElementById('billModal');
+  modal.innerHTML = `
+    <div class="modal fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-xl p-6 w-[500px] max-h-[90vh] overflow-auto">
+        <h3 class="text-xl font-bold mb-4">สร้างบิลค่าเช่า</h3>
+        <div class="space-y-3">
+          <select id="bTenant" class="w-full border p-2 rounded"><option value="">-- เลือกผู้เช่า --</option>
+            ${activeTenants.map(t => { const r = getRoom(t.roomId); return `<option value="${t.id}">${t.name} (ห้อง ${r?.number||'-'})</option>`; }).join('')}
+          </select>
+          <input id="bMonth" type="month" value="${new Date().toISOString().slice(0,7)}" class="w-full border p-2 rounded">
+          <input id="bDue" type="date" value="${today()}" class="w-full border p-2 rounded" title="วันครบกำหนด">
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="text-sm">มิเตอร์ไฟเก่า</label><input id="bElecOld" type="number" value="0" class="w-full border p-2 rounded"></div>
+            <div><label class="text-sm">มิเตอร์ไฟใหม่</label><input id="bElecNew" type="number" value="0" class="w-full border p-2 rounded"></div>
+            <div><label class="text-sm">มิเตอร์น้ำเก่า</label><input id="bWaterOld" type="number" value="0" class="w-full border p-2 rounded"></div>
+            <div><label class="text-sm">มิเตอร์น้ำใหม่</label><input id="bWaterNew" type="number" value="0" class="w-full border p-2 rounded"></div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded text-sm">
+            <div class="flex justify-between"><span>ค่าเช่า</span><span id="sumRent">0.00 ฿</span></div>
+            <div class="flex justify-between"><span>ค่าไฟ</span><span id="sumElec">0.00 ฿</span></div>
+            <div class="flex justify-between"><span>ค่าน้ำ</span><span id="sumWater">0.00 ฿</span></div>
+            <div class="flex justify-between font-bold border-t mt-2 pt-2"><span>รวม</span><span id="sumTotal">0.00 ฿</span></div>
+          </div>
+        </div>
+        <div class="flex gap-2 mt-4">
+          <button id="saveBill" class="flex-1 bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700">บันทึก</button>
+          <button id="cancelBill" class="flex-1 bg-gray-200 p-2 rounded hover:bg-gray-300">ยกเลิก</button>
+        </div>
+      </div>
+    </div>`;
+  const updateSum = () => {
+    const tid = document.getElementById('bTenant').value;
+    const t = state.tenants.find(x => x.id === tid); const r = t ? getRoom(t.roomId) : null;
+    const rent = r ? r.price : 0;
+    const elec = (Number(document.getElementById('bElecNew').value) - Number(document.getElementById('bElecOld').value)) * state.settings.electricityRate;
+    const water = (Number(document.getElementById('bWaterNew').value) - Number(document.getElementById('bWaterOld').value)) * state.settings.waterRate;
+    document.getElementById('sumRent').textContent = fmt(rent) + ' ฿';
+    document.getElementById('sumElec').textContent = fmt(elec) + ' ฿';
+    document.getElementById('sumWater').textContent = fmt(water) + ' ฿';
+    document.getElementById('sumTotal').textContent = fmt(rent + elec + water) + ' ฿';
+  };
+  ['bTenant', 'bElecOld', 'bElecNew', 'bWaterOld', 'bWaterNew'].forEach(id => document.getElementById(id).oninput = updateSum);
+  updateSum();
+  document.getElementById('cancelBill').onclick = () => modal.innerHTML = '';
+  document.getElementById('saveBill').onclick = () => {
+    const tid = document.getElementById('bTenant').value;
+    if (!tid) { alert('กรุณาเลือกผู้เช่า'); return; }
+    const t = getTenant(tid); const r = getRoom(t.roomId);
+    const elecOld = Number(document.getElementById('bElecOld').value);
+    const elecNew = Number(document.getElementById('bElecNew').value);
+    const waterOld = Number(document.getElementById('bWaterOld').value);
+    const waterNew = Number(document.getElementById('bWaterNew').value);
+    const rent = r.price;
+    const elec = (elecNew - elecOld) * state.settings.electricityRate;
+    const water = (waterNew - waterOld) * state.settings.waterRate;
+    state.bills.push({ id: 'B' + uid(), tenantId: tid, roomId: r.id, month: document.getElementById('bMonth').value, dueDate: document.getElementById('bDue').value, rent, electricity: elec, water, elecOld, elecNew, waterOld, waterNew, total: rent + elec + water });
+    db.set(KEYS.bills, state.bills); modal.innerHTML = ''; render();
+  };
+}
+
+// ============ PAYMENTS ============
+function renderPayments() {
+  return `
+    <div class="flex justify-between mb-6">
+      <h2 class="text-2xl font-bold">💵 บันทึกการชำระ (${state.payments.length})</h2>
+      <button id="addPayBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">+ บันทึกชำระ</button>
+    </div>
+    <div class="bg-white rounded-xl shadow overflow-x-auto">
+      <table class="w-full"><thead class="bg-slate-100"><tr>
+        <th class="p-3 text-left">วันที่</th><th class="p-3 text-left">ห้อง</th><th class="p-3 text-left">ผู้เช่า</th>
+        <th class="p-3 text-left">เดือนบิล</th><th class="p-3 text-right">จำนวน</th><th class="p-3 text-left">หมายเหตุ</th><th class="p-3 text-center">จัดการ</th>
+      </tr></thead><tbody>
+        ${state.payments.slice().reverse().map(p => {
+          const b = state.bills.find(x => x.id === p.billId);
+          const t = b ? getTenant(b.tenantId) : null; const r = b ? getRoom(b.roomId) : null;
+          return `<tr class="border-t hover:bg-slate-50">
+            <td class="p-3">${p.date}</td><td class="p-3 font-semibold">${r?.number||'-'}</td><td class="p-3">${t?.name||'-'}</td>
+            <td class="p-3">${b?.month||'-'}</td><td class="p-3 text-right text-green-600 font-semibold">${fmt(p.amount)} ฿</td>
+            <td class="p-3">${p.note || '-'}</td>
+            <td class="p-3 text-center whitespace-nowrap">
+              <button data-receipt="${p.id}" class="print-receipt text-green-600 hover:underline mr-1" title="พิมพ์ใบเสร็จ">${icons.printer} ใบเสร็จ</button>
+              <button data-del="${p.id}" class="del-pay text-red-600 hover:underline">ลบ</button>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody></table>
+    </div>
+    <div id="payModal"></div>`;
+}
+function bindPayments() {
+  document.getElementById('addPayBtn').onclick = () => openPayForm();
+  document.querySelectorAll('.print-receipt').forEach(b => b.onclick = () => {
+    printReceipt(b.dataset.receipt);
+  });
+  document.querySelectorAll('.del-pay').forEach(b => b.onclick = () => {
+    if (confirm('ลบการชำระนี้?')) { state.payments = state.payments.filter(x => x.id !== b.dataset.del); db.set(KEYS.payments, state.payments); render(); }
+  });
+}
+function openPayForm() {
+  const unpaidBills = state.bills.filter(b => !isBillPaid(b));
+  const modal = document.getElementById('payModal');
+  modal.innerHTML = `
+    <div class="modal fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-xl p-6 w-[500px]">
+        <h3 class="text-xl font-bold mb-4">บันทึกการชำระ</h3>
+        <div class="space-y-3">
+          <select id="pBill" class="w-full border p-2 rounded"><option value="">-- เลือกบิล --</option>
+            ${unpaidBills.map(b => { const t = getTenant(b.tenantId); const r = getRoom(b.roomId); return `<option value="${b.id}">ห้อง ${r?.number} - ${t?.name} (${b.month}) คงเหลือ ${fmt(b.total - getBillPaid(b.id))} ฿</option>`; }).join('')}
+          </select>
+          <input id="pDate" type="date" value="${today()}" class="w-full border p-2 rounded">
+          <input id="pAmount" type="number" placeholder="จำนวนเงิน" class="w-full border p-2 rounded">
+          <input id="pNote" placeholder="หมายเหตุ (เช่น โอน/เงินสด)" class="w-full border p-2 rounded">
+        </div>
+        <div class="flex gap-2 mt-4">
+          <button id="savePay" class="flex-1 bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700">บันทึก</button>
+          <button id="cancelPay" class="flex-1 bg-gray-200 p-2 rounded hover:bg-gray-300">ยกเลิก</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('pBill').onchange = (e) => {
+    const b = state.bills.find(x => x.id === e.target.value);
+    if (b) document.getElementById('pAmount').value = (b.total - getBillPaid(b.id)).toFixed(2);
+  };
+  document.getElementById('cancelPay').onclick = () => modal.innerHTML = '';
+  document.getElementById('savePay').onclick = () => {
+    const billId = document.getElementById('pBill').value;
+    const amount = Number(document.getElementById('pAmount').value);
+    if (!billId || amount <= 0) { alert('กรุณาเลือกบิลและกรอกจำนวนเงิน'); return; }
+    state.payments.push({ id: 'P' + uid(), billId, date: document.getElementById('pDate').value, amount, note: document.getElementById('pNote').value });
+    db.set(KEYS.payments, state.payments); modal.innerHTML = ''; render();
+  };
+}
+
+// ============ REPORTS ============
+function renderReports() {
+  const month = new Date().toISOString().slice(0, 7);
+  const monthBills = state.bills.filter(b => b.month === month);
+  const monthPayments = state.payments.filter(p => { const b = state.bills.find(x => x.id === p.billId); return b && b.month === month; });
+  const totalBill = monthBills.reduce((s, b) => s + b.total, 0);
+  const totalPaid = monthPayments.reduce((s, p) => s + p.amount, 0);
+  const months = [];
+  for (let i = 11; i >= 0; i--) { const d = new Date(); d.setMonth(d.getMonth() - i); months.push(d.toISOString().slice(0, 7)); }
+  const monthlyData = months.map(m => ({ month: m, total: state.payments.filter(p => { const b = state.bills.find(x => x.id === p.billId); return b && b.month === m && p.date.startsWith(m); }).reduce((s, p) => s + p.amount, 0) }));
+  const maxVal = Math.max(...monthlyData.map(d => d.total), 1);
+
+  return `
+    <h2 class="text-2xl font-bold mb-6">📈 รายงาน</h2>
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-white p-6 rounded-xl shadow"><p class="text-gray-500 text-sm">ยอดบิลเดือนนี้ (${month})</p><p class="text-2xl font-bold mt-2">${fmt(totalBill)} ฿</p></div>
+      <div class="bg-white p-6 rounded-xl shadow"><p class="text-gray-500 text-sm">รับชำระแล้วเดือนนี้</p><p class="text-2xl font-bold mt-2 text-green-600">${fmt(totalPaid)} ฿</p></div>
+      <div class="bg-white p-6 rounded-xl shadow"><p class="text-gray-500 text-sm">ค้างชำระเดือนนี้</p><p class="text-2xl font-bold mt-2 text-red-600">${fmt(totalBill - totalPaid)} ฿</p></div>
+    </div>
+    <div class="bg-white p-6 rounded-xl shadow mb-6">
+      <h3 class="font-bold mb-4">รายได้ 12 เดือนย้อนหลัง</h3>
+      <div class="flex items-end gap-2 h-48">
+        ${monthlyData.map(d => `<div class="flex-1 flex flex-col items-center"><div class="w-full bg-indigo-500 rounded-t" style="height:${(d.total/maxVal)*100}%"></div><div class="text-xs mt-1">${d.month.slice(5)}</div></div>`).join('')}
+      </div>
+    </div>
+    <div class="bg-white p-6 rounded-xl shadow">
+      <h3 class="font-bold mb-4">สรุปรายได้แยกตามห้อง</h3>
+      <table class="w-full text-sm"><thead class="bg-slate-100"><tr><th class="p-2 text-left">ห้อง</th><th class="p-2 text-left">ผู้เช่า</th><th class="p-2 text-right">ยอดบิล</th><th class="p-2 text-right">ชำระแล้ว</th><th class="p-2 text-right">ค้างชำระ</th></tr></thead><tbody>
+        ${state.rooms.map(r => {
+          const bills = state.bills.filter(b => b.roomId === r.id);
+          const total = bills.reduce((s, b) => s + b.total, 0);
+          const paid = bills.reduce((s, b) => s + getBillPaid(b.id), 0);
+          if (total === 0) return '';
+          const t = state.tenants.find(t => t.roomId === r.id && t.status === 'active');
+          return `<tr class="border-t"><td class="p-2">${r.number}</td><td class="p-2">${t?.name||'-'}</td><td class="p-2 text-right">${fmt(total)}</td><td class="p-2 text-right text-green-600">${fmt(paid)}</td><td class="p-2 text-right text-red-600">${fmt(total-paid)}</td></tr>`;
+        }).join('')}
+      </tbody></table>
+    </div>`;
+}
+
+// ============ CONTRACTS ============
+function renderContracts() {
+  const activeTenants = state.tenants.filter(t => t.status === 'active');
+  return `
+    <h2 class="text-2xl font-bold mb-6"> พิมพ์สัญญาเช่า</h2>
+    <div class="bg-white p-6 rounded-xl shadow">
+      <p class="text-gray-600 mb-4">เลือกผู้เช่าเพื่อพิมพ์สัญญาเช่า (ภาษาไทย)</p>
+      <div class="space-y-2">
+        ${activeTenants.length === 0 ? '<p class="text-gray-400">ไม่มีผู้เช่าที่อาศัยอยู่</p>' :
+          activeTenants.map(t => {
+            const r = getRoom(t.roomId);
+            return `<div class="flex justify-between items-center border p-3 rounded hover:bg-slate-50">
+              <div>
+                <div class="font-semibold">${t.name}</div>
+                <div class="text-sm text-gray-500">ห้อง ${r?.number} | เข้าอยู่ ${t.startDate||'-'} | ที่อยู่: ${t.address || 'ยังไม่ได้กรอก'}</div>
+              </div>
+              <button data-contract="${t.id}" class="print-contract bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">📄 พิมพ์สัญญา</button>
+            </div>`;
+          }).join('')}
+      </div>
+    </div>`;
+}
+function bindContracts() {
+  document.querySelectorAll('.print-contract').forEach(b => b.onclick = () => printContract(b.dataset.contract));
+}
+
+// ============ SETTINGS ============
+function renderSettings() {
+  const s = state.settings;
+  return `
+    <h2 class="text-2xl font-bold mb-6">⚙️ ตั้งค่าระบบ</h2>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="bg-white p-6 rounded-xl shadow">
+        <h3 class="font-bold mb-4">ข้อมูลหอพัก</h3>
+        <div class="space-y-3">
+          <div><label class="text-sm">ชื่อหอพัก</label><input id="sName" value="${s.housingName}" class="w-full border p-2 rounded"></div>
+          <div><label class="text-sm">ชื่อเจ้าของ</label><input id="sOwner" value="${s.ownerName}" class="w-full border p-2 rounded"></div>
+          <div><label class="text-sm">เบอร์โทรเจ้าของ</label><input id="sPhone" value="${s.ownerPhone}" class="w-full border p-2 rounded"></div>
+          <div><label class="text-sm">ที่อยู่หอพัก (สำหรับออกเอกสาร)</label><textarea id="sAddress" rows="2" class="w-full border p-2 rounded">${s.ownerAddress || ''}</textarea></div>
+          <div><label class="text-sm">ค่าไฟ (บาท/หน่วย)</label><input id="sElec" type="number" value="${s.electricityRate}" class="w-full border p-2 rounded"></div>
+          <div><label class="text-sm">ค่าน้ำ (บาท/หน่วย)</label><input id="sWater" type="number" value="${s.waterRate}" class="w-full border p-2 rounded"></div>
+          <button id="saveSettings" class="w-full bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700">บันทึก</button>
+        </div>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow">
+        <h3 class="font-bold mb-4">จัดการข้อมูล</h3>
+        <div class="space-y-2">
+          <button id="exportData" class="w-full bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700">📥 สำรองข้อมูล (JSON)</button>
+          <button id="importData" class="w-full bg-slate-600 text-white p-2 rounded hover:bg-slate-700">📤 กู้คืนข้อมูล (JSON)</button>
+          <input id="importFile" type="file" accept=".json" class="hidden">
+          
+          <div class="grid grid-cols-2 gap-2 mt-2">
+            <button id="exportExcel" class="w-full bg-emerald-600 text-white p-2 rounded hover:bg-emerald-700">📊 ส่งออก Excel</button>
+            <button id="importExcel" class="w-full bg-emerald-700 text-white p-2 rounded hover:bg-emerald-800">📥 นำเข้า Excel</button>
+            <input id="importExcelFile" type="file" accept=".csv, .xlsx, .xls" class="hidden">
+          </div>
+
+          <button id="resetData" class="w-full bg-red-600 text-white p-2 rounded hover:bg-red-700 mt-4">🗑️ ล้างข้อมูลทั้งหมด</button>
+        </div>
+      </div>
+    </div>`;
+}
+function bindSettings() {
+  document.getElementById('saveSettings').onclick = () => {
+    state.settings = {
+      housingName: document.getElementById('sName').value, ownerName: document.getElementById('sOwner').value,
+      ownerPhone: document.getElementById('sPhone').value, ownerAddress: document.getElementById('sAddress').value,
+      electricityRate: Number(document.getElementById('sElec').value), waterRate: Number(document.getElementById('sWater').value),
+    };
+    db.set(KEYS.settings, state.settings); alert('บันทึกแล้ว');
+  };
+  document.getElementById('exportData').onclick = () => {
+    const data = {}; Object.values(KEYS).forEach(k => data[k] = localStorage.getItem(k));
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `dormitory_backup_${today()}.json`; a.click();
+  };
+  document.getElementById('importData').onclick = () => document.getElementById('importFile').click();
+  document.getElementById('importFile').onchange = (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!confirm('ข้อมูลปัจจุบันจะถูกทับ ต้องการดำเนินการต่อ?')) return;
+        Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
+        alert('กู้คืนข้อมูลสำเร็จ'); location.reload();
+      } catch { alert('ไฟล์ไม่ถูกต้อง'); }
+    };
+    reader.readAsText(file);
+  };
+
+  // ============ EXPORT / IMPORT EXCEL (CSV) ============
+  document.getElementById('exportExcel').onclick = () => {
+    let csv = '\ufeffข้อมูลห้องพัก\nเลขห้อง,ประเภท,ราคา,สถานะ\n';
+    state.rooms.forEach(r => {
+      csv += `"${r.number}","${r.type === 'monthly' ? 'รายเดือน' : 'รายวัน'}","${r.price}","${r.status === 'occupied' ? 'มีผู้เช่า' : 'ว่าง'}"\n`;
+    });
+
+    csv += '\n\ufeffข้อมูลผู้เช่า\nชื่อ-นามสกุล,เลขบัตรประชาชน,เบอร์โทร,ที่อยู่,ห้อง,วันที่เข้าพัก,สถานะ\n';
+    state.tenants.forEach(t => {
+      const r = getRoom(t.roomId);
+      csv += `"${t.name}","${t.idCard || ''}","${t.phone || ''}","${t.address || ''}","${r?.number || ''}","${t.startDate || ''}","${t.status === 'active' ? 'อาศัยอยู่' : 'ออกแล้ว'}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `dormitory_data_${today()}.csv`;
+    a.click();
+  };
+
+  document.getElementById('importExcel').onclick = () => document.getElementById('importExcelFile').click();
+  document.getElementById('importExcelFile').onchange = (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const text = ev.target.result;
+        const lines = text.split(/\r\n|\n/);
+        let mode = '';
+        let roomCount = 0, tenantCount = 0;
+
+        lines.forEach(line => {
+          if (!line.trim()) return;
+          const cleanLine = line.replace(/["=]/g, '').trim();
+          if (cleanLine.includes('ข้อมูลห้องพัก')) { mode = 'rooms'; return; }
+          if (cleanLine.includes('ข้อมูลผู้เช่า')) { mode = 'tenants'; return; }
+
+          const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/^["=]+|["']+$/g, '').trim());
+          if (mode === 'rooms' && cols[0] && cols[0] !== 'เลขห้อง') {
+            const num = cols[0];
+            const type = cols[1] === 'รายวัน' ? 'daily' : 'monthly';
+            const price = Number(cols[2]) || 3500;
+            const status = cols[3] === 'มีผู้เช่า' ? 'occupied' : 'vacant';
+            
+            let r = state.rooms.find(x => x.number === num);
+            if (r) { r.type = type; r.price = price; r.status = status; }
+            else { state.rooms.push({ id: 'R' + uid(), number: num, type, price, status }); }
+            roomCount++;
+          } else if (mode === 'tenants' && cols[0] && cols[0] !== 'ชื่อ-นามสกุล') {
+            const name = cols[0];
+            const idCard = cols[1] || '';
+            const phone = cols[2] || '';
+            const address = cols[3] || '';
+            const roomNum = cols[4];
+            const startDate = cols[5] || today();
+            const status = cols[6] === 'ออกแล้ว' ? 'inactive' : 'active';
+
+            const room = state.rooms.find(x => x.number === roomNum);
+            const roomId = room ? room.id : '';
+            if (room && status === 'active') room.status = 'occupied';
+
+            state.tenants.push({ id: 'T' + uid(), name, idCard, phone, address, roomId, startDate, deposit: 0, status });
+            tenantCount++;
+          }
+        });
+
+        db.set(KEYS.rooms, state.rooms);
+        db.set(KEYS.tenants, state.tenants);
+        alert(`นำเข้าข้อมูลสำเร็จ!\n- ห้องพัก: ${roomCount} รายการ\n- ผู้เช่า: ${tenantCount} รายการ`);
+        render();
+      } catch (err) {
+        alert('เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาใช้ไฟล์ CSV ที่ส่งออกจากระบบ');
+      }
+    };
+    reader.readAsText(file, 'UTF-8');
+  };
+
+  document.getElementById('resetData').onclick = () => {
+    if (confirm('⚠️ ต้องการล้างข้อมูลทั้งหมด?')) {
+      if (confirm('ยืนยันอีกครั้ง: ลบข้อมูลทั้งหมด?')) { Object.values(KEYS).forEach(k => localStorage.removeItem(k)); location.reload(); }
+    }
+  };
+}
+
+// ============ START ============
+render();
+</script>
+</body>
+</html>
