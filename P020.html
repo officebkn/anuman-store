@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Factory Guard Control v8 - แก้กรอบแดง</title>
+<style>
+:root{
+ --navy:#0f243e; --bg:#eef3f8; --line:#d7e0ea; --ink:#172536; --muted:#6b7d92;
+ --c-dashboard:#0d47a1; --c-employee:#039be5; --c-visitor:#7c4dff; --c-goods:#ef6c00; --c-patrol:#2e7d32; --c-incident:#c62828; --c-roster:#f9a825; --c-records:#37474f; --c-backup:#78909c; --c-users:#1565c0;
+ --ok:#2e7d32; --wait:#f9a825; --no:#c62828; --checked:#1565c0;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Tahoma,"Noto Sans Thai",sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(90deg,var(--navy),#1e3a5f);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+header h1{margin:0;font-size:18px}.header-right{font-size:11px;color:#c8d8e8;text-align:right}
+.wrap{max-width:1420px;margin:auto;padding:10px}
+.notice{background:#fff;border:1px solid #ffe082;border-left:4px solid var(--c-roster);padding:9px 12px;border-radius:8px;font-size:12px;margin-bottom:10px;line-height:1.5}
+.notice b{color:var(--navy)}
+nav{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+nav button{border:2px solid transparent;background:#fff;padding:7px 10px;border-radius:8px;font-weight:bold;cursor:pointer;font-size:11.5px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+nav button.active{color:#fff}
+button[data-tab="dashboard"]{border-color:var(--c-dashboard);color:var(--c-dashboard)}button[data-tab="dashboard"].active{background:var(--c-dashboard)}
+button[data-tab="employee"]{border-color:var(--c-employee);color:var(--c-employee)}button[data-tab="employee"].active{background:var(--c-employee)}
+button[data-tab="visitor"]{border-color:var(--c-visitor);color:var(--c-visitor)}button[data-tab="visitor"].active{background:var(--c-visitor)}
+button[data-tab="goods"]{border-color:var(--c-goods);color:var(--c-goods)}button[data-tab="goods"].active{background:var(--c-goods)}
+button[data-tab="patrol"]{border-color:var(--c-patrol);color:var(--c-patrol)}button[data-tab="patrol"].active{background:var(--c-patrol)}
+button[data-tab="incident"]{border-color:var(--c-incident);color:var(--c-incident)}button[data-tab="incident"].active{background:var(--c-incident)}
+button[data-tab="roster"]{border-color:var(--c-roster);color:#8d6e00}button[data-tab="roster"].active{background:var(--c-roster);color:#fff}
+button[data-tab="users"]{border-color:var(--c-users);color:var(--c-users)}button[data-tab="users"].active{background:var(--c-users)}
+button[data-tab="records"]{border-color:var(--c-records);color:var(--c-records)}button[data-tab="records"].active{background:var(--c-records)}
+button[data-tab="backup"]{border-color:var(--c-backup);color:var(--c-backup)}button[data-tab="backup"].active{background:var(--c-backup)}
+
+.panel{display:none;background:white;border:1px solid var(--line);border-radius:11px;padding:14px;margin-bottom:10px;border-top-width:4px}
+.panel.active{display:block}
+.panel[data-color="dashboard"]{border-top-color:var(--c-dashboard)} .panel[data-color="employee"]{border-top-color:var(--c-employee)} .panel[data-color="visitor"]{border-top-color:var(--c-visitor)} .panel[data-color="goods"]{border-top-color:var(--c-goods)} .panel[data-color="patrol"]{border-top-color:var(--c-patrol)} .panel[data-color="incident"]{border-top-color:var(--c-incident)} .panel[data-color="roster"]{border-top-color:var(--c-roster)} .panel[data-color="users"]{border-top-color:var(--c-users)} .panel[data-color="records"]{border-top-color:var(--c-records)} .panel[data-color="backup"]{border-top-color:var(--c-backup)}
+
+h2{font-size:15px;margin:0 0 8px;display:flex;align-items:center;gap:6px}
+h3{font-size:13px;margin:12px 0 6px}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.field{display:flex;flex-direction:column;gap:3px}.field.full{grid-column:1/-1}
+label{font-size:11px;font-weight:bold;color:#34465a}
+input,select,textarea{width:100%;padding:7px 8px;border:1px solid #cbd5e1;border-radius:6px;font:inherit;background:#fff;font-size:12.5px}
+textarea{min-height:56px;resize:vertical}
+.actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.btn{border:0;border-radius:6px;padding:7px 11px;color:white;font-weight:bold;cursor:pointer;font-size:12px}
+.btn.secondary{background:#e8eef5;color:#24384d}.btn.danger{background:var(--c-incident)}.btn.green{background:var(--c-patrol)}.btn.roster{background:var(--c-roster);color:#222}.btn.blue{background:var(--c-users)}
+.small{font-size:10.5px;color:var(--muted)}
+.tablewrap{overflow:auto;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:11.5px;min-width:600px}
+th,td{padding:6px 7px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:#f0f4f8;font-size:11px}
+.badge{display:inline-block;padding:2px 7px;border-radius:12px;font-size:10px;color:#fff;font-weight:bold}
+.badge.wait{background:var(--wait);color:#222}.badge.ok{background:var(--ok)}.badge.no{background:var(--no)}.badge.checked{background:var(--checked)}
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px}
+.stat{background:white;border:1px solid var(--line);padding:10px;border-radius:9px;border-left-width:4px}
+.stat b{font-size:22px;line-height:1}.stat span{font-size:10px;color:var(--muted)}
+.photo-preview{max-width:130px;max-height:90px;border-radius:5px;border:1px solid var(--line);margin-top:3px;display:none;object-fit:cover}
+.photo-preview.show{display:block}
+.camera-box{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-top:2px}
+video#cameraFeed, video#scanner{width:100%;max-width:320px;border-radius:7px;background:#000;display:none}
+canvas.signature{border:1px dashed #90a4b8;border-radius:6px;background:#fcfdff;touch-action:none}
+.goods-item-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:5px;align-items:center;background:#fff7ed;border:1px solid #ffe0b2;padding:5px;border-radius:6px;margin-bottom:3px;font-size:11.5px}
+
+/* Roster compact v5 */
+.roster-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.roster-summary .sum{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-width:110px}
+.roster-summary .sum b{font-size:16px;display:block}
+.roster-summary .sum.male{border-left:3px solid #1976d2}.roster-summary .sum.female{border-left:3px solid #ec407a}.roster-summary .sum.total{border-left:3px solid var(--c-roster)}
+.roster-form-compact{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px}
+.roster-form-compact .row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:5px;align-items:end;margin-bottom:5px}
+.roster-lists{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px}
+.roster-lists .box{background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px;max-height:130px;overflow:auto}
+.roster-lists .box h4{margin:0 0 4px;font-size:11px;color:#334155}
+.roster-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-head{font-weight:bold;text-align:center;padding:5px 2px;font-size:10px;color:#fff;border-radius:4px}
+.cal-head.sun{background:#e53935}.cal-head.other{background:var(--navy)}
+.cal-day{min-height:68px;border:1px solid var(--line);border-radius:6px;background:#fff;padding:3px;cursor:pointer}
+.cal-day:hover{border-color:var(--c-roster)}.cal-day.today{outline:2px solid var(--c-roster)}
+.cal-day .num{font-weight:bold;font-size:11px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#f1f5f9}
+.cal-day.has-data .num{background:var(--c-roster);color:#fff}
+.cal-day .assign{margin-top:2px;font-size:9px;padding:1px 3px;border-radius:3px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.assign.morning{background:var(--c-employee)}.assign.night{background:#455a64}
+
+.roster-modal, #cameraModal, #userModal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;z-index:9999;padding:10px}
+.roster-modal.show, #cameraModal.show, #userModal.show{display:flex}
+.roster-modal .box, #cameraModal .inner, #userModal .inner{background:#fff;width:100%;max-width:460px;border-radius:12px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,.25)}
+.box-head{background:#1e293b;color:#fff;padding:10px 12px;display:flex;justify-content:space-between;align-items:center}
+.box-body{padding:10px}
+.shift-toggle{display:grid;grid-template-columns:1fr 1fr;gap:5px;background:#f1f5f9;padding:4px;border-radius:7px;margin-bottom:8px}
+.shift-toggle button{border:0;padding:6px;border-radius:5px;font-weight:bold;cursor:pointer;background:transparent;color:#475569;font-size:11px}
+.shift-toggle button.active{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15);color:var(--navy)}
+.points-check{display:grid;grid-template-columns:1fr 1fr;gap:3px;max-height:90px;overflow:auto;border:1px solid var(--line);border-radius:5px;padding:5px}
+
+.info-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.info-card{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10px}
+.info-card h4{margin:0 0 6px;font-size:12px}
+.arch{display:flex;gap:8px;margin-top:8px}
+.arch .arch-box{flex:1;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center}
+.arch .arch-box b{display:block;font-size:13px}
+
+#printArea{display:none}
+@media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}.roster-form-compact .row{grid-template-columns:1fr 1fr}.roster-lists{grid-template-columns:1fr}.info-2col{grid-template-columns:1fr}}
+@media print{body{background:#fff}.no-print{display:none!important}.panel{display:none!important}#printArea{display:block!important}}
+</style>
+</head>
+<body>
+<header>
+<div>
+<h1 id="mainTitle">Factory Guard Control v6</h1>
+<div id="mainSubTitle" style="font-size:11px;color:#c8d8e8">แนวทาง C - เครื่องเดียวใช้งานได้เลย + เตรียมรองรับหลายเครื่อง | ข้อมูลและเมนูชุดเดียวกับ v5</div>
+</div>
+<div class="header-right">ผู้ใช้ปัจจุบัน: <b id="headerUser">-</b><br><span id="headerRole">-</span> | ฐานข้อมูลกลาง LocalStorage</div>
+</header>
+<div class="wrap">
+
+<div id="v6Notice" class="notice no-print" style="position:relative;display:none">
+<button onclick="hideV6Notice()" style="position:absolute;right:8px;top:6px;background:#fff;border:1px solid #e2c87a;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px">✕ ซ่อนรายละเอียดนี้</button>
+<b>V6 พัฒนาต่อจาก V5 - ไม่เขียนทับไฟล์ต้นฉบับ</b><br>
+<b>1. รักษาของเดิมจาก v5</b> - เมนู สี Dashboard ตารางเวร ข้อมูลเดิม (employees, visitors, goods, patrols, incidents, roster, guards, shifts, points) ใช้ได้ต่อเนื่อง<br>
+<b>2. ระบบผู้ใช้ 4 ระดับ</b> - รปภ. / หัวหน้า รปภ. / ผู้จัดการ / Admin (สิทธิ์แยกกันชัดเจน)<br>
+<b>3. ระบบอนุมัติสิ่งของ</b> - รออนุมัติ → อนุมัติ → ไม่อนุมัติ → ตรวจสอบก่อนนำออก (ต้องมีลายเซ็น + รปภ. ตรวจ)<br>
+<b>4. ระบบภาพหลักฐาน</b> - รูปถ่ายแสดงได้ทั้งใบผ่านและรายงาน (แก้บั๊กเหตุฉุกเฉินแล้ว)<br>
+<b>5. ระบบลาดตระเวน</b> - QR/Barcode พร้อมบันทึกเวลาและจุดตรวจ + พิมพ์เอกสาร<br>
+<b>6. ระบบรายงาน</b> - ค้นหา กรองรายวัน/รายเดือน พิมพ์เอกสาร<br>
+<b>7. ระบบสำรองข้อมูล</b> - ส่งออก นำเข้า และสำรองอัตโนมัติก่อนแทนที่<br>
+<div class="arch">
+<div class="arch-box"><b>เครื่องเดียว</b><span class="small">HTML + ข้อมูลในเครื่อง<br>ใช้งานได้ทันที</span></div>
+<div class="arch-box"><b>หลายเครื่อง</b><span class="small">ต้องเพิ่มเซิร์ฟเวอร์<br>+ ฐานข้อมูลกลาง<br>ไม่ใช่แค่เปิดไฟล์ HTML</span></div>
+</div>
+</div>
+
+<nav class="no-print">
+<button class="active" data-tab="dashboard">Dashboard</button>
+<button data-tab="employee">พนักงาน</button>
+<button data-tab="visitor">บุคคลภายนอก</button>
+<button data-tab="goods">นำของเข้า/ออก</button>
+<button data-tab="patrol">ลาดตระเวน</button>
+<button data-tab="incident">เหตุฉุกเฉิน</button>
+<button data-tab="roster">ตารางเวร</button>
+<button data-tab="users">ผู้ใช้งาน 4 ระดับ</button>
+<button data-tab="records">รายงาน</button>
+<button data-tab="backup">สำรอง/นำเข้า</button>
+</nav>
+
+<section id="dashboard" class="panel active" data-color="dashboard">
+<h2><span class="dot" style="background:var(--c-dashboard)"></span>Dashboard ภาพรวม - รักษาของเดิมจาก v5</h2>
+<div class="cards">
+<div class="stat" style="border-left-color:var(--c-employee)"><b id="statLogs">0</b><span>บันทึกเข้า-ออก</span></div>
+<div class="stat" style="border-left-color:var(--c-visitor)"><b id="statVisitors">0</b><span>ผู้มาติดต่อ</span></div>
+<div class="stat" style="border-left-color:var(--c-goods)"><b id="statGoods">0</b><span>ใบผ่านสิ่งของ</span></div>
+<div class="stat" style="border-left-color:var(--c-incident)"><b id="statIncidents">0</b><span>รายงานเหตุ</span></div>
+<div class="stat" style="border-left-color:var(--c-roster)"><b id="statRoster">0</b><span>เวรเดือนนี้</span></div>
+</div>
+<div class="info-2col">
+<div class="info-card"><h4>สถานะอนุมัติสิ่งของ</h4><div id="dashApproval"></div></div>
+<div class="info-card"><h4>สรุปกำลังพล รปภ.</h4><div id="dashGuardSum"></div></div>
+</div>
+<div id="dashSummary" class="tablewrap"></div>
+</section>
+
+<section id="employee" class="panel" data-color="employee">
+<h2><span class="dot" style="background:var(--c-employee)"></span>พนักงานเข้า–ออก</h2>
+<div class="grid">
+<div class="field"><label>รหัสพนักงาน</label><input id="empCode"></div><div class="field"><label>ชื่อ*</label><input id="empName"></div>
+<div class="field"><label>แผนก</label><input id="empDept"></div><div class="field"><label>ประเภท</label><select id="empType"><option>เข้าโรงงาน</option><option>ออกจากโรงงาน</option></select></div>
+<div class="field"><label>เวลา</label><input id="empTime" type="datetime-local"></div><div class="field"><label>หมายเหตุ</label><input id="empNote"></div>
+<div class="field full"><label>รูปถ่าย</label><div class="camera-box"><input id="empPhotoFile" type="file" accept="image/*"><button class="btn secondary" type="button" onclick="openCamera('emp')">เปิดกล้อง</button><button class="btn secondary" type="button" onclick="clearPhoto('emp')">ลบ</button></div><img id="empPreview" class="photo-preview"><input type="hidden" id="empPhotoData"></div>
+</div><div class="actions"><button class="btn" style="background:var(--c-employee)" onclick="saveEmployee()">บันทึก + เคลียร์</button></div>
+</section>
+
+<section id="visitor" class="panel" data-color="visitor">
+<h2><span class="dot" style="background:var(--c-visitor)"></span>บุคคลภายนอก</h2>
+<div class="grid">
+<div class="field"><label>ชื่อ*</label><input id="visName"></div><div class="field"><label>บริษัท</label><input id="visCompany"></div>
+<div class="field"><label>เลขบัตร</label><input id="visId"></div><div class="field"><label>บัตรแลก</label><input id="visCard"></div>
+<div class="field"><label>พบใคร*</label><input id="visHost"></div><div class="field"><label>แผนก</label><input id="visDept"></div>
+<div class="field"><label>วัตถุประสงค์</label><select id="visPurpose"><option>ติดต่อธุรกิจ</option><option>ประชุม</option><option>ส่งของ</option><option>รับของ</option><option>ซ่อมบำรุง</option><option>อื่น ๆ</option></select></div><div class="field"><label>เวลาเข้า</label><input id="visIn" type="datetime-local"></div>
+<div class="field"><label>ผู้รับรอง</label><input id="visApprover"></div>
+<div class="field full"><label>รูปถ่าย</label><div class="camera-box"><input id="visPhotoFile" type="file" accept="image/*"><button class="btn secondary" type="button" onclick="openCamera('vis')">เปิดกล้อง</button><button class="btn secondary" type="button" onclick="clearPhoto('vis')">ลบ</button></div><img id="visPreview" class="photo-preview"><input type="hidden" id="visPhotoData"></div>
+<div class="field full"><label>หมายเหตุ</label><textarea id="visNote"></textarea></div>
+</div><div class="actions"><button class="btn" style="background:var(--c-visitor)" onclick="saveVisitor()">บันทึก</button><button class="btn secondary" onclick="printVisitor()">พิมพ์ใบผ่าน</button></div>
+<hr><div class="grid"><div class="field"><input id="visitorSearch" oninput="searchOpenVisitors()" placeholder="ค้นหาเลขที่/ชื่อ"></div><div class="field"><select id="visitorMatches" size="3" onchange="selectVisitorForCheckout()"></select></div></div><div class="actions"><button class="btn green" onclick="checkoutVisitor()">บันทึกออก / คืนบัตร</button><button class="btn secondary" onclick="printSelectedVisitor()">พิมพ์ใบเดิม</button></div>
+</section>
+
+<section id="goods" class="panel" data-color="goods">
+<h2><span class="dot" style="background:var(--c-goods)"></span>ระบบอนุมัติสิ่งของ - รออนุมัติ อนุมัติ ไม่อนุมัติ ตรวจสอบก่อนนำออก</h2>
+<div class="grid">
+<div class="field"><label>ประเภท</label><select id="goodDir" onchange="updateGoodsLabels()"><option value="นำของเข้า">นำของเข้า</option><option value="นำของออก" selected>นำของออก</option></select></div><div class="field"><label>เลขเอกสาร</label><input id="goodRef"></div>
+<div class="field"><label id="lblGoodRequester">ผู้ขอนำออก*</label><input id="goodRequester"></div><div class="field"><label id="lblGoodPerson">ผู้ขนย้าย/นำออก</label><input id="goodPerson"></div>
+<div class="field"><label>บริษัท/ทะเบียนรถ</label><input id="goodCompany"></div><div class="field"><label>ผู้อนุมัติ*</label><input id="goodApprover"></div>
+<div class="field"><label>เลขใบอนุมัติ</label><input id="goodApprovalRef"></div><div class="field"><label>วันเวลา</label><input id="goodTime" type="datetime-local"></div>
+<div class="field"><label>รปภ. ตรวจ</label><input id="goodGuard"></div><div class="field"><label id="lblGoodStatus">สถานะเริ่มต้น</label><select id="goodStatus"><option value="pending">รออนุมัติ</option><option value="approved">อนุมัติแล้ว</option><option value="rejected">ไม่อนุมัติ</option><option value="checked" id="optChecked">ตรวจสอบก่อนนำออกแล้ว</option></select></div>
+<div class="field full"><label id="lblGoodItems">รายการสิ่งของออก</label><div id="goodsItemsList"></div><button class="btn secondary" type="button" onclick="addGoodsItem()">+ เพิ่มรายการ</button></div>
+<div class="field full"><label id="lblGoodReason">เหตุผล/ปลายทาง</label><textarea id="goodReason"></textarea></div>
+<div class="field full"><label>รูปสิ่งของ</label><div class="camera-box"><input id="goodPhotoFile" type="file" accept="image/*"><button class="btn secondary" type="button" onclick="openCamera('good')">เปิดกล้อง</button><button class="btn secondary" type="button" onclick="clearPhoto('good')">ลบ</button></div><img id="goodPreview" class="photo-preview"><input type="hidden" id="goodPhotoData"></div>
+<div class="field"><label>ลายเซ็นผู้อนุมัติ</label><canvas id="signApprover" class="signature" width="300" height="100"></canvas><button class="btn secondary" type="button" onclick="clearSig('signApprover')">ล้าง</button></div>
+<div class="field"><label>ลายเซ็น รปภ.</label><canvas id="signGuard" class="signature" width="300" height="100"></canvas><button class="btn secondary" type="button" onclick="clearSig('signGuard')">ล้าง</button></div>
+</div>
+<div class="actions"><button class="btn" style="background:var(--c-goods)" onclick="saveGoods()">บันทึก (รออนุมัติ)</button><button class="btn secondary" onclick="printGoods()">พิมพ์เอกสาร</button></div>
+<div class="tablewrap" style="margin-top:10px"><b>รายการรออนุมัติ (ต้องให้หัวหน้า/ผู้จัดการ/Admin อนุมัติ)</b><div id="goodsPendingList"></div></div>
+</section>
+
+<section id="patrol" class="panel" data-color="patrol">
+<h2><span class="dot" style="background:var(--c-patrol)"></span>ระบบลาดตระเวน - QR/Barcode + เวลา + จุดตรวจ</h2>
+<div class="grid">
+<div class="field"><label>รหัสจุดตรวจ</label><input id="patrolCode"></div><div class="field"><label>ชื่อจุดตรวจ</label><input id="patrolName"></div>
+<div class="field"><label>ชื่อ รปภ.</label><input id="patrolGuard"></div><div class="field"><label>เวลาตรวจ</label><input id="patrolTime" type="datetime-local"></div>
+<div class="field full"><label>รูปจุดตรวจ</label><div class="camera-box"><input id="patrolPhotoFile" type="file" accept="image/*"><button class="btn secondary" type="button" onclick="openCamera('patrol')">เปิดกล้อง</button><button class="btn secondary" type="button" onclick="clearPhoto('patrol')">ลบ</button></div><img id="patrolPreview" class="photo-preview"><input type="hidden" id="patrolPhotoData"></div>
+<div class="field full"><label>ผลการตรวจ</label><textarea id="patrolNote"></textarea></div>
+</div><div class="actions"><button class="btn" style="background:var(--c-patrol)" onclick="savePatrol()">บันทึก</button><button class="btn secondary" onclick="printPatrol()">พิมพ์เอกสารลาดตระเวน</button><button class="btn secondary" onclick="startScan()">สแกน QR</button><button class="btn secondary" onclick="stopScan()">ปิดกล้อง</button></div><video id="scanner" playsinline></video><p id="scanStatus" class="small"></p>
+</section>
+
+<section id="incident" class="panel" data-color="incident">
+<h2><span class="dot" style="background:var(--c-incident)"></span>ระบบภาพหลักฐาน - รูปแสดงได้ทั้งใบผ่านและรายงาน (แก้แล้ว)</h2>
+<div class="grid">
+<div class="field"><label>ประเภทเหตุ</label><select id="incType"><option>อุบัติเหตุ</option><option>ไฟไหม้ / ควัน</option><option>บุกรุก</option><option>ทรัพย์สินสูญหาย</option><option>ทะเลาะวิวาท</option><option>ระบบขัดข้อง</option><option>อื่น ๆ</option></select></div><div class="field"><label>ระดับ</label><select id="incLevel"><option>ต่ำ</option><option>ปานกลาง</option><option>สูง</option><option>วิกฤต</option></select></div>
+<div class="field"><label>วัน-เวลา</label><input id="incTime" type="datetime-local"></div><div class="field"><label>สถานที่</label><input id="incPlace"></div>
+<div class="field"><label>ผู้รายงาน</label><input id="incReporter"></div><div class="field"><label>ผู้รับแจ้ง</label><input id="incNotified"></div>
+<div class="field full"><label>รูปหลักฐาน - ถ่ายจริง (แก้บั๊กแล้ว)</label><div class="camera-box"><input id="incPhotoFile" type="file" accept="image/*"><button class="btn secondary" type="button" onclick="openCamera('inc')">เปิดกล้องถ่ายจริง</button><button class="btn secondary" type="button" onclick="clearPhoto('inc')">ลบ</button></div><img id="incPreview" class="photo-preview"><input type="hidden" id="incPhotoData"></div>
+<div class="field full"><label>รายละเอียดเหตุการณ์</label><textarea id="incDetail"></textarea></div><div class="field full"><label>การดำเนินการ</label><textarea id="incAction"></textarea></div>
+</div><div class="actions"><button class="btn" style="background:var(--c-incident)" onclick="saveIncident()">บันทึก</button><button class="btn secondary" onclick="printIncident()">พิมพ์รายงาน (มีรูปจริง)</button></div>
+</section>
+
+<section id="roster" class="panel" data-color="roster">
+<h2><span class="dot" style="background:var(--c-roster)"></span>ตารางเวร - รักษาของเดิม v5 + สรุปยอด ชาย/หญิง</h2>
+<div class="roster-summary" id="rosterSummary">
+<div class="sum total"><span class="small">ยอดรวมทั้งหมด</span><b id="sumTotal">0 คน</b><span class="small" id="sumTotalDetail">-</span></div>
+<div class="sum male"><span class="small">ผู้ชาย</span><b id="sumMale">0 คน</b></div>
+<div class="sum female"><span class="small">ผู้หญิง</span><b id="sumFemale">0 คน</b></div>
+<div class="sum" style="border-left:3px solid var(--c-patrol)"><span class="small">เวรเดือนนี้</span><b id="sumDuty">0 เวร</b></div>
+</div>
+<div class="roster-form-compact">
+<div class="row"><div class="field"><label>ชื่อ รปภ.* + เพศ</label><div style="display:flex;gap:4px"><input id="newGuardName" placeholder="เช่น สมชาย" style="flex:1"><select id="newGuardGender" style="width:75px"><option value="male">ชาย</option><option value="female">หญิง</option></select></div></div><div class="field"><label>เบอร์โทร</label><input id="newGuardPhone" placeholder="080-xxx"></div><div class="field"><label>ตำแหน่ง</label><input id="newGuardPosition" placeholder="รปภ."></div><div class="field"><button class="btn roster" onclick="addGuard()">+ รปภ.</button></div></div>
+<div class="row"><div class="field"><label>ชื่อกะ</label><input id="newShiftName" placeholder="เช้า"></div><div class="field"><label>เริ่ม</label><input id="newShiftStart" type="time" value="06:00"></div><div class="field"><label>เลิก</label><input id="newShiftEnd" type="time" value="18:00"></div><div class="field"><button class="btn roster" onclick="addShift()">+ กะ</button></div></div>
+<div class="row"><div class="field"><label>รหัสจุด</label><input id="newPointCode" placeholder="GATE-01"></div><div class="field"><label>ชื่อจุด</label><input id="newPointName" placeholder="ประตูหน้า"></div><div class="field"><label>โซน</label><input id="newPointArea" placeholder="โซน A"></div><div class="field"><button class="btn roster" onclick="addPoint()">+ จุด</button></div></div>
+</div>
+<div class="roster-lists"><div class="box"><h4>รายชื่อ รปภ.</h4><div id="guardList"></div></div><div class="box"><h4>กะเวลา</h4><div id="shiftList"></div></div><div class="box"><h4>จุดรับผิดชอบ</h4><div id="pointList"></div></div></div>
+<div class="roster-header"><div style="display:flex;gap:4px;align-items:center"><button class="btn secondary" onclick="changeMonth(-1)">◀</button><h3 id="rosterMonthLabel" style="margin:0 4px;font-size:12px"></h3><button class="btn secondary" onclick="changeMonth(1)">▶</button></div><div class="actions"><button class="btn secondary" onclick="printRoster()">พิมพ์ตารางเวร</button><button class="btn danger" onclick="clearMonthRoster()">ล้างเวรเดือนนี้</button></div></div>
+<div class="calendar" id="rosterCalendar"></div>
+</section>
+
+<section id="users" class="panel" data-color="users">
+<h2><span class="dot" style="background:var(--c-users)"></span>ระบบผู้ใช้ 4 ระดับ - รปภ. / หัวหน้า รปภ. / ผู้จัดการ / Admin</h2>
+<div class="grid">
+<div class="field"><label>เพิ่มผู้ใช้งานใหม่</label><input id="newUserUsername" placeholder="username เช่น guard01"></div><div class="field"><label>ชื่อแสดง</label><input id="newUserName" placeholder="ชื่อ นามสกุล"></div>
+<div class="field"><label>รหัสผ่าน (demo)</label><input id="newUserPass" type="password" placeholder="1234"></div><div class="field"><label>ระดับ</label><select id="newUserRole"><option value="guard">รปภ. - สร้างใบผ่านได้ รออนุมัติ</option><option value="supervisor">หัวหน้า รปภ. - อนุมัติสิ่งของได้</option><option value="manager">ผู้จัดการ - อนุมัติ + ดูรายงานทั้งหมด</option><option value="admin">Admin - สิทธิ์ทั้งหมด ล้างข้อมูลได้</option></select></div>
+</div><div class="actions"><button class="btn blue" onclick="addUser()">เพิ่มผู้ใช้งาน</button><button class="btn secondary" onclick="switchUser()">สลับผู้ใช้ปัจจุบัน</button></div>
+<div class="tablewrap"><table><thead><tr><th>Username</th><th>ชื่อ</th><th>ระดับ</th><th>สิทธิ์</th><th>ลบ</th></tr></thead><tbody id="userList"></tbody></table></div>
+<div class="info-card" style="margin-top:10px"><h4>อธิบายสิทธิ์ 4 ระดับ</h4><table><thead><tr><th>ระดับ</th><th>สร้าง</th><th>อนุมัติสิ่งของ</th><th>รายงาน</th><th>ตั้งค่า/ล้าง</th></tr></thead><tbody><tr><td>รปภ.</td><td>✔</td><td>✖ ต้องรออนุมัติ</td><td>ดูของตัวเอง</td><td>✖</td></tr><tr><td>หัวหน้า รปภ.</td><td>✔</td><td>✔ อนุมัติ/ไม่อนุมัติ</td><td>ดูทั้งหมด</td><td>✖</td></tr><tr><td>ผู้จัดการ</td><td>✔</td><td>✔</td><td>✔ ทั้งหมด + พิมพ์</td><td>✖</td></tr><tr><td>Admin</td><td>✔</td><td>✔</td><td>✔</td><td>✔ ล้าง/สำรอง</td></tr></tbody></table></div>
+</section>
+
+<section id="records" class="panel" data-color="records">
+<h2><span class="dot" style="background:var(--c-records)"></span>ระบบรายงาน - ค้นหา กรองรายวัน/รายเดือน พิมพ์เอกสาร</h2>
+<div class="grid no-print"><div class="field"><input id="globalSearch" oninput="renderRecords()" placeholder="ค้นหาทุกหมวด"></div><div class="field"><select id="globalType" onchange="renderRecords()"><option value="all">ทุกประเภท</option><option value="employees">พนักงาน</option><option value="visitors">บุคคลภายนอก</option><option value="goods">สิ่งของ</option><option value="patrols">ลาดตระเวน</option><option value="incidents">เหตุฉุกเฉิน</option><option value="roster">ตารางเวร</option></select></div><div class="field"><input id="dateFrom" type="date" onchange="renderRecords()"></div><div class="field"><input id="dateTo" type="date" onchange="renderRecords()"></div></div>
+<div class="actions no-print"><button class="btn secondary" onclick="resetReportFilters()">ล้างตัวกรอง</button><button class="btn" style="background:var(--c-records)" onclick="printReport()">พิมพ์รายงาน</button><select id="reportStatus" onchange="renderRecords()"><option value="all">สถานะสิ่งของ: ทั้งหมด</option><option value="pending">รออนุมัติ</option><option value="approved">อนุมัติแล้ว</option><option value="rejected">ไม่อนุมัติ</option><option value="checked">ตรวจสอบแล้ว</option></select></div>
+<div id="recordTables"></div>
+</section>
+
+<section id="backup" class="panel" data-color="backup">
+<h2><span class="dot" style="background:var(--c-backup)"></span>ระบบสำรองข้อมูล - ส่งออก นำเข้า สำรองเดิมก่อนแทนที่</h2>
+<div class="info-2col">
+<div class="info-card"><h4>ส่งออก</h4><p class="small">บันทึกเป็น JSON เก็บข้อมูลทั้งหมด v6 รวม users, guards, roster</p><button class="btn" style="background:var(--c-backup)" onclick="exportJSON()">ดาวน์โหลด JSON v6</button><div style="margin-top:8px"><b>สำรองอัตโนมัติในเครื่อง:</b> <span id="autoBackupInfo" class="small">-</span></div></div>
+<div class="info-card"><h4>นำเข้า (มีสำรองอัตโนมัติก่อน)</h4><p class="small">ระบบจะสำรองข้อมูลเดิมอัตโนมัติก่อนแทนที่ ป้องกันข้อมูลหาย</p><input id="importFile" type="file" accept="application/json" onchange="importJSON(event)"><div id="backupList" class="tablewrap" style="max-height:100px;margin-top:6px"></div></div>
+</div>
+<div style="margin-top:10px" class="info-card"><h4>ตั้งชื่อระบบ (กรอบแดงเล็ก แก้ได้ตามต้องการ)</h4>
+<div class="grid">
+<div class="field"><label>ชื่อระบบหลัก (บรรทัดบน)</label><input id="customTitle" placeholder="เช่น Factory Guard Control v6 หรือ ชื่อโรงงานของคุณ"></div>
+<div class="field"><label>คำอธิบายย่อย (บรรทัดล่าง)</label><input id="customSubTitle" placeholder="เช่น แนวทาง C - ..."></div>
+</div>
+<div class="actions"><button class="btn blue" onclick="saveCustomTitle()">บันทึกชื่อระบบ</button><button class="btn secondary" onclick="resetCustomTitle()">รีเซ็ตเป็นค่าเดิม</button><button class="btn secondary" onclick="toggleV6Notice()">เปิด/ปิด กล่องรายละเอียด V6 (กรอบแดงใหญ่)</button></div>
+<p class="small">ชื่อนี้จะแสดงที่หัวเว็บทุกหน้า แก้ได้ตลอด</p>
+</div>
+
+<div style="margin-top:10px" class="info-card"><h4>ล้างข้อมูล (ต้องเป็น Admin)</h4><div class="grid"><div class="field"><input id="clearConfirm" placeholder="พิมพ์ ล้างข้อมูล เพื่อยืนยัน"></div><div class="field"><button class="btn danger" onclick="clearAll()">ล้างทั้งหมด (Admin เท่านั้น)</button></div></div><p class="small">การใช้งานหลายเครื่องต้องเพิ่มเซิร์ฟเวอร์และฐานข้อมูลกลาง ไม่ใช่เพียงเปิดไฟล์ HTML หลายเครื่อง</p></div>
+</section>
+
+</div>
+
+<div id="cameraModal"><div class="inner"><h3 id="camTitle">ถ่ายรูป</h3><video id="cameraFeed" autoplay playsinline></video><canvas id="cameraCanvas" style="display:none"></canvas><img id="cameraShot" class="photo-preview" style="max-width:100%"><div class="actions"><button class="btn" id="btnTake">ถ่ายภาพ</button><button class="btn green" id="btnUse" style="display:none">ใช้รูปนี้</button><button class="btn secondary" onclick="closeCamera()">ปิด</button></div></div></div>
+
+<div id="rosterModal" class="roster-modal"><div class="box"><div class="box-head"><div><div id="rosterModalTitle" style="font-weight:bold;font-size:12px">จัดเวรวันที่</div><div id="rosterModalSub" style="font-size:10px;opacity:.8"></div></div><button onclick="closeRosterModal()" style="background:rgba(255,255,255,.15);border:0;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer">✕</button></div><div class="box-body"><div class="shift-toggle" id="shiftToggle"></div><div class="field"><label>เลือก รปภ. กะเข้า</label><select id="rosterGuardSelect"></select></div><div class="field"><label>จุดรับผิดชอบ</label><div id="rosterPointsCheck" class="points-check"></div></div><div class="field"><label>หมายเหตุ</label><input id="rosterNote"></div><div class="actions" style="justify-content:space-between;margin-top:10px"><button class="btn secondary" style="background:#fee2e2;color:#b91c1c;font-size:10px" onclick="deleteRosterDay()">ลบเวรนี้</button><div style="display:flex;gap:5px"><button class="btn secondary" onclick="closeRosterModal()">ยกเลิก</button><button class="btn roster" onclick="saveRosterDay()">บันทึกเวร</button></div></div></div></div></div>
+
+<div id="userModal" class="roster-modal"><div class="inner" style="max-width:380px"><div class="box-head"><div><b>สลับผู้ใช้งาน</b><div class="small" style="color:#cbd5e1">เลือกผู้ใช้เพื่อทดสอบสิทธิ์ 4 ระดับ</div></div><button onclick="document.getElementById('userModal').classList.remove('show')" style="background:rgba(255,255,255,.15);border:0;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer">✕</button></div><div class="box-body"><select id="switchUserSelect" style="margin-bottom:8px"></select><input id="switchPass" type="password" placeholder="รหัสผ่าน (demo ตรวจแบบง่าย)"><div class="actions"><button class="btn blue" onclick="confirmSwitchUser()">สลับผู้ใช้</button></div><p class="small">รปภ. ไม่สามารถอนุมัติสิ่งของได้ ต้องเป็นหัวหน้า/ผู้จัดการ/Admin</p></div></div></div>
+
+<div id="printArea"></div>
+
+<script>
+let db = loadDB(); let lastVisitor=null, lastGoods=null, lastIncident=null, lastPatrol=null;
+let rosterDate = new Date(); rosterDate.setDate(1); let selectedRosterDateStr='', selectedShiftId='';
+let currentUser = null;
+
+function emptyDB(){
+ return {
+  employees:[],visitors:[],goods:[],patrols:[],incidents:[],
+  guards:[{id:'G001',name:'รปภ. สมชาย แสงดี',phone:'080-000-0001',gender:'male',position:'หัวหน้าชุด'},{id:'G002',name:'รปภ. บุญมี ใจดี',phone:'080-000-0002',gender:'male',position:'รปภ.'},{id:'G003',name:'รปภ. สมหญิง ใจงาม',phone:'080-000-0003',gender:'female',position:'รปภ.'}],
+  shifts:[{id:'S001',name:'เช้า 06:00-18:00',start:'06:00',end:'18:00'},{id:'S002',name:'ดึก 18:00-06:00',start:'18:00',end:'06:00'}],
+  patrolPoints:[{code:'GATE-01',name:'ประตูหน้า',area:'โซน A'},{code:'WARE-01',name:'คลังสินค้า',area:'โซน B'},{code:'OFFICE',name:'อาคารสำนักงาน',area:'โซน C'}],
+  roster:[],
+  users:[{id:'U001',username:'admin',name:'Admin โรงงาน',role:'admin',pass:'admin123'},{id:'U002',username:'manager01',name:'ผู้จัดการ',role:'manager',pass:'1234'},{id:'U003',username:'sup01',name:'หัวหน้า รปภ.',role:'supervisor',pass:'1234'},{id:'U004',username:'guard01',name:'รปภ. สมชาย',role:'guard',pass:'1234'}],
+  backups:[]
+ }
+}
+function loadDB(){
+ try{
+  let v6=localStorage.getItem('factory_guard_v6'); if(v6){let o=JSON.parse(v6); return o.data||o;}
+  let v5=localStorage.getItem('factory_guard_v5'); if(v5){let o=JSON.parse(v5); let d=o.data||o; return {...emptyDB(), ...d, users: emptyDB().users, backups:[]}; }
+  let v4=localStorage.getItem('factory_guard_v4'); if(v4){let o=JSON.parse(v4); let d=o.data||o; return {...emptyDB(), ...d, users: emptyDB().users, backups:[]};}
+ }catch(e){} return emptyDB();
+}
+function persist(autoBackup=false){
+ // autoBackup ปิดไว้เพื่อไม่ให้เต็ม quota จากรูป base64
+ if(autoBackup){ 
+   try{ 
+     // ลบ backup เก่าก่อน 1 อัน
+     let oldKeys = Object.keys(localStorage).filter(k=>k.startsWith('factory_guard_backup_')).sort();
+     if(oldKeys.length>=5){ localStorage.removeItem(oldKeys[0]); }
+     localStorage.setItem('factory_guard_backup_'+Date.now(), JSON.stringify({version:6,data:db})); 
+   }catch(e){
+     console.warn('auto backup quota exceeded, skipped', e);
+   } 
+ }
+ try{
+   localStorage.setItem('factory_guard_v6',JSON.stringify({version:6,data:db}));
+ }catch(e){
+   alert('พื้นที่เต็ม! กรุณาล้างข้อมูลหรือลบรูปบางส่วน\n'+e.message);
+   throw e;
+ }
+ updateStats(); renderRecords(); renderRoster(); renderGuardShiftPointLists(); updateRosterSummary(); renderUsers(); renderGoodsPending(); updateDash();
+}
+function nowLocal(){let d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16)}
+document.querySelectorAll('#empTime,#visIn,#goodTime,#patrolTime,#incTime').forEach(el=>{if(el && !el.value) el.value=nowLocal()})
+
+function switchTab(tab){
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+  let btn=document.querySelector(`nav button[data-tab="${tab}"]`);
+  if(btn) btn.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  let sec=document.getElementById(tab);
+  if(sec) sec.classList.add('active');
+}
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+window.switchTab=switchTab;
+
+function val(id){let e=document.getElementById(id); return e?e.value.trim():''}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function idGen(p){return p+'-'+Date.now().toString().slice(-6)}
+function roleLabel(r){return {guard:'รปภ.', supervisor:'หัวหน้า รปภ.', manager:'ผู้จัดการ', admin:'Admin'}[r]||r}
+function canApprove(){return currentUser && ['supervisor','manager','admin'].includes(currentUser.role)}
+function isAdmin(){return currentUser && currentUser.role==='admin'}
+
+function bindFilePreview(fileId, previewId, dataId){
+ let f=document.getElementById(fileId), pv=document.getElementById(previewId), hd=document.getElementById(dataId);
+ if(!f) return;
+ f.addEventListener('change',()=>{let file=f.files[0]; if(!file) return; let r=new FileReader(); r.onload=()=>{compressImage(r.result).then(b64=>{pv.src=b64; pv.classList.add('show'); hd.value=b64; pv.style.display='block';})}; r.readAsDataURL(file)});
+}
+['emp','vis','good','patrol','inc'].forEach(p=>bindFilePreview(p+'PhotoFile',p+'Preview',p+'PhotoData'));
+function compressImage(dataUrl){return new Promise(res=>{let im=new Image(); im.onload=()=>{let c=document.createElement('canvas'), s=Math.min(1,1280/Math.max(im.width,im.height)); c.width=Math.round(im.width*s); c.height=Math.round(im.height*s); c.getContext('2d').drawImage(im,0,0,c.width,c.height); res(c.toDataURL('image/jpeg',0.72))}; im.onerror=()=>res(dataUrl); im.src=dataUrl})}
+function getPhotoData(p){let e=document.getElementById(p+'PhotoData'); return e?e.value:''}
+function clearPhoto(p){let pv=document.getElementById(p+'Preview'); if(pv){pv.src=''; pv.classList.remove('show'); pv.style.display='none'}; let hd=document.getElementById(p+'PhotoData'); if(hd) hd.value=''; let f=document.getElementById(p+'PhotoFile'); if(f) f.value='';}
+
+let camStream=null, camTarget=null, camCapturedData='';
+async function openCamera(t){camTarget=t; camCapturedData=''; document.getElementById('cameraShot').style.display='none'; document.getElementById('btnUse').style.display='none'; document.getElementById('btnTake').style.display='inline-block'; document.getElementById('cameraModal').classList.add('show'); document.getElementById('camTitle').textContent='ถ่ายรูป: '+t; let v=document.getElementById('cameraFeed'); v.style.display='block'; try{camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}); v.srcObject=camStream; await v.play()}catch(e){alert('เปิดกล้องไม่ได้'); closeCamera()}}
+function closeCamera(){if(camStream){camStream.getTracks().forEach(t=>t.stop()); camStream=null} document.getElementById('cameraFeed').srcObject=null; document.getElementById('cameraModal').classList.remove('show')}
+document.getElementById('btnTake').addEventListener('click',async()=>{let v=document.getElementById('cameraFeed'), c=document.getElementById('cameraCanvas'), s=document.getElementById('cameraShot'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d').drawImage(v,0,0); let comp=await compressImage(c.toDataURL('image/jpeg',0.8)); camCapturedData=comp; s.src=comp; s.style.display='block'; s.classList.add('show'); document.getElementById('btnUse').style.display='inline-block';})
+document.getElementById('btnUse').addEventListener('click',()=>{if(!camTarget||!camCapturedData) return; let pv=document.getElementById(camTarget+'Preview'); pv.src=camCapturedData; pv.classList.add('show'); pv.style.display='block'; document.getElementById(camTarget+'PhotoData').value=camCapturedData; closeCamera();})
+
+function makeSig(id){let c=document.getElementById(id); if(!c) return; let ctx=c.getContext('2d'), d=false; ctx.lineWidth=2; ctx.lineCap='round'; function pos(e){let r=c.getBoundingClientRect(); let x=(e.touches?e.touches[0].clientX:e.clientX)-r.left; let y=(e.touches?e.touches[0].clientY:e.clientY)-r.top; return {x:x*(c.width/r.width), y:y*(c.height/r.height)}}; c.addEventListener('mousedown',e=>{d=true; let p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y)}); c.addEventListener('mousemove',e=>{if(!d) return; let p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke()}); window.addEventListener('mouseup',()=>d=false); c.addEventListener('touchstart',e=>{d=true; let p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); e.preventDefault()},{passive:false}); c.addEventListener('touchmove',e=>{if(!d) return; let p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); e.preventDefault()},{passive:false}); c.addEventListener('touchend',()=>d=false);}
+makeSig('signApprover'); makeSig('signGuard');
+function clearSig(id){let c=document.getElementById(id); if(c) c.getContext('2d').clearRect(0,0,c.width,c.height)}
+function getSig(id){let c=document.getElementById(id); if(!c) return ''; let b=document.createElement('canvas'); b.width=c.width; b.height=c.height; if(c.toDataURL()===b.toDataURL()) return ''; return c.toDataURL('image/png')}
+
+let goodsItems=[{name:'',qty:'1',serial:''}];
+function renderGoodsItems(){let cont=document.getElementById('goodsItemsList'); cont.innerHTML=goodsItems.map((it,i)=>`<div class="goods-item-row"><input placeholder="ชื่อ*" value="${esc(it.name)}" oninput="goodsItems[${i}].name=this.value"><input placeholder="จำนวน" value="${esc(it.qty)}" oninput="goodsItems[${i}].qty=this.value"><input placeholder="Serial" value="${esc(it.serial)}" oninput="goodsItems[${i}].serial=this.value"><button class="btn danger" type="button" onclick="removeGoodsItem(${i})">ลบ</button></div>`).join('')}
+function addGoodsItem(){goodsItems.push({name:'',qty:'1',serial:''}); renderGoodsItems()}
+function removeGoodsItem(i){goodsItems.splice(i,1); if(goodsItems.length===0) goodsItems=[{name:'',qty:'1',serial:''}]; renderGoodsItems()}
+renderGoodsItems();
+function clearForm(ids){ids.forEach(id=>{let e=document.getElementById(id); if(e){ if(e.type==='file') e.value=''; else if(e.tagName!=='SELECT') e.value=''; }}); ['empTime','visIn','goodTime','patrolTime','incTime'].forEach(x=>{let e=document.getElementById(x); if(e) e.value=nowLocal()})}
+
+function updateStats(){document.getElementById('statLogs').textContent=db.employees.length; document.getElementById('statVisitors').textContent=db.visitors.length; document.getElementById('statGoods').textContent=db.goods.length; document.getElementById('statIncidents').textContent=db.incidents.length; document.getElementById('statRoster').textContent=db.roster.filter(r=>{let y=rosterDate.getFullYear(), m=rosterDate.getMonth()+1; return r.date.startsWith(`${y}-${String(m).padStart(2,'0')}`)}).length}
+function updateDash(){
+ updateStats();
+ let pending=db.goods.filter(g=>g.status==='pending').length, approved=db.goods.filter(g=>g.status==='approved').length, rejected=db.goods.filter(g=>g.status==='rejected').length, checked=db.goods.filter(g=>g.status==='checked').length;
+ document.getElementById('dashApproval').innerHTML=`<div style="display:flex;gap:6px;flex-wrap:wrap"><span class="badge wait">รออนุมัติ ${pending}</span><span class="badge ok">อนุมัติ ${approved}</span><span class="badge no">ไม่อนุมัติ ${rejected}</span><span class="badge checked">ตรวจสอบแล้ว ${checked}</span></div>`;
+ let total=db.guards.length, male=db.guards.filter(g=>g.gender==='male').length, female=db.guards.filter(g=>g.gender==='female').length;
+ document.getElementById('dashGuardSum').innerHTML=`รวม ${total} คน | ชาย ${male} | หญิง ${female}`;
+ let cont=document.getElementById('dashSummary'); let g=db.goods.slice(0,5).map(o=>`<tr><td>${esc(o.id)}</td><td>${esc(o.requester)}</td><td>${esc(o.items)}<br><span class="badge ${o.status==='pending'?'wait':o.status==='approved'?'ok':o.status==='rejected'?'no':'checked'}">${esc(statusLabel(o.status))}</span></td><td>${esc(o.approver)}</td><td>${esc(o.time)}</td></tr>`).join(''); cont.innerHTML=`<h3>ใบนำออกล่าสุด (ตรวจสอบย้อนหลัง + สถานะ)</h3><table><thead><tr><th>เลขที่</th><th>ผู้ขอนำออก</th><th>รายการ + สถานะ</th><th>ผู้อนุมัติ</th><th>เวลา</th></tr></thead><tbody>${g||'<tr><td colspan=5>ไม่มีข้อมูล</td></tr>'}</tbody></table>`;
+}
+function statusLabel(s){return {pending:'รออนุมัติ', approved:'อนุมัติแล้ว', rejected:'ไม่อนุมัติ', checked:'ตรวจสอบแล้ว', checked_in:'ตรวจสอบนำเข้าแล้ว', checked_out:'ตรวจสอบนำออกแล้ว'}[s]||s}
+function updateGoodsLabels(){
+  let dir=document.getElementById('goodDir')?document.getElementById('goodDir').value:'นำของออก';
+  let isIn = dir==='นำของเข้า';
+  let lblReq=document.getElementById('lblGoodRequester');
+  let lblPer=document.getElementById('lblGoodPerson');
+  let lblItems=document.getElementById('lblGoodItems');
+  let lblReason=document.getElementById('lblGoodReason');
+  let lblStatus=document.getElementById('lblGoodStatus');
+  let optChecked=document.getElementById('optChecked');
+  if(lblReq) lblReq.textContent = isIn ? 'ผู้ขอนำเข้า*' : 'ผู้ขอนำออก*';
+  if(lblPer) lblPer.textContent = isIn ? 'ผู้ขนส่ง/นำเข้า' : 'ผู้ขนย้าย/นำออก';
+  if(lblItems) lblItems.textContent = isIn ? 'รายการสิ่งของเข้า' : 'รายการสิ่งของออก';
+  if(lblReason) lblReason.textContent = isIn ? 'เหตุผล/ที่มา' : 'เหตุผล/ปลายทาง';
+  if(lblStatus) lblStatus.textContent = isIn ? 'สถานะนำเข้า' : 'สถานะนำออก';
+  if(optChecked) optChecked.textContent = isIn ? 'ตรวจสอบก่อนนำเข้าแล้ว' : 'ตรวจสอบก่อนนำออกแล้ว';
+  // Update print button title etc
+  let h2=document.querySelector('#goods h2');
+  if(h2) h2.innerHTML = '<span class="dot" style="background:var(--c-goods)"></span>ระบบ'+ (isIn?'นำของเข้า':'นำของออก') +' - รออนุมัติ อนุมัติ ไม่อนุมัติ ตรวจสอบก่อน'+(isIn?'นำเข้า':'นำออก');
+}
+
+
+// Saves
+async function saveEmployee(){if(!val('empName')) return alert('กรอกชื่อ'); db.employees.unshift({id:idGen('EMP'),code:val('empCode'),name:val('empName'),dept:val('empDept'),type:val('empType'),time:val('empTime'),note:val('empNote'),photo:getPhotoData('emp'),by:currentUser?currentUser.name:''}); persist(); alert('บันทึกแล้ว'); clearPhoto('emp'); clearForm(['empCode','empName','empDept','empNote'])}
+async function saveVisitor(){if(!val('visName')||!val('visHost')) return alert('กรอกชื่อและผู้พบ'); lastVisitor={id:idGen('VIS'),name:val('visName'),company:val('visCompany'),doc:val('visId'),card:val('visCard'),host:val('visHost'),dept:val('visDept'),purpose:val('visPurpose'),in:val('visIn')||nowLocal(),out:'',approver:val('visApprover'),note:val('visNote'),photo:getPhotoData('vis'),cardReturned:false,by:currentUser?currentUser.name:''}; db.visitors.unshift(lastVisitor); persist(); searchOpenVisitors(); alert('บันทึกแล้ว'); clearPhoto('vis'); clearForm(['visName','visCompany','visId','visCard','visHost','visDept','visApprover','visNote'])}
+async function saveGoods(){
+ let valid=goodsItems.filter(it=>it.name.trim()!=='');
+ if(!val('goodRequester')||!val('goodApprover')||valid.length===0) return alert('กรอกผู้ขอนำออก ผู้อนุมัติ และรายการ');
+ // ระบบอนุมัติ: รปภ. สร้างได้แค่ pending
+ let status=val('goodStatus');
+ if(currentUser && currentUser.role==='guard' && status!=='pending'){ alert('รปภ. ทำได้แค่ รออนุมัติ เท่านั้น'); status='pending'; document.getElementById('goodStatus').value='pending'; }
+ lastGoods={id:idGen('GP'),direction:val('goodDir'),ref:val('goodRef'),requester:val('goodRequester'),person:val('goodPerson'),company:val('goodCompany'),itemsList:valid,items:valid.map(i=>`${i.name} x${i.qty} ${i.serial}`.trim()).join(', '),reason:val('goodReason'),approver:val('goodApprover'),approvalRef:val('goodApprovalRef'),time:val('goodTime'),guard:val('goodGuard'),photo:getPhotoData('good'),sigApprover:getSig('signApprover'),sigGuard:getSig('signGuard'),status:status,by:currentUser?currentUser.name:'',history:[{at:nowLocal(),by:currentUser?currentUser.name:'',action:status}]};
+ db.goods.unshift(lastGoods); persist(false); alert('บันทึกใบนำออกแล้ว - สถานะ: '+statusLabel(status)); clearPhoto('good'); clearSig('signApprover'); clearSig('signGuard'); goodsItems=[{name:'',qty:'1',serial:''}]; renderGoodsItems(); clearForm(['goodRef','goodRequester','goodPerson','goodCompany','goodApprover','goodApprovalRef','goodReason','goodGuard'])
+}
+function renderGoodsPending(){
+ let cont=document.getElementById('goodsPendingList');
+ if(!cont) return;
+ let rows=db.goods.slice(0,20).map(g=>`<tr><td>${esc(g.id)}</td><td>${esc(g.requester)}<br><span class="small">${esc(g.items)}</span></td><td><span class="badge ${g.status==='pending'?'wait':g.status==='approved'?'ok':g.status==='rejected'?'no':'checked'}">${esc(statusLabel(g.status))}</span></td><td>${esc(g.approver)}</td><td>${canApprove()?`<button class="btn green" style="padding:4px 8px;font-size:10px" onclick="approveGoods('${g.id}','approved')">อนุมัติ</button> <button class="btn danger" style="padding:4px 8px;font-size:10px" onclick="approveGoods('${g.id}','rejected')">ไม่อนุมัติ</button> <button class="btn blue" style="padding:4px 8px;font-size:10px" onclick="approveGoods('${g.id}','checked')">ตรวจสอบแล้ว</button>`:'<span class="small">ต้องเป็นหัวหน้า/ผู้จัดการ/Admin</span>'}</td></tr>`).join('');
+ cont.innerHTML=`<table><thead><tr><th>เลขที่</th><th>ผู้ขอนำออก + รายการ</th><th>สถานะ</th><th>ผู้อนุมัติ</th><th>จัดการ</th></tr></thead><tbody>${rows||'<tr><td colspan=5>ไม่มีข้อมูล</td></tr>'}</tbody></table>`;
+}
+function approveGoods(id,newStatus){
+ if(!canApprove()) return alert('สิทธิ์ไม่พอ - ต้องเป็น หัวหน้า รปภ. / ผู้จัดการ / Admin');
+ let g=db.goods.find(x=>x.id===id); if(!g) return;
+ g.status=newStatus; g.history=g.history||[]; g.history.push({at:nowLocal(),by:currentUser?currentUser.name:'',action:newStatus});
+ persist(false); alert('เปลี่ยนสถานะเป็น '+statusLabel(newStatus)+' แล้ว');
+}
+
+function savePatrol(){if(!val('patrolCode')||!val('patrolGuard')) return alert('กรอกรหัสจุดตรวจและชื่อ รปภ.'); lastPatrol={id:idGen('PAT'),code:val('patrolCode'),name:val('patrolName'),guard:val('patrolGuard'),time:val('patrolTime'),note:val('patrolNote'),photo:getPhotoData('patrol'),by:currentUser?currentUser.name:''}; db.patrols.unshift(lastPatrol); persist(); alert('บันทึกจุดตรวจแล้ว'); clearPhoto('patrol'); clearForm(['patrolCode','patrolName','patrolNote'])}
+async function saveIncident(){if(!val('incPlace')||!val('incDetail')||!val('incReporter')) return alert('กรอกสถานที่ รายละเอียด ผู้รายงาน'); lastIncident={id:idGen('INC'),type:val('incType'),level:val('incLevel'),time:val('incTime'),place:val('incPlace'),reporter:val('incReporter'),notified:val('incNotified'),detail:val('incDetail'),action:val('incAction'),photo:getPhotoData('inc'),by:currentUser?currentUser.name:''}; db.incidents.unshift(lastIncident); persist(); alert('บันทึกรายงานเหตุแล้ว'); clearPhoto('inc'); clearForm(['incPlace','incReporter','incNotified','incAction']); document.getElementById('incDetail').value='';}
+
+// Records
+function table(title,arr,cols){
+  return `<h3>${title} (${arr.length})</h3><div class="tablewrap"><table><thead><tr>${cols.map(c=>`<th>${c[0]}</th>`).join('')}<th>รูปหลักฐาน</th></tr></thead><tbody>${arr.length?arr.slice(0,200).map(o=>{
+    let photo = o.photo || o.image || '';
+    let photoCell = '';
+    if(photo){
+      // escape single quotes for onclick
+      let safePhoto = photo.slice(0,200); // for preview only
+      photoCell = `<img src="${photo}" loading="lazy" style="width:72px;height:54px;object-fit:cover;border-radius:4px;border:1px solid #ddd;cursor:pointer" onclick="openPhotoViewer('${o.id||''}')" title="คลิกดูรูปใหญ่"><br><span class="small" style="color:#2e7d32">มีรูป</span>`;
+    } else {
+      photoCell = '<span class="small">ไม่มีรูป</span>';
+    }
+    return `<tr>${cols.map(c=>{let v=o[c[1]]; if(c[1]==='status') return `<td><span class="badge ${v==='pending'?'wait':v==='approved'?'ok':v==='rejected'?'no':'checked'}">${esc(statusLabel(v))}</span></td>`; return `<td>${esc(v??'')}</td>`}).join('')}<td style="text-align:center">${photoCell}</td></tr>`;
+  }).join(''):`<tr><td colspan="${cols.length+1}" class="empty">ยังไม่มีข้อมูล</td></tr>`}</tbody></table></div>`;
+}
+function openPhotoViewer(id){
+  // Find in all arrays
+  let all = [...db.employees, ...db.visitors, ...db.goods, ...db.patrols, ...db.incidents, ...db.roster];
+  let o = all.find(x=>x.id===id);
+  if(!o || !o.photo){ alert('ไม่พบรูป'); return; }
+  let w=window.open('','_blank'); if(!w) return;
+  w.document.write(`<html><head><title>รูปหลักฐาน ${esc(id)}</title></head><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${o.photo}" style="max-width:95vw;max-height:95vh;border-radius:8px"><script>document.addEventListener('click',()=>window.close())<\/script></body></html>`);
+}
+
+function resetReportFilters(){document.getElementById('globalSearch').value='';document.getElementById('globalType').value='all';document.getElementById('dateFrom').value='';document.getElementById('dateTo').value='';document.getElementById('reportStatus').value='all';renderRecords()}
+function reportMatch(o,q,from,to,st){let hay=JSON.stringify(o).toLowerCase();if(q&&!hay.includes(q))return false;let d=String(o.time||o.in||o.date||'').slice(0,10);if(from&&d&&d<from)return false;if(to&&d&&d>to)return false;if(st!=='all' && o.status && o.status!==st) return false;return true}
+function filteredReports(){let q=val('globalSearch').toLowerCase(),type=val('globalType'),from=val('dateFrom'),to=val('dateTo'),st=val('reportStatus');let sets=[['employees','พนักงาน',db.employees,[['รหัส','code'],['ชื่อ','name'],['เวลา','time']]],['visitors','บุคคลภายนอก',db.visitors,[['เลขที่','id'],['ชื่อ','name'],['เวลาเข้า','in']]],['goods','สิ่งของ',db.goods,[['เลขที่','id'],['ผู้ขอนำออก','requester'],['รายการ','items'],['สถานะ','status'],['เวลา','time']]],['patrols','ลาดตระเวน',db.patrols,[['จุด','code'],['ชื่อจุด','name'],['รปภ.','guard'],['เวลา','time']]],['incidents','เหตุฉุกเฉิน',db.incidents,[['เลขที่','id'],['ประเภท','type'],['สถานที่','place'],['เวลา','time']]],['roster','ตารางเวร',db.roster,[['วันที่','date'],['กะ','shiftName'],['รปภ.','guardName'],['จุด','pointsText']]]];return sets.filter(x=>type==='all'||x[0]===type).map(x=>({title:x[1],cols:x[3],rows:x[2].filter(o=>reportMatch(o,q,from,to,st))}))}
+function renderRecords(){document.getElementById('recordTables').innerHTML=filteredReports().map(x=>table(x.title,x.rows,x.cols)).join('')||'<p>ไม่พบข้อมูล</p>'}
+function printDoc(html){let pa=document.getElementById('printArea'); pa.innerHTML=html; pa.style.display='block'; window.print(); setTimeout(()=>{pa.style.display='none'; pa.innerHTML=''},600)}
+function docWithPhoto(title,fields,photo,extra=''){let rows=fields.map(([k,v])=>`<tr><th style="text-align:left;width:25%;background:#f8fafc">${esc(k)}</th><td>${esc(v||'-')}</td></tr>`).join(''); return `<div style="font-family:Tahoma;padding:20px;color:#111"><h2 style="text-align:center;border-bottom:2px solid #333;padding-bottom:8px">${title}</h2><table border="1" cellpadding="8" style="width:100%;border-collapse:collapse;margin-top:12px">${rows}</table>${extra}${photo?`<div style="margin-top:14px;border:1px solid #ccc;padding:10px;border-radius:8px"><b>ภาพหลักฐาน (ถ่ายจริง):</b><br><img src="${photo}" style="max-width:100%;max-height:420px;margin-top:8px;border-radius:6px"></div>`:''}<div style="display:flex;justify-content:space-around;margin-top:40px;text-align:center"><div>ลงชื่อ _______________<br>ผู้เกี่ยวข้อง</div><div>ลงชื่อ _______________<br>ผู้อนุมัติ</div><div>ลงชื่อ _______________<br>รปภ.</div></div><p style="font-size:11px;margin-top:16px">พิมพ์เมื่อ ${new Date().toLocaleString('th-TH')} | ผู้พิมพ์: ${esc(currentUser?currentUser.name:'')}</p></div>`}
+function printGoods(){let g=lastGoods||db.goods[0]; if(!g) return alert('บันทึกก่อน'); let itTable=g.itemsList?`<table border="1" cellpadding="6" style="width:100%;border-collapse:collapse"><thead><tr><th>ลำดับ</th><th>รายการ${g.direction==='นำของเข้า'?'เข้า':'ออก'}</th><th>จำนวน</th><th>Serial</th></tr></thead><tbody>${g.itemsList.map((it,i)=>`<tr><td>${i+1}</td><td>${esc(it.name)}</td><td>${esc(it.qty)}</td><td>${esc(it.serial)}</td></tr>`).join('')}</tbody></table>`:esc(g.items); let docTitle = g.direction==='นำของเข้า'?'เอกสารขออนุมัตินำสิ่งของเข้า':'เอกสารขออนุมัตินำสิ่งของออก'; let html=`<div style="font-family:Tahoma;padding:20px"><h2 style="text-align:center;border-bottom:3px solid #ef6c00">${docTitle}</h2><p>เลขที่ ${esc(g.id)} | ${esc(g.direction)} | สถานะ <b>${esc(statusLabel(g.status))}</b></p><table border="1" cellpadding="8" style="width:100%;border-collapse:collapse"><tr><th>ผู้ขอนำออก</th><td>${esc(g.requester)}</td><th>ผู้ขนย้าย</th><td>${esc(g.person)}</td></tr><tr><th>บริษัท/รถ</th><td>${esc(g.company)}</td><th>อ้างอิง</th><td>${esc(g.ref)}</td></tr><tr><th>ผู้อนุมัติ</th><td>${esc(g.approver)}</td><th>วันเวลา</th><td>${esc(g.time)}</td></tr><tr><th>เหตุผล</th><td colspan="3">${esc(g.reason)}</td></tr></table><h3 style="color:#ef6c00">รายการสิ่งของออก</h3>${itTable}${g.photo?`<p><b>รูป:</b><br><img src="${g.photo}" style="max-width:400px"></p>`:''}<div style="display:flex;justify-content:space-around;margin-top:20px"><div style="border:1px solid #ccc;padding:10px;text-align:center"><b>ผู้ขอนำออก</b><br>ลงชื่อ __________<br>${esc(g.requester)}</div><div style="border:1px solid #ef6c00;padding:10px;text-align:center"><b>ผู้อนุมัติ</b><br>${g.sigApprover?`<img src="${g.sigApprover}" style="max-width:180px">`:'ลงชื่อ __________'}<br>${esc(g.approver)}</div><div style="border:1px solid #333;padding:10px;text-align:center"><b>รปภ.</b><br>${g.sigGuard?`<img src="${g.sigGuard}" style="max-width:180px">`:'ลงชื่อ __________'}<br>${esc(g.guard)}</div></div><p>ประวัติ: ${(g.history||[]).map(h=>`${esc(h.at)} ${esc(h.by)} ${esc(statusLabel(h.action))}`).join(' → ')}</p></div>`; printDoc(html)}
+function printPatrol(){let p=lastPatrol||db.patrols[0]; if(!p) return alert('บันทึกจุดตรวจก่อน'); let extra=`<table border="1" cellpadding="8" style="width:100%;border-collapse:collapse;margin-top:10px"><tr><th>รหัสจุด</th><td>${esc(p.code)}</td><th>ชื่อจุด</th><td>${esc(p.name)}</td></tr><tr><th>รปภ.</th><td>${esc(p.guard)}</td><th>เวลา</th><td>${esc(p.time)}</td></tr><tr><th>ผลตรวจ</th><td colspan="3">${esc(p.note)}</td></tr></table>`; printDoc(docWithPhoto('เอกสารบันทึกการลาดตระเวน', [['เลขที่',p.id],['รหัสจุดตรวจ',p.code],['ชื่อจุดตรวจ',p.name],['รปภ. ผู้ตรวจ',p.guard],['วันเวลาตรวจ',p.time]], p.photo, extra))}
+function printIncident(){let i=lastIncident||db.incidents[0]; if(!i) return alert('บันทึกเหตุก่อน'); let extra=`<div style="margin-top:10px"><b>รายละเอียด:</b> ${esc(i.detail)}<br><br><b>การดำเนินการ:</b> ${esc(i.action)}</div>`; printDoc(docWithPhoto('รายงานเหตุฉุกเฉิน', [['เลขที่',i.id],['ประเภท',i.type],['ระดับ',i.level],['วันเวลา',i.time],['สถานที่',i.place],['ผู้รายงาน',i.reporter],['ผู้รับแจ้ง',i.notified]], i.photo, extra))}
+function printVisitor(){let v=lastVisitor||db.visitors[0]; if(!v) return alert('บันทึกก่อน'); printDoc(docWithPhoto('ใบผ่านบุคคลภายนอก', [['เลขที่',v.id],['ชื่อ',v.name],['บริษัท',v.company],['บัตรแลก',v.card],['ผู้พบ',v.host],['เวลาเข้า',v.in],['เวลาออก',v.out||'ยังไม่ออก']], v.photo))}
+function printVisitorRecord(v){printDoc(docWithPhoto('ใบผ่านบุคคลภายนอก', [['เลขที่',v.id],['ชื่อ',v.name],['บริษัท',v.company],['บัตรแลก',v.card],['ผู้พบ',v.host],['เวลาเข้า',v.in],['เวลาออก',v.out||'ยังไม่ออก'],['คืนบัตร',v.cardReturned?'คืนแล้ว':'ยังไม่คืน']], v.photo))}
+function printSelectedVisitor(){let id=document.getElementById('visitorMatches').value; let v=db.visitors.find(x=>x.id===id)||lastVisitor; if(!v) return alert('เลือกใบก่อน'); printVisitorRecord(v)}
+function printReport(){let sets=filteredReports(); let body=sets.map(x=>`<h3>${esc(x.title)} (${x.rows.length})</h3><table border="1" cellpadding="6" style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr>${x.cols.map(c=>`<th>${esc(c[0])}</th>`).join('')}<th>รูป</th></tr></thead><tbody>${x.rows.map(o=>`<tr>${x.cols.map(c=>{let v=o[c[1]]; if(c[1]==='status') return `<td>${esc(statusLabel(v))}</td>`; return `<td>${esc(v??'')}</td>`}).join('')}<td>${o.photo?'มีรูป':''}</td></tr>`).join('')||`<tr><td colspan="${x.cols.length+1}">ไม่มีข้อมูล</td></tr>`}</tbody></table>`).join('<br>'); printDoc(`<div style="font-family:Tahoma;padding:15px"><h2 style="text-align:center">รายงานระบบ รปภ. v6</h2><p>ผู้พิมพ์: ${esc(currentUser?currentUser.name:'')} | ${new Date().toLocaleString('th-TH')}</p>${body}</div>`)}
+function searchOpenVisitors(){let q=(val('visitorSearch')||'').toLowerCase(),sel=document.getElementById('visitorMatches'); let list=db.visitors.filter(v=>!v.out&&!v.cardReturned&&[v.id,v.name,v.company,v.card].join(' ').toLowerCase().includes(q)); sel.innerHTML=list.map(v=>`<option value="${esc(v.id)}">${esc(v.id)} | ${esc(v.name)}</option>`).join('')}
+function selectedVisitor(){return db.visitors.find(v=>v.id===val('visitorMatches'))}
+function selectVisitorForCheckout(){let v=selectedVisitor(); if(v) lastVisitor=v}
+function checkoutVisitor(){let v=selectedVisitor(); if(!v) return alert('เลือกใบก่อน'); if(!confirm('ยืนยันออก '+v.name+' ?')) return; v.out=nowLocal(); v.cardReturned=true; lastVisitor=v; persist(); searchOpenVisitors(); alert('บันทึกออกแล้ว')}
+
+// Roster
+function renderGuardShiftPointLists(){
+ document.getElementById('guardList').innerHTML=`<table style="min-width:0"><tbody>${db.guards.map(g=>`<tr><td>${esc(g.name)} <span style="font-size:10px;color:${g.gender==='female'?'#ec407a':'#1976d2'}">(${g.gender==='female'?'หญิง':'ชาย'})</span><br><small>${esc(g.position||'')}${g.phone?' | '+esc(g.phone):''}</small></td><td><button class="btn danger" style="padding:4px 8px;font-size:10px" onclick="deleteGuard('${g.id}')">ลบ</button></td></tr>`).join('')}</tbody></table>`;
+ document.getElementById('shiftList').innerHTML=`<table style="min-width:0"><tbody>${db.shifts.map(s=>`<tr><td>${esc(s.name)}<br><small>${esc(s.start)}-${esc(s.end)}</small></td><td><button class="btn danger" style="padding:4px 8px;font-size:10px" onclick="deleteShift('${s.id}')">ลบ</button></td></tr>`).join('')}</tbody></table>`;
+ document.getElementById('pointList').innerHTML=`<table style="min-width:0"><tbody>${db.patrolPoints.map(p=>`<tr><td>${esc(p.code)} ${esc(p.name)}<br><small>${esc(p.area||'')}</small></td><td><button class="btn danger" style="padding:4px 8px;font-size:10px" onclick="deletePoint('${p.code}')">ลบ</button></td></tr>`).join('')}</tbody></table>`;
+}
+function updateRosterSummary(){
+ let total=db.guards.length; let male=db.guards.filter(g=>g.gender==='male').length; let female=db.guards.filter(g=>g.gender==='female').length;
+ let monthPrefix=`${rosterDate.getFullYear()}-${String(rosterDate.getMonth()+1).padStart(2,'0')}`; let dutyCount=db.roster.filter(r=>r.date.startsWith(monthPrefix)).length;
+ document.getElementById('sumTotal').textContent=total+' คน'; document.getElementById('sumMale').textContent=male+' คน'; document.getElementById('sumFemale').textContent=female+' คน'; document.getElementById('sumDuty').textContent=dutyCount+' เวร';
+ document.getElementById('sumTotalDetail').textContent=`ชาย ${male} | หญิง ${female} | รวม ${total} คน`;
+}
+function addGuard(){let name=val('newGuardName'), phone=val('newGuardPhone'), gender=val('newGuardGender'), pos=val('newGuardPosition'); if(!name) return alert('ใส่ชื่อ รปภ.'); db.guards.unshift({id:idGen('G'),name,phone,gender,position:pos}); document.getElementById('newGuardName').value=''; document.getElementById('newGuardPhone').value=''; document.getElementById('newGuardPosition').value=''; persist()}
+function deleteGuard(id){if(!confirm('ลบ รปภ. คนนี้?')) return; db.guards=db.guards.filter(g=>g.id!==id); persist()}
+function addShift(){let name=val('newShiftName'), st=val('newShiftStart'), en=val('newShiftEnd'); if(!name||!st||!en) return alert('ใส่ชื่อกะและเวลา'); db.shifts.push({id:idGen('S'),name:`${name} ${st}-${en}`,start:st,end:en}); document.getElementById('newShiftName').value=''; persist()}
+function deleteShift(id){if(db.shifts.length<=1) return alert('ต้องเหลืออย่างน้อย 1 กะ'); db.shifts=db.shifts.filter(s=>s.id!==id); persist()}
+function addPoint(){let code=val('newPointCode'), name=val('newPointName'), area=val('newPointArea'); if(!code||!name) return alert('ใส่รหัสและชื่อจุด'); db.patrolPoints.push({code,name,area}); document.getElementById('newPointCode').value=''; document.getElementById('newPointName').value=''; document.getElementById('newPointArea').value=''; persist()}
+function deletePoint(code){db.patrolPoints=db.patrolPoints.filter(p=>p.code!==code); persist()}
+function changeMonth(d){rosterDate.setMonth(rosterDate.getMonth()+d); renderRoster(); updateRosterSummary(); updateStats()}
+function renderRoster(){
+ let y=rosterDate.getFullYear(), m=rosterDate.getMonth();
+ document.getElementById('rosterMonthLabel').textContent=new Intl.DateTimeFormat('th-TH',{month:'long',year:'numeric'}).format(rosterDate);
+ let first=new Date(y,m,1), last=new Date(y,m+1,0), startDay=first.getDay(), daysInMonth=last.getDate();
+ let container=document.getElementById('rosterCalendar'); container.innerHTML='';
+ let heads=['อา','จ','อ','พ','พฤ','ศ','ส']; heads.forEach((h,i)=>{let d=document.createElement('div'); d.className='cal-head '+(i===0?'sun':'other'); d.textContent=h; container.appendChild(d)});
+ for(let i=0;i<startDay;i++){let e=document.createElement('div'); e.className='cal-day'; e.style.background='#f8fafc'; container.appendChild(e)}
+ for(let d=1;d<=daysInMonth;d++){
+  let dateStr=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  let assignments=db.roster.filter(r=>r.date===dateStr);
+  let el=document.createElement('div'); el.className='cal-day'+(assignments.length?' has-data':'')+(dateStr===new Date().toISOString().slice(0,10)?' today':'');
+  el.innerHTML=`<div class="num">${d}</div>${assignments.map(a=>{let sh=db.shifts.find(s=>s.id===a.shiftId); let isNight=sh&&sh.start>='18:00'; return `<div class="assign ${isNight?'night':'morning'}">${esc(a.guardName||'ว่าง')}</div>`}).join('')}${assignments.length>2?`<div class="small">+${assignments.length-2}</div>`:''}`;
+  el.onclick=()=>openRosterModal(dateStr);
+  container.appendChild(el);
+ }
+}
+function openRosterModal(dateStr){
+ selectedRosterDateStr=dateStr; let dateObj=new Date(dateStr); let thaiDay=new Intl.DateTimeFormat('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(dateObj);
+ document.getElementById('rosterModalTitle').textContent=`จัดเวรวันที่ ${dateStr}`; document.getElementById('rosterModalSub').textContent=thaiDay;
+ let toggle=document.getElementById('shiftToggle'); toggle.innerHTML=db.shifts.map(s=>`<button data-id="${s.id}" onclick="selectShift('${s.id}')">${esc(s.name)}</button>`).join('');
+ let existing=db.roster.filter(r=>r.date===dateStr); let first=existing[0]; selectedShiftId=first?first.shiftId:(db.shifts[0]?.id||''); if(selectedShiftId) selectShift(selectedShiftId);
+ let gSel=document.getElementById('rosterGuardSelect'); gSel.innerHTML=`<option value="">-- ไม่จัดเวร / ว่าง --</option>`+db.guards.map(g=>`<option value="${g.id}">${esc(g.name)} (${g.gender==='female'?'ญ':'ช'})</option>`).join(''); if(first) gSel.value=first.guardId||'';
+ let pc=document.getElementById('rosterPointsCheck'); pc.innerHTML=db.patrolPoints.map(p=>`<label style="font-size:11px;display:flex;gap:3px;align-items:center"><input type="checkbox" value="${p.code}" ${first&&first.points&&first.points.includes(p.code)?'checked':''}> ${esc(p.code)}</label>`).join('');
+ document.getElementById('rosterNote').value=first?first.note||'':''; document.getElementById('rosterModal').classList.add('show');
+}
+function selectShift(id){selectedShiftId=id; document.querySelectorAll('#shiftToggle button').forEach(b=>b.classList.toggle('active',b.dataset.id===id))}
+function closeRosterModal(){document.getElementById('rosterModal').classList.remove('show')}
+function saveRosterDay(){
+ let guardSel=document.getElementById('rosterGuardSelect'); let guardId=guardSel.value; let guard=db.guards.find(g=>g.id===guardId);
+ if(!guardId){ db.roster=db.roster.filter(r=>!(r.date===selectedRosterDateStr && r.shiftId===selectedShiftId)); persist(); closeRosterModal(); return;}
+ let shift=db.shifts.find(s=>s.id===selectedShiftId); let points=[...document.querySelectorAll('#rosterPointsCheck input:checked')].map(i=>i.value); let note=val('rosterNote');
+ db.roster=db.roster.filter(r=>!(r.date===selectedRosterDateStr && r.shiftId===selectedShiftId));
+ db.roster.push({date:selectedRosterDateStr,shiftId:selectedShiftId,shiftName:shift?shift.name:'',guardId,guardName:guard?guard.name:'',points,pointsText:points.join(', '),note});
+ persist(); closeRosterModal();
+}
+function deleteRosterDay(){if(!confirm('ลบเวรวันที่ '+selectedRosterDateStr+' ?')) return; db.roster=db.roster.filter(r=>r.date!==selectedRosterDateStr); persist(); closeRosterModal();}
+function clearMonthRoster(){let y=rosterDate.getFullYear(), m=rosterDate.getMonth()+1; let prefix=`${y}-${String(m).padStart(2,'0')}`; if(!confirm('ล้างเวรเดือน '+prefix+' ?')) return; db.roster=db.roster.filter(r=>!r.date.startsWith(prefix)); persist()}
+function printRoster(){let y=rosterDate.getFullYear(), m=rosterDate.getMonth(); let prefix=`${y}-${String(m+1).padStart(2,'0')}`; let rows=db.roster.filter(r=>r.date.startsWith(prefix)).sort((a,b)=>a.date.localeCompare(b.date)); let male=db.guards.filter(g=>g.gender==='male').length; let female=db.guards.filter(g=>g.gender==='female').length; let body=`<p>สรุปกำลังพล: รวม ${db.guards.length} คน ชาย ${male} หญิง ${female}</p><table border="1" cellpadding="6" style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th>วันที่</th><th>กะ</th><th>รปภ.</th><th>จุดรับผิดชอบ</th><th>หมายเหตุ</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.shiftName)}</td><td>${esc(r.guardName)}</td><td>${esc(r.pointsText)}</td><td>${esc(r.note)}</td></tr>`).join('')||'<tr><td colspan=5>ไม่มีเวร</td></tr>'}</tbody></table>`; printDoc(`<div style="font-family:Tahoma;padding:16px"><h2 style="text-align:center">ตารางเวร รปภ. ประจำเดือน ${esc(document.getElementById('rosterMonthLabel').textContent)}</h2>${body}<p>พิมพ์เมื่อ ${new Date().toLocaleString('th-TH')} | ผู้พิมพ์: ${esc(currentUser?currentUser.name:'')}</p></div>`)}
+
+// Users 4 levels
+function renderUsers(){
+ let tbody=document.getElementById('userList'); tbody.innerHTML=db.users.map(u=>`<tr><td>${esc(u.username)}</td><td>${esc(u.name)}</td><td>${esc(roleLabel(u.role))}</td><td style="font-size:10px">${u.role==='guard'?'สร้างได้ รออนุมัติ':u.role==='supervisor'?'อนุมัติสิ่งของได้':u.role==='manager'?'อนุมัติ+รายงาน': 'ทั้งหมด'}</td><td>${u.username==='admin'?'Adminหลัก':`<button class="btn danger" style="padding:3px 7px;font-size:10px" onclick="deleteUser('${u.id}')">ลบ</button>`}</td></tr>`).join('');
+ let sel=document.getElementById('switchUserSelect'); if(sel) sel.innerHTML=db.users.map(u=>`<option value="${u.id}">${esc(u.username)} - ${esc(u.name)} (${esc(roleLabel(u.role))})</option>`).join('');
+ document.getElementById('headerUser').textContent=currentUser?currentUser.name:'-'; document.getElementById('headerRole').textContent=currentUser?roleLabel(currentUser.role):'-';
+}
+function addUser(){let username=val('newUserUsername'), name=val('newUserName'), pass=val('newUserPass'), role=val('newUserRole'); if(!username||!name) return alert('ใส่ username และชื่อ'); if(db.users.find(u=>u.username===username)) return alert('username นี้มีแล้ว'); db.users.push({id:idGen('U'),username,name,role,pass:pass||'1234'}); document.getElementById('newUserUsername').value=''; document.getElementById('newUserName').value=''; document.getElementById('newUserPass').value=''; persist(); alert('เพิ่มผู้ใช้แล้ว: '+username)}
+function deleteUser(id){if(!isAdmin()) return alert('ต้องเป็น Admin เท่านั้น'); if(!confirm('ลบผู้ใช้นี้?')) return; db.users=db.users.filter(u=>u.id!==id); persist();}
+function switchUser(){document.getElementById('userModal').classList.add('show'); renderUsers()}
+function confirmSwitchUser(){let id=val('switchUserSelect'), pass=val('switchPass'); let u=db.users.find(x=>x.id===id); if(!u) return alert('เลือกผู้ใช้'); if(u.pass && pass!==u.pass) return alert('รหัสผ่านไม่ถูก (demo: '+u.pass+')'); currentUser=u; localStorage.setItem('factory_guard_current_user', JSON.stringify(u)); renderUsers(); updateDash(); document.getElementById('userModal').classList.remove('show'); alert('สลับเป็น '+u.name+' ('+roleLabel(u.role)+') แล้ว'); document.getElementById('switchPass').value='';}
+
+// Backup with auto backup
+function exportJSON(){let blob=new Blob([JSON.stringify({version:6,data:db},null,2)],{type:'application/json'}); let a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='factory-guard-v6-'+new Date().toISOString().slice(0,10)+'.json'; a.click(); let el=document.getElementById('autoBackupInfo'); if(el) el.textContent='ดาวน์โหลดเมื่อ '+new Date().toLocaleString('th-TH')}
+function importJSON(e){
+ let f=e.target.files[0]; if(!f) return; let r=new FileReader(); r.onload=()=>{
+  try{
+   let x=JSON.parse(r.result),d=x.data||x;
+   if(!d.employees||!d.visitors) throw Error('ไฟล์ไม่ถูกต้อง');
+   // ลบ backup เก่าก่อนเพื่อไม่ให้เต็ม
+   try{
+     Object.keys(localStorage).filter(k=>k.startsWith('factory_guard_backup_')).forEach(k=>localStorage.removeItem(k));
+   }catch(e){}
+   // สำรองข้อมูลเดิมก่อนแทนที่ (พยายาม)
+   let backupKey='factory_guard_backup_'+Date.now(); 
+   try{ localStorage.setItem(backupKey, localStorage.getItem('factory_guard_v6')||''); }catch(err){ console.warn('backup quota full, skip'); }
+   db.backups=db.backups||[]; db.backups.unshift({key:backupKey,at:new Date().toLocaleString('th-TH')}); if(db.backups.length>10) db.backups.pop();
+   if(!confirm('จะแทนที่ข้อมูลปัจจุบันด้วยไฟล์ที่เลือก?')) return;
+   db={...emptyDB(),...d, backups:db.backups}; 
+   if(!d.users) db.users=emptyDB().users;
+   persist(false); alert('นำเข้าสำเร็จ');
+  }catch(err){alert('นำเข้าไม่ได้: '+err.message)}
+ }; r.readAsText(f); e.target.value='';
+}
+function renderBackups(){
+ let cont=document.getElementById('backupList'); if(!cont) return;
+ let keys=Object.keys(localStorage).filter(k=>k.startsWith('factory_guard_backup_')).sort().reverse().slice(0,10);
+ cont.innerHTML=`${keys.map(k=>`<div style="font-size:10px;display:flex;justify-content:space-between;padding:3px;border-bottom:1px solid #eee"><span>${k.slice(-19)} - ${new Date(parseInt(k.split('_').pop())).toLocaleString('th-TH')}</span><button class="btn secondary" style="padding:2px 6px;font-size:9px" onclick="restoreBackup('${k}')">กู้คืน</button></div>`).join('')||'<span class="small">ยังไม่มีสำรองอัตโนมัติ</span>'}`;
+}
+function restoreBackup(key){if(!confirm('กู้คืนข้อมูลจาก '+key+' ?')) return; try{let s=localStorage.getItem(key); if(!s) return alert('ไม่พบข้อมูล'); let o=JSON.parse(s); let d=o.data||o; db={...emptyDB(),...d, backups:db.backups}; persist(); alert('กู้คืนแล้ว')}catch(e){alert('กู้คืนไม่ได้')}} 
+function clearAll(){
+ let confirmText = document.getElementById('clearConfirm') ? document.getElementById('clearConfirm').value.trim() : '';
+ if(confirmText !== 'ล้างข้อมูล'){ return alert('พิมพ์คำว่า ล้างข้อมูล ในช่องก่อน'); }
+ if(!isAdmin()){
+   if(!confirm('คุณไม่ใช่ Admin (ปัจจุบัน: '+(currentUser?roleLabel(currentUser.role):'ไม่ทราบ')+') ต้องการล้างข้อมูลต่อหรือไม่?')) return;
+ } else {
+   if(!confirm('ยืนยันลบทั้งหมด? ระบบจะพยายามสำรองก่อนลบ (ถ้าพื้นที่เต็มจะข้ามสำรอง)')) return;
+ }
+ try{
+   // 1. ลบ backup เก่าทั้งหมดก่อนเพื่อเพิ่มพื้นที่ว่าง แก้ exceeded quota
+   let oldBackups = Object.keys(localStorage).filter(k=>k.startsWith('factory_guard_backup_'));
+   oldBackups.forEach(k=>{ try{localStorage.removeItem(k);}catch(e){} });
+   // 2. พยายามสำรอง แต่ถ้าเต็มให้ข้าม
+   let backupKey='factory_guard_backup_'+Date.now();
+   let currentData = localStorage.getItem('factory_guard_v6');
+   if(currentData){
+     try{
+       localStorage.setItem(backupKey, currentData);
+     }catch(err){
+       console.warn('Backup failed quota, will clear without backup', err);
+       alert('พื้นที่เต็ม ไม่สามารถสำรองได้ จะล้างข้อมูลเลย\nสาเหตุ: '+err.message);
+     }
+   }
+   // 3. ลบข้อมูลหลัก
+   Object.keys(localStorage).forEach(k=>{
+     if(k.startsWith('factory_guard_v') && !k.startsWith('factory_guard_backup_')){
+       try{localStorage.removeItem(k);}catch(e){}
+     }
+   });
+   localStorage.removeItem('factory_guard_current_user');
+   db=emptyDB();
+   currentUser=db.users[0];
+   // บันทึก db ว่าง (ไม่สำรองซ้ำ)
+   try{ localStorage.setItem('factory_guard_v6', JSON.stringify({version:6,data:db})); }catch(e){}
+   let el=document.getElementById('clearConfirm');
+   if(el) el.value='';
+   alert('ล้างข้อมูลสำเร็จแล้ว กำลังรีโหลด...');
+   location.reload();
+ }catch(e){ 
+   // ถ้ายัง error อีก ให้ force clear
+   try{
+     localStorage.clear();
+     alert('ล้างแบบ Force Clear สำเร็จ (ลบ LocalStorage ทั้งหมด) กำลังรีโหลด');
+     location.reload();
+   }catch(e2){
+     alert('ล้างไม่ได้: '+e.message+' / '+e2.message);
+   }
+   console.error(e);
+ }
+}
+function hideV6Notice(){
+  let el=document.getElementById('v6Notice');
+  if(el) el.style.display='none';
+  localStorage.setItem('factory_guard_hide_notice','1');
+}
+function toggleV6Notice(){
+  let el=document.getElementById('v6Notice');
+  if(!el) return;
+  if(el.style.display==='none'){
+    el.style.display='block';
+    localStorage.removeItem('factory_guard_hide_notice');
+  }else{
+    el.style.display='none';
+    localStorage.setItem('factory_guard_hide_notice','1');
+  }
+}
+function checkNoticePref(){
+  try{
+    // v8: ซ่อนถาวรโดย default ถ้าไม่เคยตั้งค่า
+    if(localStorage.getItem('factory_guard_hide_notice')===null){
+      // default hide big box
+      localStorage.setItem('factory_guard_hide_notice','1');
+    }
+    if(localStorage.getItem('factory_guard_hide_notice')==='1'){
+      let el=document.getElementById('v6Notice');
+      if(el) el.style.display='none';
+    }
+  }catch(e){}
+}
+function saveCustomTitle(){
+  let t=document.getElementById('customTitle')?document.getElementById('customTitle').value.trim():'';
+  let st=document.getElementById('customSubTitle')?document.getElementById('customSubTitle').value.trim():'';
+  if(t) localStorage.setItem('factory_guard_custom_title', t);
+  if(st) localStorage.setItem('factory_guard_custom_subtitle', st);
+  applyCustomTitle();
+  alert('บันทึกชื่อระบบแล้ว');
+}
+function resetCustomTitle(){
+  localStorage.removeItem('factory_guard_custom_title');
+  localStorage.removeItem('factory_guard_custom_subtitle');
+  document.getElementById('customTitle').value='';
+  document.getElementById('customSubTitle').value='';
+  applyCustomTitle();
+  alert('รีเซ็ตแล้ว');
+}
+function applyCustomTitle(){
+  try{
+    let t=localStorage.getItem('factory_guard_custom_title');
+    let st=localStorage.getItem('factory_guard_custom_subtitle');
+    if(t){ let el=document.getElementById('mainTitle'); if(el) el.textContent=t; let inp=document.getElementById('customTitle'); if(inp && !inp.value) inp.value=t; }
+    if(st){ let el=document.getElementById('mainSubTitle'); if(el) el.textContent=st; let inp=document.getElementById('customSubTitle'); if(inp && !inp.value) inp.value=st; }
+    // also fill inputs if empty
+    let ct=document.getElementById('customTitle');
+    let cst=document.getElementById('customSubTitle');
+    if(ct && !ct.value) ct.value=localStorage.getItem('factory_guard_custom_title')||'';
+    if(cst && !cst.value) cst.value=localStorage.getItem('factory_guard_custom_subtitle')||'';
+  }catch(e){}
+}
+
+
+
+let scannerStream=null, scanLoop=null;
+async function startScan(){if(!('BarcodeDetector' in window)){document.getElementById('scanStatus').textContent='เบราว์เซอร์ไม่รองรับ'; return} try{let det=new BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13']}); let video=document.getElementById('scanner'); scannerStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}); video.srcObject=scannerStream; video.style.display='block'; await video.play(); document.getElementById('scanStatus').textContent='กำลังสแกน...'; async function tick(){if(!scannerStream) return; try{let codes=await det.detect(video); if(codes.length){document.getElementById('patrolCode').value=codes[0].rawValue; document.getElementById('scanStatus').textContent='อ่านได้: '+codes[0].rawValue; stopScan(); return}}catch(e){} scanLoop=requestAnimationFrame(tick)} tick()}catch(e){document.getElementById('scanStatus').textContent='เปิดกล้องไม่ได้'}}
+function stopScan(){if(scanLoop) cancelAnimationFrame(scanLoop); if(scannerStream){scannerStream.getTracks().forEach(t=>t.stop()); scannerStream=null} let v=document.getElementById('scanner'); v.pause(); v.srcObject=null; v.style.display='none'}
+
+ // Init robust
+ try{ let saved=localStorage.getItem('factory_guard_current_user'); if(saved) currentUser=JSON.parse(saved); else currentUser=db.users[0]; }catch(e){ currentUser=db.users[0]; }
+ function safe(fn){try{fn()}catch(err){console.error(err)}}
+ safe(()=>updateStats()); safe(()=>updateDash()); safe(()=>renderGuardShiftPointLists()); safe(()=>renderRoster()); safe(()=>renderRecords()); safe(()=>updateRosterSummary()); safe(()=>renderUsers()); safe(()=>renderGoodsPending()); safe(()=>renderBackups()); safe(()=>updateGoodsLabels()); safe(()=>checkNoticePref()); safe(()=>applyCustomTitle());
+
+</script>
+</body>
+</html>
