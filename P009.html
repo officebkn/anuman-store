@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบสต็อกวัสดุ/พัสดุครบวงจร</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>*{font-family:'Sarabun',sans-serif} .thumb{width:40px;height:40px;object-fit:cover;border-radius:6px}</style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<div id="app" class="max-w-[1400px] mx-auto p-3 md:p-6">
+<header class="bg-white rounded-xl shadow p-4 flex flex-wrap justify-between items-center gap-3">
+<div class="flex items-center gap-3">
+<img id="logoImg" class="w-12 h-12 rounded-lg object-cover border hidden" onerror="handleImgError(this)">
+<div>
+<h1 id="editableTitle" contenteditable="true" class="text-xl md:text-2xl font-bold text-slate-800 outline-dashed outline-1 outline-transparent hover:outline-blue-400 rounded px-1 transition" title="คลิกเพื่อแก้ไขชื่อหัวข้อ">ระบบบริหารวัสดุ/พัสดุยืดหยุ่น ครบวงจร</h1>
+<p id="editableSub" contenteditable="true" class="text-xs text-slate-500 outline-dashed outline-1 outline-transparent hover:outline-blue-400 rounded px-1 transition" title="คลิกเพื่อแก้ไขคำอธิบาย">รูปภาพ • กราฟ • QR/บาร์โค้ด • ลายเซ็น • แจ้งเตือน • โลโก้ • พิมพ์เอกสาร + ค้นหาทุกช่อง รับ/จ่าย/ยืม</p>
+</div>
+</div>
+<div class="flex flex-wrap gap-2">
+<label class="px-3 py-2 bg-slate-100 rounded-lg text-sm cursor-pointer hover:bg-slate-200">🖼️ โลโก้<input type="file" id="logoUpload" accept="image/*" class="hidden"></label>
+<button onclick="importExcel()" class="px-3 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-sm hover:bg-emerald-100">📥 นำเข้า Excel</button>
+<button onclick="exportExcel()" class="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">📤 ส่งออก Excel</button>
+<button onclick="exportData()" class="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm hover:bg-indigo-100">💾 สำรอง JSON</button>
+<button onclick="clearAllHard()" class="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm hover:bg-red-100">🗑️ ล้างทั้งหมด</button>
+</div>
+</header>
+
+<div id="expiredBanner" class="hidden mt-3 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-xl text-sm"></div>
+<nav class="mt-4 bg-white rounded-xl shadow p-2 flex flex-wrap gap-1">
+<button data-tab="stock" class="tabBtn px-4 py-2 rounded-lg bg-blue-600 text-white">📦 สต็อกคงเหลือ</button>
+<button data-tab="master" class="tabBtn px-4 py-2 rounded-lg hover:bg-slate-100">📚 คลังวัสดุ/พัสดุ</button>
+<button data-tab="receive" class="tabBtn px-4 py-2 rounded-lg hover:bg-slate-100">📥 รับวัสดุ/พัสดุ</button>
+<button data-tab="issue" class="tabBtn px-4 py-2 rounded-lg hover:bg-slate-100">📤 เบิกจ่าย</button>
+<button data-tab="borrow" class="tabBtn px-4 py-2 rounded-lg hover:bg-slate-100">🤝 ยืม-คืน</button>
+<button data-tab="alert" class="tabBtn px-4 py-2 rounded-lg hover:bg-slate-100">⚠️ แจ้งเตือน</button>
+<button data-tab="report" class="tabBtn px-4 py-2 rounded-lg hover:bg-slate-100">📊 รายงานสรุป</button>
+</nav>
+
+<!-- STOCK -->
+<div id="tab-stock" class="tabPane mt-4">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+<div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-slate-500">มูลค่ารวม</div><div id="sumVal" class="text-xl font-bold text-blue-700">0 ฿</div></div>
+<div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-slate-500">รายการทั้งหมด</div><div id="sumItems" class="text-xl font-bold">0</div></div>
+<div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-slate-500">ต่ำกว่าเกณฑ์</div><div id="sumLow" class="text-xl font-bold text-amber-600">0</div></div>
+<div class="bg-white p-4 rounded-xl shadow"><div class="text-xs text-slate-500">ยืมค้าง</div><div id="sumBorrow" class="text-xl font-bold text-red-600">0</div></div>
+</div>
+<div class="mt-4 bg-white p-4 rounded-xl shadow flex flex-wrap gap-2">
+<input id="searchStock" placeholder="🔍 ค้นหาทุกช่อง: รหัส / ชื่อ / หมวดหมู่ / ที่เก็บ" class="flex-1 min-w-[260px] px-4 py-2.5 border rounded-lg">
+<select id="filterCat" class="px-3 py-2.5 border rounded-lg"><option value="">ทุกหมวดหมู่</option></select>
+<select id="filterStatus" class="px-3 py-2.5 border rounded-lg"><option value="">ทุกสถานะ</option><option>ปกติ</option><option>ต่ำ</option><option>หมด</option></select>
+<button onclick="clearFilterStock()" class="px-3 py-2 bg-slate-100 rounded-lg">🧹 ล้าง</button>
+<button onclick="downloadStockReport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg">📄 ดาวน์โหลดรายงาน HTML (มีปุ่มพิมพ์)</button>
+</div>
+<div class="mt-4 bg-white rounded-xl shadow overflow-auto">
+<table class="w-full text-sm"><thead class="bg-slate-800 text-white"><tr><th class="p-2">รูป</th><th class="p-2">รหัส</th><th class="p-2">ชื่อ</th><th class="p-2">หมวดหมู่</th><th class="p-2">รับรวม</th><th class="p-2">เบิกรวม</th><th class="p-2">ยืมค้าง</th><th class="p-2">คงเหลือ</th><th class="p-2">ราคา</th><th class="p-2">มูลค่า</th><th class="p-2">QR</th><th class="p-2">สถานะ</th></tr></thead><tbody id="stockBody"></tbody><tfoot><tr class="bg-blue-50 font-bold"><td colspan="4" class="p-2 text-center">รวมตามที่กรอง</td><td id="fIn" class="p-2 text-center">0</td><td id="fOut" class="p-2 text-center">0</td><td id="fBor" class="p-2 text-center">0</td><td id="fBal" class="p-2 text-center">0</td><td class="p-2"></td><td id="fVal" class="p-2 text-center">0</td><td colspan="2"></td></tr></tfoot></table>
+</div>
+</div>
+
+<!-- MASTER -->
+<div id="tab-master" class="tabPane mt-4 hidden">
+<div class="bg-white p-4 rounded-xl shadow">
+<div class="flex flex-wrap gap-2 mb-3">
+<input id="searchMaster" placeholder="🔍 ค้นหาทุกช่องในคลัง: รหัส / ชื่อ / หมวดหมู่ / ที่เก็บ" class="flex-1 min-w-[300px] px-4 py-2.5 border rounded-lg">
+<button onclick="clearMaster()" class="px-3 py-2 bg-red-50 text-red-600 rounded-lg">🗑️ ล้างคลัง</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-6 gap-2 mb-3">
+<input id="mCode" placeholder="รหัส P00X" class="px-3 py-2 border rounded-lg">
+<input id="mName" placeholder="ชื่อวัสดุ/พัสดุ" class="px-3 py-2 border rounded-lg md:col-span-2">
+<input id="mCat" placeholder="หมวดหมู่" list="listCat" class="px-3 py-2 border rounded-lg">
+<input id="mUnit" placeholder="หน่วย" list="listUnit" class="px-3 py-2 border rounded-lg">
+<input id="mMin" type="number" placeholder="ขั้นต่ำ" class="px-3 py-2 border rounded-lg">
+<input id="mPrice" type="number" placeholder="ราคา" class="px-3 py-2 border rounded-lg">
+<input id="mLoc" placeholder="ที่เก็บ" list="listLoc" class="px-3 py-2 border rounded-lg">
+<input id="mImg" type="file" accept="image/*" class="px-3 py-2 border rounded-lg md:col-span-2">
+<button onclick="addMaster()" class="px-4 py-2 bg-blue-600 text-white rounded-lg md:col-span-2">➕ เพิ่มวัสดุ/พัสดุ</button>
+</div>
+<div class="overflow-auto"><table class="w-full text-sm"><thead class="bg-slate-800 text-white"><tr><th class="p-2">รูป</th><th class="p-2">รหัส</th><th class="p-2">ชื่อ</th><th class="p-2">หมวดหมู่</th><th class="p-2">หน่วย</th><th class="p-2">ขั้นต่ำ</th><th class="p-2">ราคา</th><th class="p-2">ที่เก็บ</th><th class="p-2">QR</th><th class="p-2">ลบ</th></tr></thead><tbody id="masterBody"></tbody></table></div>
+</div>
+</div>
+
+<!-- RECEIVE -->
+<div id="tab-receive" class="tabPane mt-4 hidden">
+<div class="bg-white p-4 rounded-xl shadow">
+<div class="flex flex-wrap gap-2 mb-3">
+<input id="searchReceive" placeholder="🔍 ค้นหาทุกช่องในรับ: ผู้ส่ง / เลขที่ใบส่งของ / รหัส / ชื่อ / วันที่ / ผู้รับ" class="flex-1 min-w-[350px] px-4 py-2.5 border-2 border-blue-200 rounded-lg bg-blue-50/50">
+<button onclick="clearReceive()" class="px-3 py-2 bg-red-50 text-red-600 rounded-lg">🗑️ ล้างประวัติรับ</button>
+<button onclick="downloadReceiveDoc()" class="px-4 py-2 bg-blue-600 text-white rounded-lg">📄 ดาวน์โหลดใบรับ HTML (มีปุ่มพิมพ์+ลายเซ็น)</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-7 gap-2 mb-3">
+<input id="rSender" placeholder="ผู้ส่งของ" class="px-3 py-2 border rounded-lg">
+<input id="rDocNo" placeholder="เลขที่ใบส่งของ" class="px-3 py-2 border rounded-lg">
+<input id="rDate" type="date" class="px-3 py-2 border rounded-lg">
+<select id="rCodeSel" class="px-3 py-2 border rounded-lg"></select>
+<input id="rQty" type="number" placeholder="จำนวน" class="px-3 py-2 border rounded-lg">
+<input id="rReceiver" placeholder="ผู้รับ" class="px-3 py-2 border rounded-lg">
+<button onclick="addReceiveItem()" class="px-4 py-2 bg-green-600 text-white rounded-lg">➕ เพิ่มลงตะกร้า</button>
+</div>
+
+<!-- ตะกร้ารับ -->
+<div class="border-2 border-green-200 rounded-xl p-3 mb-3 bg-green-50/50">
+<div class="flex justify-between items-center">
+<div class="font-bold">🧺 ตะกร้ารับเข้า (บิล: <span id="rCartDocNo" class="text-green-700"></span>) - <span id="rCartCount">0</span> รายการ</div>
+<div class="flex gap-2">
+<button onclick="saveReceiveBill()" class="px-4 py-2 bg-green-600 text-white rounded-lg">💾 บันทึกทั้งบิล</button>
+<button onclick="clearReceiveCart()" class="px-3 py-2 bg-slate-200 rounded-lg">ล้างตะกร้า</button>
+</div>
+</div>
+<table class="w-full text-sm border mt-2 bg-white rounded">
+<thead class="bg-green-100"><tr><th class="p-2">รหัส</th><th class="p-2">ชื่อวัสดุ/พัสดุ</th><th class="p-2">จำนวน</th><th class="p-2">ราคา</th><th class="p-2">ลบ</th></tr></thead>
+<tbody id="rCartBody"></tbody>
+</table>
+</div>
+
+<div class="overflow-auto"><table class="w-full text-sm"><thead class="bg-green-700 text-white"><tr><th class="p-2">เลขที่ใบส่ง</th><th class="p-2">วันที่</th><th class="p-2">ผู้ส่ง</th><th class="p-2">รหัส</th><th class="p-2">ชื่อ</th><th class="p-2">จำนวน</th><th class="p-2">ราคา</th><th class="p-2">ผู้รับ</th><th class="p-2">ลบแถว / ลบบิล</th></tr></thead><tbody id="receiveBody"></tbody></table></div>
+</div>
+</div>
+
+
+<!-- ISSUE -->
+<div id="tab-issue" class="tabPane mt-4 hidden">
+<div class="bg-white p-4 rounded-xl shadow">
+<div class="flex flex-wrap gap-2 mb-3">
+<input id="searchIssue" placeholder="🔍 ค้นหาทุกช่องในเบิกจ่าย: ผู้เบิก / เลขที่ใบเบิก / แผนก / รหัส / ชื่อ / ผู้อนุมัติ" class="flex-1 min-w-[350px] px-4 py-2.5 border-2 border-orange-200 rounded-lg bg-orange-50/50">
+<button onclick="clearIssue()" class="px-3 py-2 bg-red-50 text-red-600 rounded-lg">🗑️ ล้างประวัติเบิก</button>
+<button onclick="downloadIssueDoc()" class="px-4 py-2 bg-orange-600 text-white rounded-lg">📄 ดาวน์โหลดใบเบิก HTML (มีปุ่มพิมพ์+ลายเซ็น)</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-7 gap-2 mb-3">
+<input id="iDocNo" placeholder="เลขที่ใบเบิก" class="px-3 py-2 border rounded-lg">
+<input id="iName" placeholder="ผู้เบิก" class="px-3 py-2 border rounded-lg">
+<input id="iDept" placeholder="แผนก" class="px-3 py-2 border rounded-lg">
+<input id="iDate" type="date" class="px-3 py-2 border rounded-lg">
+<select id="iCodeSel" class="px-3 py-2 border rounded-lg"></select>
+<input id="iQty" type="number" placeholder="จำนวน" class="px-3 py-2 border rounded-lg">
+<input id="iApprover" placeholder="ผู้อนุมัติ" class="px-3 py-2 border rounded-lg">
+</div>
+<div class="flex gap-2 mb-3">
+<button onclick="addIssueItem()" class="px-4 py-2 bg-blue-600 text-white rounded-lg">➕ เพิ่มลงตะกร้า</button>
+</div>
+
+<!-- ตะกร้าเบิก -->
+<div class="border-2 border-orange-200 rounded-xl p-3 mb-3 bg-orange-50/50">
+<div class="flex justify-between items-center">
+<div class="font-bold">🧺 ตะกร้าเบิก (บิล: <span id="iCartDocNo" class="text-orange-700"></span>) - <span id="iCartCount">0</span> รายการ</div>
+<div class="flex gap-2">
+<button onclick="saveIssueBill()" class="px-4 py-2 bg-orange-600 text-white rounded-lg">💾 บันทึกทั้งบิล</button>
+<button onclick="clearIssueCart()" class="px-3 py-2 bg-slate-200 rounded-lg">ล้างตะกร้า</button>
+</div>
+</div>
+<table class="w-full text-sm border mt-2 bg-white rounded">
+<thead class="bg-orange-100"><tr><th class="p-2">รหัส</th><th class="p-2">ชื่อวัสดุ/พัสดุ</th><th class="p-2">จำนวน</th><th class="p-2">คงเหลือ</th><th class="p-2">ลบ</th></tr></thead>
+<tbody id="iCartBody"></tbody>
+</table>
+</div>
+
+<div class="overflow-auto"><table class="w-full text-sm"><thead class="bg-orange-600 text-white"><tr><th class="p-2">เลขที่ใบเบิก</th><th class="p-2">วันที่</th><th class="p-2">ผู้เบิก</th><th class="p-2">แผนก</th><th class="p-2">รหัส</th><th class="p-2">ชื่อ</th><th class="p-2">จำนวน</th><th class="p-2">ผู้อนุมัติ</th><th class="p-2">ลบแถว / ลบบิล</th></tr></thead><tbody id="issueBody"></tbody></table></div>
+</div>
+</div>
+
+
+<!-- BORROW -->
+<div id="tab-borrow" class="tabPane mt-4 hidden">
+<div class="bg-white p-4 rounded-xl shadow">
+<div class="flex flex-wrap gap-2 mb-3">
+<input id="searchBorrow" placeholder="🔍 ค้นหาทุกช่องในยืม: ผู้ยืม / เลขที่ใบยืม / รหัส / ชื่อ / กำหนดคืน / สถานะ" class="flex-1 min-w-[350px] px-4 py-2.5 border-2 border-purple-200 rounded-lg bg-purple-50/50">
+<button onclick="clearBorrow()" class="px-3 py-2 bg-red-50 text-red-600 rounded-lg">🗑️ ล้างประวัติยืม</button>
+<button onclick="downloadBorrowDoc()" class="px-4 py-2 bg-purple-600 text-white rounded-lg">📄 ดาวน์โหลดใบยืม HTML (มีปุ่มพิมพ์+ลายเซ็น+เกินกำหนด)</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-8 gap-2 mb-3">
+<input id="bDocNo" placeholder="เลขที่ใบยืม" class="px-3 py-2 border rounded-lg">
+<input id="bName" placeholder="ผู้ยืม" class="px-3 py-2 border rounded-lg">
+<input id="bDate" type="date" class="px-3 py-2 border rounded-lg">
+<input id="bDue" type="date" class="px-3 py-2 border rounded-lg">
+<select id="bCodeSel" class="px-3 py-2 border rounded-lg"></select>
+<input id="bQty" type="number" placeholder="จำนวน" class="px-3 py-2 border rounded-lg">
+<input id="bApprover" placeholder="ผู้อนุมัติยืม" class="px-3 py-2 border rounded-lg">
+<button onclick="addBorrow()" class="px-4 py-2 bg-purple-600 text-white rounded-lg">➕ บันทึกยืม</button>
+</div>
+<div class="overflow-auto"><table class="w-full text-sm"><thead class="bg-purple-700 text-white"><tr><th class="p-2">เลขที่ใบยืม</th><th class="p-2">ผู้ยืม</th><th class="p-2">รหัส</th><th class="p-2">ชื่อ</th><th class="p-2">จำนวน</th><th class="p-2">วันที่ยืม</th><th class="p-2">กำหนดคืน</th><th class="p-2">เกินกำหนด</th><th class="p-2">สถานะ</th><th class="p-2">คืน</th><th class="p-2">ลบ</th></tr></thead><tbody id="borrowBody"></tbody></table></div>
+</div>
+</div>
+
+<!-- ALERT -->
+<div id="tab-alert" class="tabPane mt-4 hidden">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="bg-white p-4 rounded-xl shadow"><h3 class="font-bold text-amber-700 mb-2">⚠️ ต่ำกว่าเกณฑ์</h3><div id="lowList"></div></div>
+<div class="bg-white p-4 rounded-xl shadow"><h3 class="font-bold text-red-700 mb-2">⏰ ยืมเกินกำหนด</h3><div id="overdueList"></div></div>
+</div>
+</div>
+
+<!-- REPORT -->
+<div id="tab-report" class="tabPane mt-4 hidden">
+<div class="bg-white p-4 rounded-xl shadow">
+<h3 class="font-bold mb-3">📊 กราฟสรุป</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><canvas id="barChart"></canvas></div><div><canvas id="pieChart"></canvas></div></div>
+<div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+<input id="sign1" placeholder="ผู้จัดทำ" class="px-3 py-2 border rounded-lg">
+<input id="sign2" placeholder="หัวหน้าวัสดุ/พัสดุ" class="px-3 py-2 border rounded-lg">
+<input id="sign3" placeholder="ผู้อนุมัติ" class="px-3 py-2 border rounded-lg">
+</div>
+<button onclick="downloadSummaryReport()" class="mt-3 px-6 py-3 bg-indigo-600 text-white rounded-lg">📄 ดาวน์โหลดรายงานสรุป HTML พร้อมโลโก้ + กราฟ + ลายเซ็น (มีปุ่มพิมพ์)</button>
+</div>
+</div>
+</div>
+
+<!-- Datalist สำหรับระบบแนะนำคำเก่า -->
+<datalist id="listCat"></datalist>
+<datalist id="listUnit"></datalist>
+<datalist id="listLoc"></datalist>
+
+<div id="qrModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50"><div class="bg-white p-6 rounded-xl text-center"><h3 id="qrTitle" class="font-bold mb-2"></h3><img id="qrImg" class="mx-auto mb-3"><div id="qrBar" class="font-mono text-lg tracking-widest"></div><button onclick="closeQR()" class="mt-4 px-4 py-2 bg-slate-200 rounded-lg">ปิด</button></div></div>
+<input type="file" id="importFile" accept=".json,.csv" class="hidden">
+<input type="file" id="importExcelFile" accept=".xlsx,.xls,.csv" class="hidden">
+
+<script>
+let master=[], receive=[], issue=[], borrow=[], logoBase64='';
+const LS_M='v8Master', LS_R='v8Receive', LS_I='v8Issue', LS_B='v8Borrow', LS_LOGO='v8Logo', LS_SIGN='v8Sign', LS_HEADER='v8HeaderText';
+function init(){
+ master=JSON.parse(localStorage.getItem(LS_M)||'[]');
+ receive=JSON.parse(localStorage.getItem(LS_R)||'[]');
+ issue=JSON.parse(localStorage.getItem(LS_I)||'[]');
+ borrow=JSON.parse(localStorage.getItem(LS_B)||'[]');
+ logoBase64=localStorage.getItem(LS_LOGO)||'';
+ let signs=JSON.parse(localStorage.getItem(LS_SIGN)||'{}');
+ document.getElementById('sign1').value=signs.s1||''; document.getElementById('sign2').value=signs.s2||''; document.getElementById('sign3').value=signs.s3||'';
+ if(logoBase64){ document.getElementById('logoImg').src=logoBase64; document.getElementById('logoImg').classList.remove('hidden'); }
+ 
+ // โหลดหัวข้อที่เคยแก้ไว้
+ let savedHeader = JSON.parse(localStorage.getItem(LS_HEADER)||'{}');
+ if(savedHeader.title) document.getElementById('editableTitle').textContent = savedHeader.title;
+ if(savedHeader.sub) document.getElementById('editableSub').textContent = savedHeader.sub;
+
+ bindEvents(); renderAll();
+}
+function bindEvents(){
+ document.querySelectorAll('.tabBtn').forEach(btn=>{ btn.addEventListener('click', ()=>{ document.querySelectorAll('.tabBtn').forEach(b=>b.className='tabBtn px-4 py-2 rounded-lg hover:bg-slate-100'); btn.className='tabBtn px-4 py-2 rounded-lg bg-blue-600 text-white'; document.querySelectorAll('.tabPane').forEach(p=>p.classList.add('hidden')); document.getElementById('tab-'+btn.dataset.tab).classList.remove('hidden'); if(btn.dataset.tab==='report') drawCharts(); }) });
+ document.getElementById('searchStock').addEventListener('input', renderStock);
+ document.getElementById('filterCat').addEventListener('change', renderStock);
+ document.getElementById('filterStatus').addEventListener('change', renderStock);
+ document.getElementById('searchMaster').addEventListener('input', renderMaster);
+ document.getElementById('searchReceive').addEventListener('input', renderReceive);
+ document.getElementById('searchIssue').addEventListener('input', renderIssue);
+ document.getElementById('searchBorrow').addEventListener('input', renderBorrow);
+ document.getElementById('logoUpload').addEventListener('change', e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ logoBase64=r.result; localStorage.setItem(LS_LOGO, logoBase64); document.getElementById('logoImg').src=logoBase64; document.getElementById('logoImg').classList.remove('hidden'); }; r.readAsDataURL(f); });
+ document.getElementById('sign1').addEventListener('input', saveSign); document.getElementById('sign2').addEventListener('input', saveSign); document.getElementById('sign3').addEventListener('input', saveSign);
+ document.getElementById('importFile').addEventListener('change', handleImport);
+ document.getElementById('importExcelFile').addEventListener('change', handleExcelImport);
+
+ // บันทึกหัวข้ออัตโนมัติเมื่อมีการแก้ไข
+ document.getElementById('editableTitle').addEventListener('blur', saveHeaderText);
+ document.getElementById('editableSub').addEventListener('blur', saveHeaderText);
+}
+function saveHeaderText(){
+  const title = document.getElementById('editableTitle').textContent;
+  const sub = document.getElementById('editableSub').textContent;
+  localStorage.setItem(LS_HEADER, JSON.stringify({title, sub}));
+}
+function saveSign(){ localStorage.setItem(LS_SIGN, JSON.stringify({s1:document.getElementById('sign1').value, s2:document.getElementById('sign2').value, s3:document.getElementById('sign3').value})); }
+function saveAll(){ localStorage.setItem(LS_M, JSON.stringify(master)); localStorage.setItem(LS_R, JSON.stringify(receive)); localStorage.setItem(LS_I, JSON.stringify(issue)); localStorage.setItem(LS_B, JSON.stringify(borrow)); updateDatalists(); }
+function renderAll(){ renderMaster(); renderStock(); renderReceive(); renderIssue(); renderBorrow(); renderAlert(); updateCatFilter(); updateCodeSels(); updateDatalists(); }
+
+function updateDatalists(){
+  const cats = [...new Set(master.map(m=>m.cat).filter(Boolean))];
+  const units = [...new Set(master.map(m=>m.unit).filter(Boolean))];
+  const locs = [...new Set(master.map(m=>m.loc).filter(Boolean))];
+  document.getElementById('listCat').innerHTML = cats.map(c=>`<option value="${c}">`).join('');
+  document.getElementById('listUnit').innerHTML = units.map(u=>`<option value="${u}">`).join('');
+  document.getElementById('listLoc').innerHTML = locs.map(l=>`<option value="${l}">`).join('');
+}
+
+function updateCatFilter(){ const cats=[...new Set(master.map(m=>m.cat).filter(Boolean))]; const sel=document.getElementById('filterCat'); sel.innerHTML='<option value="">ทุกหมวดหมู่</option>'+cats.map(c=>`<option>${c}</option>`).join(''); }
+function updateCodeSels(){ const opts=master.map(m=>`<option value="${m.code}">${m.code} - ${m.name}</option>`).join(''); document.getElementById('rCodeSel').innerHTML='<option value="">เลือกรหัส</option>'+opts; document.getElementById('iCodeSel').innerHTML='<option value="">เลือกรหัส</option>'+opts; document.getElementById('bCodeSel').innerHTML='<option value="">เลือกรหัส</option>'+opts; }
+
+function addMaster(){
+ const code=document.getElementById('mCode').value.trim(); const name=document.getElementById('mName').value.trim(); if(!code||!name) return toast('ใส่รหัสและชื่อ');
+ const file=document.getElementById('mImg').files[0];
+ const obj={code, name, cat:document.getElementById('mCat').value, unit:document.getElementById('mUnit').value, min:parseInt(document.getElementById('mMin').value)||0, price:parseFloat(document.getElementById('mPrice').value)||0, loc:document.getElementById('mLoc').value, img:''};
+ const done=()=>{ master.push(obj); saveAll(); renderAll(); ['mCode','mName','mCat','mUnit','mMin','mPrice','mLoc'].forEach(id=>document.getElementById(id).value=''); document.getElementById('mImg').value=''; toast('เพิ่มแล้ว'); };
+ if(file){ const r=new FileReader(); r.onload=()=>{ obj.img=r.result; done(); }; r.readAsDataURL(file); } else done();
+}
+function renderMaster(){
+ const q=document.getElementById('searchMaster').value.toLowerCase();
+ const tbody=document.getElementById('masterBody'); tbody.innerHTML='';
+ master.filter(m=> !q || `${m.code} ${m.name} ${m.cat} ${m.unit} ${m.loc}`.toLowerCase().includes(q)).forEach(m=>{
+   tbody.innerHTML+=`<tr class="border-b"><td class="p-2">${m.img?`<img src="${m.img}" class="thumb" onerror="handleImgError(this)">`:''}</td><td class="p-2">${m.code}</td><td class="p-2">${m.name}</td><td class="p-2">${m.cat}</td><td class="p-2">${m.unit}</td><td class="p-2">${m.min}</td><td class="p-2">${m.price}</td><td class="p-2">${m.loc}</td><td class="p-2"><button onclick="showQR('${m.code}')" class="px-2 py-1 bg-slate-100 rounded">QR</button></td><td class="p-2"><button onclick="master=master.filter(x=>x.code!=='${m.code}');saveAll();renderAll()" class="text-red-600">ลบ</button></td></tr>`;
+ });
+}
+function getStockCalc(){
+ return master.map(m=>{
+  const rIn=receive.filter(r=>r.code===m.code).reduce((s,x)=>s+Number(x.qty||0),0);
+  const rOut=issue.filter(i=>i.code===m.code).reduce((s,x)=>s+Number(x.qty||0),0);
+  const rBor=borrow.filter(b=>b.code===m.code && b.status!=='คืนแล้ว').reduce((s,x)=>s+Number(x.qty||0),0);
+  const bal=rIn - rOut - rBor;
+  return {...m, in:rIn, out:rOut, bor:rBor, bal, val:bal*m.price, status: bal<=0?'หมด': bal<=m.min?'ต่ำ':'ปกติ'};
+ });
+}
+function renderStock(){
+ const q=document.getElementById('searchStock').value.toLowerCase();
+ const cat=document.getElementById('filterCat').value;
+ const st=document.getElementById('filterStatus').value;
+ const data=getStockCalc().filter(d=> !q || `${d.code} ${d.name} ${d.cat} ${d.loc}`.toLowerCase().includes(q)).filter(d=>!cat||d.cat===cat).filter(d=>!st||d.status===st);
+ const tbody=document.getElementById('stockBody'); tbody.innerHTML=''; let sIn=0,sOut=0,sBor=0,sBal=0,sVal=0;
+ data.forEach(d=>{ sIn+=d.in; sOut+=d.out; sBor+=d.bor; sBal+=d.bal; sVal+=d.val; tbody.innerHTML+=`<tr class="border-b ${d.status==='หมด'?'bg-red-50':d.status==='ต่ำ'?'bg-amber-50':''}"><td class="p-2">${d.img?`<img src="${d.img}" class="thumb" onerror="handleImgError(this)">`:''}</td><td class="p-2">${d.code}</td><td class="p-2">${d.name}</td><td class="p-2">${d.cat}</td><td class="p-2 text-center">${d.in}</td><td class="p-2 text-center">${d.out}</td><td class="p-2 text-center">${d.bor}</td><td class="p-2 text-center font-bold">${d.bal}</td><td class="p-2 text-center">${d.price}</td><td class="p-2 text-center">${d.val.toLocaleString()}</td><td class="p-2 text-center"><button onclick="showQR('${d.code}')" class="px-2 py-1 bg-slate-100 rounded">QR</button></td><td class="p-2 text-center">${d.status==='ปกติ'?'<span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">ปกติ</span>':d.status==='ต่ำ'?'<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded-full text-xs">ต่ำ</span>':'<span class="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs">หมด</span>'}</td></tr>`; });
+ document.getElementById('fIn').textContent=sIn; document.getElementById('fOut').textContent=sOut; document.getElementById('fBor').textContent=sBor; document.getElementById('fBal').textContent=sBal; document.getElementById('fVal').textContent=sVal.toLocaleString();
+ document.getElementById('sumVal').textContent=sVal.toLocaleString()+' ฿'; document.getElementById('sumItems').textContent=data.length; document.getElementById('sumLow').textContent=data.filter(d=>d.status!=='ปกติ').length; document.getElementById('sumBorrow').textContent=borrow.filter(b=>b.status!=='คืนแล้ว').length;
+}
+function clearFilterStock(){ document.getElementById('searchStock').value=''; document.getElementById('filterCat').value=''; document.getElementById('filterStatus').value=''; renderStock(); }
+
+// ===== ตะกร้าชั่วคราว =====
+let rCart = [];
+let iCart = [];
+(function migrateLegacyIds(){
+  if(Array.isArray(receive)) receive.forEach(r=>{ if(!r.id) r.id='L'+Math.random().toString(16).slice(2,10); });
+  if(Array.isArray(issue)) issue.forEach(r=>{ if(!r.id) r.id='L'+Math.random().toString(16).slice(2,10); });
+})();
+
+function addReceiveItem(){
+  const code = document.getElementById('rCodeSel').value;
+  const qty  = parseInt(document.getElementById('rQty').value) || 0;
+  if(!code || qty <= 0) return toast('เลือกรหัสและจำนวน');
+  const m = master.find(x => x.code === code);
+  const old = rCart.find(x => x.code === code);
+  if(old) old.qty += qty;
+  else rCart.push({ code, name: m?.name || '', qty, price: m?.price || 0 });
+  document.getElementById('rQty').value = '';
+  renderRCart();
+}
+function renderRCart(){
+  const tb = document.getElementById('rCartBody');
+  const count = document.getElementById('rCartCount');
+  const docSpan = document.getElementById('rCartDocNo');
+  if(!tb) return;
+  tb.innerHTML = rCart.map((r,i)=>'<tr class="border-b"><td class="p-2">'+r.code+'</td><td class="p-2">'+r.name+'</td><td class="p-2 text-center">'+r.qty+'</td><td class="p-2 text-center">'+r.price+'</td><td class="p-2 text-center"><button onclick="rCart.splice('+i+',1);renderRCart()" class="text-red-600">ลบ</button></td></tr>').join('');
+  if(count) count.textContent = rCart.length;
+  if(docSpan) docSpan.textContent = document.getElementById('rDocNo').value || '';
+}
+function clearReceiveCart(){ if(confirm('ล้างตะกร้ารับ?')){ rCart=[]; renderRCart(); } }
+function saveReceiveBill(){
+  if(rCart.length === 0) return toast('ยังไม่มีรายการในบิล');
+  const docNo    = document.getElementById('rDocNo').value || 'R' + Date.now();
+  const sender   = document.getElementById('rSender').value;
+  const date     = document.getElementById('rDate').value || new Date().toISOString().slice(0,10);
+  const receiver = document.getElementById('rReceiver').value;
+  rCart.forEach(it => {
+    receive.push({
+      id: 'L' + Date.now() + Math.random().toString(16).slice(2,8),
+      docNo, date, sender,
+      code: it.code, name: it.name, qty: it.qty, price: it.price,
+      receiver
+    });
+  });
+  saveAll(); renderReceive(); renderStock();
+  rCart = []; renderRCart();
+  document.getElementById('rQty').value   = '';
+  toast('บันทึกบิล ' + docNo + ' แล้ว');
+}
+function renderReceive(){
+ const q=document.getElementById('searchReceive').value.toLowerCase();
+ const tbody=document.getElementById('receiveBody'); tbody.innerHTML='';
+ receive.filter(r=> !q || `${r.docNo} ${r.date} ${r.sender} ${r.code} ${r.name} ${r.receiver}`.toLowerCase().includes(q)).forEach(r=>{
+  tbody.innerHTML+=`<tr class="border-b"><td class="p-2">${r.docNo}</td><td class="p-2">${r.date}</td><td class="p-2">${r.sender}</td><td class="p-2">${r.code}</td><td class="p-2">${r.name}</td><td class="p-2 text-center">${r.qty}</td><td class="p-2 text-center">${r.price}</td><td class="p-2">${r.receiver}</td><td class="p-2"><button onclick="delReceiveLine('${r.id}')" class="text-red-600">ลบแถว</button><button onclick="delReceiveBill('${r.docNo}')" class="text-gray-500 ml-2">ลบบิล</button></td></tr>`;
+ });
+}
+
+function addIssueItem(){
+  const code = document.getElementById('iCodeSel').value;
+  const qty  = parseInt(document.getElementById('iQty').value) || 0;
+  if(!code || qty <= 0) return toast('เลือกรหัสและจำนวน');
+  const m   = master.find(x => x.code === code);
+  const bal = getStockCalc().find(s => s.code === code)?.bal || 0;
+  const inCart = iCart.filter(x => x.code === code).reduce((s,x) => s + x.qty, 0);
+  if(inCart + qty > bal) return toast('ของไม่พอ คงเหลือ ' + bal);
+  const old = iCart.find(x => x.code === code);
+  if(old) old.qty += qty;
+  else iCart.push({ code, name: m?.name || '', qty, bal });
+  document.getElementById('iQty').value = '';
+  renderICart();
+}
+function renderICart(){
+  const tb = document.getElementById('iCartBody');
+  const count = document.getElementById('iCartCount');
+  const docSpan = document.getElementById('iCartDocNo');
+  if(!tb) return;
+  tb.innerHTML = iCart.map((r,i)=>'<tr class="border-b"><td class="p-2">'+r.code+'</td><td class="p-2">'+r.name+'</td><td class="p-2 text-center">'+r.qty+'</td><td class="p-2 text-center">'+r.bal+'</td><td class="p-2 text-center"><button onclick="iCart.splice('+i+',1);renderICart()" class="text-red-600">ลบ</button></td></tr>').join('');
+  if(count) count.textContent = iCart.length;
+  if(docSpan) docSpan.textContent = document.getElementById('iDocNo').value || '';
+}
+function clearIssueCart(){ if(confirm('ล้างตะกร้าเบิก?')){ iCart=[]; renderICart(); } }
+function saveIssueBill(){
+  if(iCart.length === 0) return toast('ยังไม่มีรายการในบิล');
+  const docNo    = document.getElementById('iDocNo').value || 'I' + Date.now();
+  const borrower = document.getElementById('iName').value;
+  const dept     = document.getElementById('iDept').value;
+  const date     = document.getElementById('iDate').value || new Date().toISOString().slice(0,10);
+  const approver = document.getElementById('iApprover').value;
+  iCart.forEach(it => {
+    issue.push({
+      id: 'L' + Date.now() + Math.random().toString(16).slice(2,8),
+      docNo, date, borrower, dept,
+      code: it.code, name2: it.name, qty: it.qty,
+      approver
+    });
+  });
+  saveAll(); renderIssue(); renderStock();
+  iCart = []; renderICart();
+  document.getElementById('iQty').value   = '';
+  toast('บันทึกบิล ' + docNo + ' แล้ว');
+}
+function renderIssue(){
+ const q=document.getElementById('searchIssue').value.toLowerCase();
+ const tbody=document.getElementById('issueBody'); tbody.innerHTML='';
+ issue.filter(r=> !q || `${r.docNo} ${r.date} ${r.borrower} ${r.dept} ${r.code} ${r.name2} ${r.approver}`.toLowerCase().includes(q)).forEach(r=>{
+  tbody.innerHTML+=`<tr class="border-b"><td class="p-2">${r.docNo}</td><td class="p-2">${r.date}</td><td class="p-2">${r.borrower}</td><td class="p-2">${r.dept}</td><td class="p-2">${r.code}</td><td class="p-2">${r.name2}</td><td class="p-2 text-center">${r.qty}</td><td class="p-2">${r.approver}</td><td class="p-2"><button onclick="delIssueLine('${r.id}')" class="text-red-600">ลบแถว</button><button onclick="delIssueBill('${r.docNo}')" class="text-gray-500 ml-2">ลบบิล</button></td></tr>`;
+ });
+}
+function delReceiveLine(id){ receive = receive.filter(x => x.id !== id); saveAll(); renderReceive(); renderStock(); }
+function delReceiveBill(docNo){ if(!confirm('ลบทั้งบิล ' + docNo + ' ?')) return; receive = receive.filter(x => x.docNo !== docNo); saveAll(); renderReceive(); renderStock(); }
+function delIssueLine(id){ issue = issue.filter(x => x.id !== id); saveAll(); renderIssue(); renderStock(); }
+function delIssueBill(docNo){ if(!confirm('ลบทั้งบิล ' + docNo + ' ?')) return; issue = issue.filter(x => x.docNo !== docNo); saveAll(); renderIssue(); renderStock(); }
+
+function addBorrow(){
+ const doc=document.getElementById('bDocNo').value; const name=document.getElementById('bName').value; const date=document.getElementById('bDate').value; const due=document.getElementById('bDue').value; const code=document.getElementById('bCodeSel').value; const qty=parseInt(document.getElementById('bQty').value)||0; const appr=document.getElementById('bApprover').value;
+ if(!code||!qty) return toast('เลือกรหัสและจำนวน'); const m=master.find(x=>x.code===code);
+ borrow.push({docNo:doc||'B'+Date.now(), name, date:date||new Date().toISOString().slice(0,10), due:due||'', code, name2:m?.name||'', qty, status:'ยืมอยู่', approver:appr});
+ saveAll(); renderBorrow(); renderStock(); renderAlert(); toast('บันทึกยืมแล้ว');
+}
+function renderBorrow(){
+ const q=document.getElementById('searchBorrow').value.toLowerCase();
+ const tbody=document.getElementById('borrowBody'); tbody.innerHTML='';
+ borrow.filter(r=> !q || `${r.docNo} ${r.name} ${r.code} ${r.name2} ${r.date} ${r.due} ${r.status} ${r.approver}`.toLowerCase().includes(q)).forEach((r,idx)=>{
+  const overdue=r.due && r.status!=='คืนแล้ว' ? Math.floor((new Date() - new Date(r.due))/86400000) : 0;
+  const isOver=overdue>0;
+  tbody.innerHTML+=`<tr class="border-b ${isOver?'bg-red-50':''}"><td class="p-2">${r.docNo}</td><td class="p-2">${r.name}</td><td class="p-2">${r.code}</td><td class="p-2">${r.name2}</td><td class="p-2 text-center">${r.qty}</td><td class="p-2">${r.date}</td><td class="p-2">${r.due}</td><td class="p-2 text-center">${isOver?`<span class="bg-red-600 text-white px-2 py-1 rounded-full text-xs">เกิน ${overdue} วัน</span>`:''}</td><td class="p-2">${r.status}</td><td class="p-2">${r.status!=='คืนแล้ว'?`<button onclick="borrow[${borrow.indexOf(r)}].status='คืนแล้ว';saveAll();renderBorrow();renderStock();renderAlert()" class="px-2 py-1 bg-green-600 text-white rounded">คืน</button>`:''}</td><td class="p-2"><button onclick="borrow.splice(${borrow.indexOf(r)},1);saveAll();renderBorrow();renderStock();renderAlert()" class="text-red-600">ลบ</button></td></tr>`;
+ });
+}
+function renderAlert(){
+ const low=getStockCalc().filter(s=>s.bal<=s.min);
+ document.getElementById('lowList').innerHTML=low.length? low.map(s=>`<div class="flex justify-between py-1 border-b"><span>${s.code} ${s.name}</span><span class="text-red-600">${s.bal}/${s.min}</span></div>`).join('') : '<div class="text-slate-400">ไม่มีต่ำกว่าเกณฑ์</div>';
+ const over=borrow.filter(b=> b.due && b.status!=='คืนแล้ว' && new Date(b.due) < new Date());
+ document.getElementById('overdueList').innerHTML=over.length? over.map(b=>{const d=Math.floor((new Date()-new Date(b.due))/86400000); return `<div class="flex justify-between py-1 border-b"><span>${b.docNo} ${b.name} ${b.code}</span><span class="text-red-600">เกิน ${d} วัน</span></div>`;}).join('') : '<div class="text-slate-400">ไม่มียืมเกินกำหนด</div>';
+}
+function drawCharts(){
+ const bar=document.getElementById('barChart'); const pie=document.getElementById('pieChart'); if(!bar||!pie) return;
+ if(window.barChartInst) window.barChartInst.destroy(); if(window.pieChartInst) window.pieChartInst.destroy();
+ const months=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.']; const inData=[10,20,15,25,30, receive.length]; const outData=[5,10,8,12,18, issue.length];
+ window.barChartInst=new Chart(bar,{type:'bar', data:{labels:months, datasets:[{label:'รับ', data:inData, backgroundColor:'#16a34a'}, {label:'เบิก', data:outData, backgroundColor:'#ea580c'}]}, options:{responsive:true}});
+ const cats=[...new Set(master.map(m=>m.cat))]; const catCounts=cats.map(c=> master.filter(m=>m.cat===c).length);
+ window.pieChartInst=new Chart(pie,{type:'pie', data:{labels:cats, datasets:[{data:catCounts, backgroundColor:['#2563eb','#16a34a','#f59e0b','#8b5cf6','#ef4444']}]}, options:{responsive:true}});
+}
+function showQR(code){ document.getElementById('qrTitle').textContent=code; document.getElementById('qrImg').src=`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(code)}`; document.getElementById('qrBar').textContent=`*${code}*`; document.getElementById('qrModal').classList.remove('hidden'); document.getElementById('qrModal').classList.add('flex'); }
+function closeQR(){ document.getElementById('qrModal').classList.add('hidden'); document.getElementById('qrModal').classList.remove('flex'); }
+
+function clearAllHard(){ if(!confirm('ล้างข้อมูลทั้งหมดจริงๆ?')) return; master=[]; receive=[]; issue=[]; borrow=[]; localStorage.clear(); saveAll(); if(logoBase64) localStorage.setItem(LS_LOGO, logoBase64); renderAll(); toast('ล้างหมดแล้ว'); }
+function clearMaster(){ if(!confirm('ล้างคลัง?')) return; master=[]; saveAll(); renderAll(); }
+function clearReceive(){ if(!confirm('ล้างประวัติรับ?')) return; receive=[]; saveAll(); renderReceive(); renderStock(); }
+function clearIssue(){ if(!confirm('ล้างประวัติเบิก?')) return; issue=[]; saveAll(); renderIssue(); renderStock(); }
+function clearBorrow(){ if(!confirm('ล้างประวัติยืม?')) return; borrow=[]; saveAll(); renderBorrow(); renderStock(); renderAlert(); }
+
+function exportData(){ const data={master, receive, issue, borrow, logo:logoBase64}; const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='stock_backup.json'; a.click(); URL.revokeObjectURL(url); }
+
+// ================= ระบบ Excel (.xlsx / .csv) สำรองและนำเข้า =================
+function exportExcel(){
+  let csv = '\ufeffรหัสวัสดุ/พัสดุ,ชื่อวัสดุ/พัสดุ,หมวดหมู่,หน่วย,ขั้นต่ำ,ราคา,ที่เก็บ\n';
+  master.forEach(m=>{
+    csv += `"${m.code}","${m.name}","${m.cat||''}","${m.unit||''}","${m.min||0}","${m.price||0}","${m.loc||''}"\n`;
+  });
+  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'stock_master_export.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('ส่งออกข้อมูล Excel สำเร็จ');
+}
+
+function importExcel(){ document.getElementById('importExcelFile').click(); }
+function handleExcelImport(e){
+  const f = e.target.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = (evt)=>{
+    try {
+      const text = evt.target.result;
+      const lines = text.split(/\r\n|\n/);
+      let count = 0;
+      for(let i=1; i<lines.length; i++){
+        if(!lines[i].trim()) continue;
+        const cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s=>s.replace(/^"|"$/g,'').trim());
+        if(cols.length >= 2 && cols[0]){
+          const code = cols[0];
+          const name = cols[1];
+          const cat = cols[2] || '';
+          const unit = cols[3] || '';
+          const min = parseInt(cols[4]) || 0;
+          const price = parseFloat(cols[5]) || 0;
+          const loc = cols[6] || '';
+          
+          const exist = master.find(x=>x.code === code);
+          if(exist){
+            exist.name = name; exist.cat = cat; exist.unit = unit; exist.min = min; exist.price = price; exist.loc = loc;
+          } else {
+            master.push({code, name, cat, unit, min, price, loc, img:''});
+          }
+          count++;
+        }
+      }
+      saveAll(); renderAll();
+      toast(`นำเข้า Excel สำเร็จ ${count} รายการ`);
+    } catch(err){
+      toast('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel/CSV');
+    }
+  };
+  r.readAsText(f, 'UTF-8');
+}
+
+function handleImport(e){ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); if(d.master) master=d.master; if(d.receive) receive=d.receive; if(d.issue) issue=d.issue; if(d.borrow) borrow=d.borrow; if(d.logo) {logoBase64=d.logo; localStorage.setItem(LS_LOGO, logoBase64);} saveAll(); renderAll(); toast('นำเข้าแล้ว'); }catch{ toast('ไฟล์ไม่ถูกต้อง'); } }; r.readAsText(f); }
+
+function genPrintable(title, headCols, rows, extra=''){
+ const logo = logoBase64 ? `<img src="${logoBase64}" style="width:60px;height:60px;object-fit:contain">` : '';
+ const s1=document.getElementById('sign1').value||'....................'; const s2=document.getElementById('sign2').value||'....................'; const s3=document.getElementById('sign3').value||'....................';
+ const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>body{font-family:sarabun,sans-serif;padding:20px} table{width:100%;border-collapse:collapse} th,td{border:1px solid #ccc;padding:8px;text-align:center;font-size:13px} th{background:#2F5597;color:#fff} .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px} .bar{background:#2F5597;color:white;padding:12px;border-radius:8px;display:flex;justify-content:space-between;align-items:center} .btn{background:white;color:#2F5597;border:none;padding:10px 20px;border-radius:6px;font-weight:bold;cursor:pointer} @media print{.bar{display:none}}</style></head><body>
+<div class="bar"><div><b>${title}</b><br><small>วันที่ ${new Date().toLocaleString('th-TH')}</small></div><button class="btn" onclick="window['pri'+'nt']()">🖨️ พิมพ์เอกสารนี้</button></div>
+<div class="top"><div>${logo}</div><div style="text-align:center"><h2 style="margin:0">${title}</h2><p>ระบบบริหารวัสดุ/พัสดุ</p></div><div style="width:60px"></div></div>
+${extra}
+<table><thead><tr>${headCols.map(c=>`<th>${c}</th>`).join('')}</thead><tbody>${rows.map(r=>`<tr>${r.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table>
+<div style="display:flex;justify-content:space-between;margin-top:60px;text-align:center"><div>ลงชื่อ................................<br>ผู้จัดทำ<br>(${s1})</div><div>ลงชื่อ................................<br>หัวหน้าวัสดุ/พัสดุ<br>(${s2})</div><div>ลงชื่อ................................<br>ผู้อนุมัติ<br>(${s3})</div></div>
+</body></html>`;
+ const blob=new Blob([html],{type:'text/html'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=title+'.html'; a.click(); setTimeout(()=>{ window.open(url,'_blank'); },500);
+}
+
+function downloadStockReport(){
+ const data = getStockCalc();
+ const q = document.getElementById('searchStock').value.toLowerCase();
+ const cat = document.getElementById('filterCat').value;
+ const st = document.getElementById('filterStatus').value;
+ 
+ // กรองเฉพาะยอดคงเหลือมากกว่า 0 และตามเงื่อนไขค้นหา (ตัดข้อความแถวสีแดงออก ไม่ใส่ใน extra)
+ const filtered = data.filter(d => d.bal > 0).filter(d => !q || `${d.code} ${d.name} ${d.cat}`.toLowerCase().includes(q)).filter(d => !cat || d.cat === cat).filter(d => !st || d.status === st);
+ 
+ const rows = filtered.map((d,i)=>[i+1, d.code, d.name, d.cat, d.in, d.out, d.bor, d.bal, d.price, d.val, d.status]);
+ genPrintable('รายงานสต็อกคงเหลือ', ['ลำดับ','รหัส','ชื่อ','หมวดหมู่','รับรวม','เบิกรวม','ยืมค้าง','คงเหลือ','ราคา','มูลค่า','สถานะ'], rows, '');
+}
+
+function downloadReceiveDoc(){
+ const q=document.getElementById('searchReceive').value.toLowerCase();
+ const filtered=receive.filter(r=> !q || `${r.docNo} ${r.date} ${r.sender} ${r.code} ${r.name} ${r.receiver}`.toLowerCase().includes(q));
+ const rows=filtered.map(r=>[r.docNo,r.date,r.sender,r.code,r.name,r.qty,r.price,r.receiver]);
+ genPrintable('ใบรับวัสดุ/พัสดุ', ['เลขที่ใบส่ง','วันที่','ผู้ส่ง','รหัส','ชื่อ','จำนวน','ราคา','ผู้รับ'], rows);
+}
+function downloadIssueDoc(){
+ const q=document.getElementById('searchIssue').value.toLowerCase();
+ const filtered=issue.filter(r=> !q || `${r.docNo} ${r.date} ${r.borrower} ${r.dept} ${r.code} ${r.name2} ${r.approver}`.toLowerCase().includes(q));
+ const rows=filtered.map(r=>[r.docNo,r.date,r.borrower,r.dept,r.code,r.name2,r.qty,r.approver]);
+ genPrintable('ใบเบิกวัสดุ/พัสดุ', ['เลขที่ใบเบิก','วันที่','ผู้เบิก','แผนก','รหัส','ชื่อ','จำนวน','ผู้อนุมัติ'], rows);
+}
+function downloadBorrowDoc(){
+ const q=document.getElementById('searchBorrow').value.toLowerCase();
+ const filtered=borrow.filter(r=> !q || `${r.docNo} ${r.name} ${r.code} ${r.name2} ${r.date} ${r.due} ${r.status}`.toLowerCase().includes(q));
+ const rows=filtered.map(r=>{ const over=r.due && r.status!=='คืนแล้ว' && new Date(r.due)<new Date() ? 'เกิน '+Math.floor((new Date()-new Date(r.due))/86400000)+' วัน' : ''; return [r.docNo,r.name,r.code,r.name2,r.qty,r.date,r.due,over,r.status]; });
+ genPrintable('ใบยืมวัสดุ/พัสดุ', ['เลขที่ใบยืม','ผู้ยืม','รหัส','ชื่อ','จำนวน','วันที่ยืม','กำหนดคืน','เกินกำหนด','สถานะ'], rows);
+}
+
+function downloadSummaryReport(){
+ const bar=document.getElementById('barChart'); const pie=document.getElementById('pieChart');
+ const barImg=bar? bar.toDataURL() : ''; const pieImg=pie? pie.toDataURL() : '';
+ const extra=`<div style="display:flex;gap:20px;flex-wrap:wrap"><img src="${barImg}" style="max-width:48%"><img src="${pieImg}" style="max-width:48%"></div>`;
+ 
+ // กรองเฉพาะรายการที่มียอดคงเหลือ > 0
+ const data = getStockCalc().filter(d => d.bal > 0);
+ const rows = data.map((d,i)=>[i+1, d.code, d.name, d.bal, d.price, d.val, d.status]);
+ 
+ genPrintable('รายงานสรุปพร้อมกราฟ', ['ลำดับ','รหัส','ชื่อ','คงเหลือ','ราคา','มูลค่า','สถานะ'], rows, extra);
+}
+
+function isExpiredFBLink(url){ return url && (url.includes('fbsbx.com') || url.includes('fbcdn.net') || url.includes('scontent')); }
+function handleImgError(img){
+  if(isExpiredFBLink(img.src)){
+    img.onerror=null;
+    img.src='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="100%" height="100%" fill="%23fee2e2"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="7" fill="%23dc2626">ลิงก์หมดอายุ</text></svg>';
+  } else {
+    img.onerror=null;
+    img.src='https://via.placeholder.com/40?text=No';
+  }
+}
+
+function toast(m){ const t=document.createElement('div'); t.textContent=m; t.className='fixed bottom-4 right-4 bg-slate-800 text-white px-4 py-2 rounded-lg shadow z-50'; document.body.appendChild(t); setTimeout(()=>t.remove(),2500); }
+
+init();
+setTimeout(()=>{ try{renderRCart(); renderICart();}catch(e){} },600);
+</script>
+</body>
+</html>
