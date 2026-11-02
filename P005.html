@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ระบบให้เช่าห้องประชุม</title>
+<style>
+  :root{--bg:#f4f6fa;--card:#fff;--line:#e3e8f0;--ink:#1d2433;--muted:#6b7689;
+        --brand:#2563eb;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;}
+  *{box-sizing:border-box;font-family:"Segoe UI",Tahoma,sans-serif}
+  body{margin:0;background:var(--bg);color:var(--ink);font-size:14px}
+  header{background:#fff;border-bottom:1px solid var(--line);padding:12px 20px;
+         display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+  header h1{font-size:17px;margin:0}
+  nav{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+  nav button{border:1px solid var(--line);background:#fff;padding:7px 13px;border-radius:8px;cursor:pointer}
+  nav button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+  main{padding:18px;max-width:1500px;margin:auto}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  .row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
+  input,select,textarea{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;width:100%;background:#fff;color:var(--ink)}
+  .btn{background:var(--brand);color:#fff;border:0;padding:9px 15px;border-radius:8px;cursor:pointer;font-size:14px}
+  .btn.gray{background:#64748b}.btn.red{background:var(--bad)}.btn.green{background:var(--ok)}
+  .btn.amber{background:var(--warn)}.btn.sm{padding:4px 9px;font-size:12px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+  th{background:#f8fafc;font-weight:600}
+  .wrap{overflow:auto}
+  .grid td.free{background:#fff;cursor:pointer;text-align:center;color:#cbd5e1}
+  .grid td.free:hover{background:#eff6ff;color:var(--brand)}
+  .grid td.busy{cursor:pointer;font-size:12px;line-height:1.35}
+  .st-confirmed{background:#dcfce7;border-left:3px solid var(--ok)}
+  .st-pending{background:#fef3c7;border-left:3px solid var(--warn)}
+  .st-done{background:#dbeafe;border-left:3px solid #2563eb}
+  .roomcell{background:#f8fafc;font-weight:600;white-space:nowrap;position:sticky;left:0;z-index:1}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;white-space:nowrap}
+  .p-confirmed{background:#dcfce7;color:#166534}.p-pending{background:#fef3c7;color:#92400e}
+  .p-cancelled{background:#fee2e2;color:#991b1b}.p-done{background:#dbeafe;color:#1e40af}
+  .overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:flex-start;
+           justify-content:center;padding:20px;z-index:20;overflow:auto}
+  .overlay.show{display:flex}
+  .modal{background:#fff;border-radius:14px;width:820px;max-width:100%;padding:20px;margin:auto}
+  .f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .f4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+  .total{font-size:22px;font-weight:700;color:var(--brand)}
+  .muted{color:var(--muted);font-size:12px}
+  .stat{flex:1;min-width:140px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .stat b{display:block;font-size:21px;margin-top:3px}
+  .sec{font-weight:700;margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .tabsmall{display:flex;gap:6px}
+  .tabsmall button{border:1px solid var(--line);background:#fff;padding:7px 13px;border-radius:8px;cursor:pointer}
+  .tabsmall button.on{background:var(--ink);color:#fff}
+  #printArea{display:none}
+  @media print{
+    body{background:#fff}
+    body>*{display:none!important}
+    #printArea{display:block!important;font-family:"TH Sarabun New",Tahoma,sans-serif;padding:14mm}
+    @page{size:A4;margin:0}
+  }
+  .doc{font-family:"TH Sarabun New",Tahoma,sans-serif;color:#000;font-size:15px}
+  .doc h2{text-align:center;margin:0 0 4px;font-size:22px}
+  .doc .co{font-size:17px;font-weight:700}
+  .doc table{font-size:14px}
+  .doc th,.doc td{border:1px solid #000;padding:5px 7px}
+  .doc .nb,.doc .nb td{border:0!important;padding:2px 0}
+  .sign{margin-top:46px;display:flex;justify-content:space-between;gap:30px;text-align:center}
+  .sign div{flex:1}
+  .sline{border-bottom:1px dotted #000;height:26px;margin-bottom:6px}
+</style>
+
+<style>
+@media print{
+  body{background:#fff !important}
+  #mainApp{display:block !important}
+  #printArea{display:block !important; position:static !important; width:100% !important; padding:14mm !important; font-family:"TH Sarabun New",Tahoma,sans-serif}
+}
+</style>
+</head>
+<body>
+<div id="mainApp">
+
+<header>
+  <h1>🏢 ระบบให้เช่าห้องประชุม</h1>
+  <nav>
+    <button data-tab="grid" class="on">ตารางจอง</button>
+    <button data-tab="list">รายการจอง</button>
+    <button data-tab="rooms">ห้องประชุม</button>
+    <button data-tab="svc">อาหาร/บริการ</button>
+    <button data-tab="report">รายงาน</button>
+    <button data-tab="cfg">ตั้งค่า</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ===== ตารางจอง ===== -->
+  <section id="tab-grid">
+    <div class="card row">
+      <div><label>วันที่</label><input type="date" id="gDate"></div>
+      <div><button class="btn gray" onclick="shiftDay(-1)">◀</button></div>
+      <div><button class="btn gray" onclick="goToday()">วันนี้</button></div>
+      <div><button class="btn gray" onclick="shiftDay(1)">▶</button></div>
+      <div style="margin-left:auto"><button class="btn" onclick="openForm()">+ จองใหม่</button></div>
+    </div>
+    <div class="card wrap"><table class="grid" id="gridTable"></table>
+      <p class="muted" style="margin:10px 0 0">คลิกช่องว่าง = จองใหม่ · คลิกช่องที่จองแล้ว = เปิดรายละเอียด ·
+        <span class="pill p-pending">รอมัดจำ</span> <span class="pill p-confirmed">ยืนยันแล้ว</span>
+        <span class="pill p-done">ชำระครบ</span></p>
+    </div>
+  </section>
+
+  <!-- ===== รายการจอง ===== -->
+  <section id="tab-list" hidden>
+    <div class="card row">
+      <div style="flex:2;min-width:200px"><label>ค้นหา ชื่อ/บริษัท/เบอร์/เลขที่</label><input id="q" oninput="renderList()"></div>
+      <div><label>สถานะ</label><select id="fStatus" onchange="renderList()">
+        <option value="">ทั้งหมด</option><option value="pending">รอมัดจำ</option>
+        <option value="confirmed">ยืนยันแล้ว</option><option value="done">ชำระครบ</option>
+        <option value="cancelled">ยกเลิก</option></select></div>
+      <div><label>ตั้งแต่</label><input type="date" id="fFrom" onchange="renderList()"></div>
+      <div><label>ถึง</label><input type="date" id="fTo" onchange="renderList()"></div>
+      <div><button class="btn gray" onclick="clearFilter()">ล้าง</button></div>
+      <div style="margin-left:auto"><button class="btn gray" onclick="exportCSV()">⬇ CSV</button>
+        <button class="btn" onclick="openForm()">+ จองใหม่</button></div>
+    </div>
+    <div class="card wrap"><table id="listTable"></table></div>
+  </section>
+
+  <!-- ===== ห้อง ===== -->
+  <section id="tab-rooms" hidden>
+    <div class="card">
+      <div class="sec" style="margin-top:0">เพิ่มห้องใหม่</div>
+      <div class="f4">
+        <div><label>ชื่อห้อง</label><input id="nName" placeholder="Meeting D1"></div>
+        <div><label>ความจุ (คน)</label><input type="number" id="nCap" value="10"></div>
+        <div><label>ราคา/ชั่วโมง</label><input type="number" id="nH" value="600"></div>
+        <div><label>ราคาครึ่งวัน</label><input type="number" id="nHalf" value="2000"></div>
+      </div>
+      <div class="f4" style="margin-top:12px">
+        <div><label>ราคาเต็มวัน</label><input type="number" id="nFull" value="3500"></div>
+        <div><label>ราคารายเดือน</label><input type="number" id="nMonth" value="45000"></div>
+        <div style="grid-column:span 2"><label>อุปกรณ์ในห้อง</label><input id="nNote" placeholder="โปรเจกเตอร์, ไมค์"></div>
+      </div>
+      <div style="margin-top:12px"><button class="btn" onclick="addRoom()">+ เพิ่มห้อง</button></div>
+    </div>
+    <div class="card wrap"><table id="roomTable"></table>
+      <p class="muted" style="margin:8px 0 0">แก้ไขในช่องแล้วคลิกนอกช่อง ระบบบันทึกอัตโนมัติ</p></div>
+  </section>
+
+  <!-- ===== บริการ/อาหาร ===== -->
+  <section id="tab-svc" hidden>
+    <div class="card">
+      <div class="sec" style="margin-top:0">เพิ่มรายการอาหาร / บริการเสริม</div>
+      <div class="f3">
+        <div><label>ชื่อรายการ</label><input id="sName" placeholder="อาหารว่าง เบรกบ่าย"></div>
+        <div><label>ราคาต่อหน่วย</label><input type="number" id="sPrice" value="80"></div>
+        <div><label>หน่วย</label><select id="sUnit">
+          <option>ท่าน</option><option>ชุด</option><option>ตัว</option><option>ขวด</option>
+          <option>ครั้ง</option><option>ชม.</option><option>วัน</option></select></div>
+      </div>
+      <div style="margin-top:12px"><button class="btn" onclick="addSvc()">+ เพิ่มรายการ</button></div>
+      <p class="muted" style="margin:10px 0 0">หน่วย "ท่าน" ระบบจะเติมจำนวนเท่ากับผู้เข้าร่วมให้อัตโนมัติ</p>
+    </div>
+    <div class="card wrap"><table id="svcTable"></table></div>
+  </section>
+
+  <!-- ===== รายงาน ===== -->
+  <section id="tab-report" hidden>
+    <div class="card row">
+      <div><label>ตั้งแต่วันที่</label><input type="date" id="repFrom" onchange="renderReport()"></div>
+      <div><label>ถึงวันที่</label><input type="date" id="repTo" onchange="renderReport()"></div>
+      <div style="flex:2;min-width:220px"><label>ค้นหา (ชื่อผู้เช่า, บริษัท, ห้อง, เลขที่)</label><input id="repQuery" placeholder="พิมพ์คำค้นหา..." oninput="renderReport()"></div>
+      <div><button class="btn gray" onclick="setRepPeriod('today')">วันนี้</button></div>
+      <div><button class="btn gray" onclick="setRepPeriod('month')">เดือนนี้</button></div>
+      <div><button class="btn gray" onclick="setRepPeriod('all')">ทั้งหมด</button></div>
+      <div style="margin-left:auto"><button class="btn amber" onclick="printReport()">🖨 พิมพ์รายงาน</button></div>
+    </div>
+    <div class="row" id="stats" style="margin-bottom:14px"></div>
+    <div class="card wrap"><div class="sec" style="margin-top:0">สรุปตามห้อง</div><table id="repRoom"></table></div>
+    <div class="card wrap"><div class="sec" style="margin-top:0">รายการจอง</div><table id="repBook"></table></div>
+    <div class="card wrap"><div class="sec" style="margin-top:0">เงินรับเข้าในช่วงนี้</div><table id="repPay"></table></div>
+  </section>
+
+  <!-- ===== ตั้งค่า ===== -->
+  <section id="tab-cfg" hidden>
+    <div class="card">
+      <div class="sec" style="margin-top:0">ข้อมูลผู้ให้เช่า (ใช้บนหัวเอกสาร)</div>
+      <div class="f2">
+        <div><label>ชื่อกิจการ</label><input id="cBiz"></div>
+        <div><label>เลขประจำตัวผู้เสียภาษี</label><input id="cTax"></div>
+      </div>
+      <div style="margin-top:12px"><label>ที่อยู่</label><input id="cAddr"></div>
+      <div class="f3" style="margin-top:12px">
+        <div><label>โทรศัพท์</label><input id="cPhone"></div>
+        <div><label>อีเมล</label><input id="cEmail"></div>
+        <div><label>ผู้มีอำนาจลงนาม</label><input id="cSigner"></div>
+      </div>
+      <div style="margin-top:12px"><label>บัญชีรับชำระเงิน</label><input id="cBank"></div>
+
+      <div class="sec">เวลาทำการ และช่วงราคาเหมา</div>
+      <div class="f4">
+        <div><label>เปิด (ชม.)</label><input type="number" id="cOpen"></div>
+        <div><label>ปิด (ชม.)</label><input type="number" id="cClose"></div>
+        <div><label>ครึ่งวันเช้า (เริ่ม / จบ)</label><div class="row" style="gap:4px"><input id="cAmS" style="flex:1"><input id="cAmE" style="flex:1"></div></div>
+        <div><label>ครึ่งวันบ่าย (เริ่ม / จบ)</label><div class="row" style="gap:4px"><input id="cPmS" style="flex:1"><input id="cPmE" style="flex:1"></div></div>
+      </div>
+      <div class="f4" style="margin-top:12px">
+        <div><label>เต็มวันเริ่ม</label><input id="cFdS"></div>
+        <div><label>เต็มวันสิ้นสุด</label><input id="cFdE"></div>
+        <div><label>คิด VAT</label><select id="cVatOn"><option value="0">ไม่คิด</option><option value="1">คิด VAT</option></select></div>
+        <div><label>อัตรา VAT (%)</label><input type="number" id="cVat"></div>
+      </div>
+      <div class="f2" style="margin-top:12px">
+        <div><label>มัดจำมาตรฐาน (% ของยอดรวม)</label><input type="number" id="cDep"></div>
+        <div><label>เลขที่ใบจองขึ้นต้นด้วย</label><input id="cPre" placeholder="BK"></div>
+      </div>
+      <div style="margin-top:12px"><label>เงื่อนไขการจอง (แสดงท้ายใบจอง)</label><textarea id="cTerms" rows="5"></textarea></div>
+      <div style="margin-top:14px"><button class="btn green" onclick="saveCfg()">บันทึกการตั้งค่า</button></div>
+
+      <div class="sec">ข้อมูลระบบ</div>
+      <div class="row">
+        <button class="btn gray" onclick="backup()">⬇ สำรองข้อมูล (JSON)</button>
+        <button class="btn gray" onclick="document.getElementById('restoreFile').click()">⬆ กู้คืนข้อมูล (JSON)</button>
+        <input type="file" id="restoreFile" accept=".json" hidden onchange="restore(this)">
+        
+        <button class="btn green" onclick="exportExcelCSV()">📊 ส่งออกข้อมูล Excel (CSV)</button>
+        <button class="btn amber" onclick="document.getElementById('restoreExcelFile').click()">📥 นำเข้าข้อมูลจาก Excel (CSV)</button>
+        <input type="file" id="restoreExcelFile" accept=".csv" hidden onchange="restoreExcelCSV(this)">
+        
+        <button class="btn red" onclick="wipe()">ล้างข้อมูลการจองทั้งหมด</button>
+      </div>
+      <p class="muted" style="margin-top:10px">ข้อมูลเก็บในเบราว์เซอร์เครื่องนี้ แนะนำกดสำรองข้อมูลทุกสัปดาห์</p>
+    </div>
+  </section>
+</main>
+
+<!-- ===== ฟอร์มจอง ===== -->
+<div class="overlay" id="ov">
+  <div class="modal">
+    <input type="hidden" id="bId">
+    <div class="row" style="align-items:center">
+      <h2 id="mTitle" style="margin:0;font-size:18px">ใบจองห้องประชุม</h2>
+      <span class="muted" id="mDoc" style="margin-left:8px"></span>
+      <div style="margin-left:auto"><button class="btn gray sm" onclick="closeForm()">✕ ปิด</button></div>
+    </div>
+
+    <div class="sec">ข้อมูลการใช้ห้อง</div>
+    <div class="f3">
+      <div><label>ห้อง *</label><select id="bRoom" onchange="calc()"></select></div>
+      <div><label>รูปแบบการเช่า *</label><select id="bMode" onchange="modeChanged()">
+        <option value="hour">รายชั่วโมง</option><option value="half">ครึ่งวัน</option>
+        <option value="full">เต็มวัน</option><option value="month">รายเดือน</option></select></div>
+      <div><label>จำนวนผู้เข้าร่วม</label><input type="number" id="bPax" value="1" oninput="calc()"></div>
+    </div>
+    <div class="f4" style="margin-top:12px">
+      <div><label>วันที่เริ่ม *</label><input type="date" id="bDate" onchange="calc()"></div>
+      <div id="wEnd"><label>ถึงวันที่</label><input type="date" id="bDateEnd" onchange="calc()"></div>
+      <div id="wStart"><label>เวลาเริ่ม</label><select id="bStart" onchange="calc()"></select></div>
+      <div id="wStop"><label>เวลาสิ้นสุด</label><select id="bEnd" onchange="calc()"></select></div>
+      <div id="wHalf" hidden><label>ช่วงครึ่งวัน</label><select id="bHalf" onchange="calc()">
+        <option value="am">ช่วงเช้า</option><option value="pm">ช่วงบ่าย</option></select></div>
+      <div id="wMonths" hidden><label>จำนวนเดือน</label><input type="number" id="bMonths" value="1" min="1" onchange="calc()"></div>
+    </div>
+
+    <div class="sec">ข้อมูลผู้เช่า</div>
+    <div class="f2">
+      <div><label>ชื่อผู้ติดต่อ *</label><input id="bName"></div>
+      <div><label>บริษัท / หน่วยงาน</label><input id="bOrg"></div>
+    </div>
+    <div class="f3" style="margin-top:12px">
+      <div><label>โทรศัพท์</label><input id="bPhone"></div>
+      <div><label>อีเมล</label><input id="bEmail"></div>
+      <div><label>เลขผู้เสียภาษี</label><input id="bTax"></div>
+    </div>
+    <div style="margin-top:12px"><label>ที่อยู่สำหรับออกเอกสาร</label><input id="bAddr"></div>
+
+    <div class="sec">อาหาร / บริการเสริม</div>
+    <div class="row">
+      <div style="flex:3;min-width:220px"><label>เลือกรายการ</label><select id="pickSvc"></select></div>
+      <div style="flex:1"><label>จำนวน</label><input type="number" id="pickQty" value="1"></div>
+      <div><button class="btn" onclick="addItem()">+ ใส่ในใบจอง</button></div>
+    </div>
+    <table id="itemTable" style="margin-top:10px"></table>
+
+    <div class="sec">สรุปยอด</div>
+    <div class="f3">
+      <div><label>ส่วนลด (บาท)</label><input type="number" id="bDisc" value="0" oninput="calc()"></div>
+      <div><label>สถานะ</label><select id="bStatus">
+        <option value="pending">รอมัดจำ</option><option value="confirmed">ยืนยันแล้ว</option>
+        <option value="done">ชำระครบ</option><option value="cancelled">ยกเลิก</option></select></div>
+      <div><label>หมายเหตุ</label><input id="bNote"></div>
+    </div>
+    <table style="margin-top:12px"><tbody id="sumTable"></tbody></table>
+
+    <div id="payBlock">
+      <div class="sec">การชำระเงิน / มัดจำ</div>
+      <table id="payTable"></table>
+      <div class="row" style="margin-top:10px">
+        <div><label>วันที่รับเงิน</label><input type="date" id="pDate"></div>
+        <div><label>จำนวนเงิน</label><input type="number" id="pAmt"></div>
+        <div><label>ช่องทาง</label><select id="pMethod">
+          <option>เงินสด</option><option>โอนเงิน</option><option>บัตรเครดิต</option><option>เช็ค</option></select></div>
+        <div><label>ประเภท</label><select id="pType"><option>มัดจำ</option><option>ชำระส่วนที่เหลือ</option><option>ชำระเต็มจำนวน</option></select></div>
+        <div><button class="btn green" onclick="addPay()">+ บันทึกรับเงิน</button></div>
+        <div><button class="btn gray sm" onclick="fillDeposit()">เติมยอดมัดจำมาตรฐาน</button></div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:18px;border-top:1px solid var(--line);padding-top:14px">
+      <div><div class="muted" id="balText"></div><div class="total" id="totalText">0 บาท</div></div>
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn red" id="btnDel" onclick="delBooking()" hidden>ลบ</button>
+        <button class="btn amber" id="btnPrint" onclick="printBooking(document.getElementById('bId').value)" hidden>🖨 ใบจอง (ให้ลูกค้าเซ็น)</button>
+        <button class="btn gray" onclick="closeForm()">ปิด</button>
+        <button class="btn green" onclick="saveBooking()">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+window.onerror=function(m,s,l){alert('เกิดข้อผิดพลาด: '+m+'\nบรรทัดที่ '+l);return false};
+
+const CFG_DEF={biz:'บริษัท ตัวอย่าง มีทติ้ง สเปซ จำกัด',tax:'0105560000000',
+ addr:'123 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร 10110',
+ phone:'**-***-****',email:'*******@*******.***',signer:'',
+ bank:'ธนาคารกสิกรไทย เลขที่ 123-4-56789-0 ชื่อบัญชี บจก. ตัวอย่าง มีทติ้ง สเปซ',
+ open:8,close:21,amS:'08:00',amE:'12:00',pmS:'13:00',pmE:'17:00',fdS:'08:00',fdE:'17:00',
+ vatOn:0,vat:7,dep:30,pre:'BK',
+ terms:'1. การจองจะสมบูรณ์เมื่อชำระเงินมัดจำและส่งหลักฐานการชำระเงินแล้ว\n'+
+ '2. ชำระส่วนที่เหลือทั้งหมดภายในวันใช้บริการ\n'+
+ '3. ยกเลิกก่อนวันใช้บริการ 7 วันขึ้นไป คืนเงินมัดจำเต็มจำนวน / น้อยกว่า 7 วัน ขอสงวนสิทธิ์ไม่คืนเงินมัดจำ\n'+
+ '4. กรุณาแจ้งจำนวนอาหารและเครื่องดื่มล่วงหน้าอย่างน้อย 2 วันทำการ\n'+
+ '5. ผู้เช่าต้องรับผิดชอบความเสียหายที่เกิดกับทรัพย์สินภายในห้องประชุมตามจริง'};
+
+const DEF_ROOMS=[
+ {id:'R01',name:'Meeting A1',cap:4,  h:300, half:1000, full:1800, month:22000, note:'ทีวี 43 นิ้ว, ไวท์บอร์ด'},
+ {id:'R02',name:'Meeting A2',cap:4,  h:300, half:1000, full:1800, month:22000, note:'ทีวี 43 นิ้ว, ไวท์บอร์ด'},
+ {id:'R03',name:'Meeting A3',cap:6,  h:400, half:1400, full:2500, month:28000, note:'ทีวี 50 นิ้ว, ไวท์บอร์ด'},
+ {id:'R04',name:'Meeting B1',cap:10, h:600, half:2000, full:3500, month:40000, note:'โปรเจกเตอร์, ไมค์ 2 ตัว'},
+ {id:'R05',name:'Meeting B2',cap:10, h:600, half:2000, full:3500, month:40000, note:'โปรเจกเตอร์, ไมค์ 2 ตัว'},
+ {id:'R06',name:'Meeting B3',cap:12, h:700, half:2400, full:4200, month:46000, note:'โปรเจกเตอร์, ระบบประชุมทางไกล'},
+ {id:'R07',name:'Training C1',cap:20,h:1000,half:3500, full:6000, month:65000, note:'โปรเจกเตอร์, ไมค์ 4 ตัว'},
+ {id:'R08',name:'Training C2',cap:24,h:1200,half:4000, full:7000, month:75000, note:'โปรเจกเตอร์, เวที'},
+ {id:'R09',name:'Board Room', cap:16,h:1500,half:5000, full:9000, month:95000, note:'โต๊ะบอร์ด, ระบบเสียงครบ'},
+ {id:'R10',name:'Auditorium', cap:60,h:2500,half:9000, full:15000,month:160000,note:'เวที, ไฟ, เครื่องเสียงเต็มระบบ'}];
+
+const DEF_SVC=[
+ {id:'S01',name:'อาหารว่าง + เครื่องดื่ม (1 เบรก)',price:90,unit:'ท่าน'},
+ {id:'S02',name:'อาหารว่าง 2 เบรก',price:170,unit:'ท่าน'},
+ {id:'S03',name:'อาหารกลางวัน ข้าวกล่อง',price:150,unit:'ท่าน'},
+ {id:'S04',name:'อาหารกลางวัน บุฟเฟต์',price:320,unit:'ท่าน'},
+ {id:'S05',name:'ชา-กาแฟ ตลอดวัน',price:60,unit:'ท่าน'},
+ {id:'S06',name:'น้ำดื่มบรรจุขวด',price:15,unit:'ขวด'},
+ {id:'S07',name:'โปรเจกเตอร์ + จอ',price:500,unit:'ชุด'},
+ {id:'S08',name:'ไมโครโฟนเพิ่มเติม',price:200,unit:'ตัว'},
+ {id:'S09',name:'Flipchart + ปากกาเมจิก',price:300,unit:'ชุด'},
+ {id:'S10',name:'ระบบประชุมออนไลน์ (Zoom set)',price:1500,unit:'ครั้ง'},
+ {id:'S11',name:'เจ้าหน้าที่เทคนิคประจำห้อง',price:800,unit:'ชม.'},
+ {id:'S12',name:'จัดห้องรูปแบบพิเศษ',price:1000,unit:'ครั้ง'}];
+
+function LS(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}}
+let CFG     = Object.assign({},CFG_DEF,LS('mr_cfg')||{});
+let rooms   = LS('mr_rooms')||DEF_ROOMS;
+let svcs    = LS('mr_svc')||DEF_SVC;
+let bookings= LS('mr_book')||[];
+let seq     = LS('mr_seq')||{bk:0,rc:0};
+let curItems=[], curPays=[];
+
+function save(){
+  localStorage.setItem('mr_cfg',JSON.stringify(CFG));
+  localStorage.setItem('mr_rooms',JSON.stringify(rooms));
+  localStorage.setItem('mr_svc',JSON.stringify(svcs));
+  localStorage.setItem('mr_book',JSON.stringify(bookings));
+  localStorage.setItem('mr_seq',JSON.stringify(seq));
+}
+
+function $(id){return document.getElementById(id)}
+const pad=n=>String(n).padStart(2,'0');
+const toMin=t=>{const a=String(t||'0:0').split(':');return (+a[0])*60+(+a[1]||0)};
+const money=n=>(Math.round((+n||0)*100)/100).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const num=n=>Math.round(+n||0).toLocaleString('th-TH');
+function today(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+const room=id=>rooms.find(r=>r.id===id)||{id:'',name:'(ห้องถูกลบ)',cap:0,h:0,half:0,full:0,month:0,note:''};
+const svc=id=>svcs.find(s=>s.id===id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ST={pending:'รอมัดจำ',confirmed:'ยืนยันแล้ว',done:'ชำระครบ',cancelled:'ยกเลิก'};
+const MODE={hour:'รายชั่วโมง',half:'ครึ่งวัน',full:'เต็มวัน',month:'รายเดือน'};
+const thDate=d=>d?new Date(d+'T00:00').toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}):'-';
+const thLong=d=>d?new Date(d+'T00:00').toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'-';
+function addDays(d,n){const x=new Date(d+'T00:00');x.setDate(x.getDate()+n);
+  return x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate())}
+const days=(a,b)=>Math.max(1,Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/864e5)+1);
+function slots(){const a=[];for(let m=CFG.open*60;m<=CFG.close*60;m+=30)a.push(pad(Math.floor(m/60))+':'+pad(m%60));return a}
+const paid=b=>(b.pays||[]).reduce((s,p)=>s+(+p.amount||0),0);
+
+function bahtText(v){
+  const T=['','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'],P=['','สิบ','ร้อย','พัน','หมื่น','แสน'];
+  function rd(n){n=Math.floor(n);if(n===0)return 'ศูนย์';let o='';
+    if(n>=1000000){o+=rd(Math.floor(n/1000000))+'ล้าน';n%=1000000;if(n===0)return o;}
+    const s=String(n),L=s.length;
+    for(let i=0;i<L;i++){const d=+s[i],p=L-i-1;if(!d)continue;
+      if(p===0&&d===1&&L>1)o+='เอ็ด';else if(p===1&&d===1)o+='';else if(p===1&&d===2)o+='ยี่';else o+=T[d];
+      o+=P[p];}
+    return o;}
+  const c=Math.round(v*100),b=Math.floor(c/100),st=c%100;
+  return st?rd(b)+'บาท'+rd(st)+'สตางค์':rd(b)+'บาทถ้วน';
+}
+function nextNo(kind){
+  const p=today().slice(2,4)+today().slice(5,7);
+  if(kind==='bk'){seq.bk++;return (CFG.pre||'BK')+'-'+p+'-'+pad(seq.bk);}
+  seq.rc++;return 'RC-'+p+'-'+pad(seq.rc);
+}
+
+const TABFN={grid:renderGrid,list:renderList,rooms:renderRooms,svc:renderSvc,report:renderReport,cfg:loadCfg};
+document.querySelectorAll('nav button').forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+    ['grid','list','rooms','svc','report','cfg'].forEach(t=>$('tab-'+t).hidden=(t!==b.dataset.tab));
+    TABFN[b.dataset.tab]();
+  };
+});
+
+function goToday(){$('gDate').value=today();renderGrid();}
+function bookingsOn(d){return bookings.filter(b=>b.status!=='cancelled'&&b.date<=d&&(b.dateEnd||b.date)>=d)}
+function renderGrid(){
+  const d=$('gDate').value||today(),hrs=[];
+  for(let h=CFG.open;h<CFG.close;h++)hrs.push(h);
+  let html='<tr><th class="roomcell">ห้อง \\ เวลา</th>'+hrs.map(h=>'<th>'+pad(h)+'</th>').join('')+'</tr>';
+  const list=bookingsOn(d);
+  rooms.forEach(function(r){
+    html+='<tr><td class="roomcell">'+esc(r.name)+'<div class="muted">'+r.cap+' คน · '+num(r.h)+'฿/ชม.</div></td>';
+    let h=CFG.open;
+    while(h<CFG.close){
+      const b=list.find(x=>x.roomId===r.id&&toMin(x.start)<(h+1)*60&&toMin(x.end)>h*60);
+      if(b){
+        let span=Math.min(Math.ceil(toMin(b.end)/60),CFG.close)-h;
+        if(span<1)span=1;
+        const bal=b.total-paid(b);
+        html+='<td class="busy st-'+b.status+'" colspan="'+span+'" onclick="openForm(null,null,null,\''+b.id+'\')">'+
+          '<b>'+esc(b.org||b.name)+'</b> <span class="muted">'+b.docNo+'</span><br>'+
+          b.start+'-'+b.end+' · '+MODE[b.mode]+' · '+num(b.total)+'฿'+
+          (bal>0.01?'<span style="color:#b45309"> (ค้าง '+num(bal)+'฿)</span>':'<span style="color:#15803d"> ✓ ชำระครบ</span>')+'</td>';
+        h+=span;
+      }else{
+        html+='<td class="free" onclick="openForm(\''+r.id+'\',\''+d+'\',\''+pad(h)+':00\')">+</td>';h++;
+      }
+    }
+    html+='</tr>';
+  });
+  $('gridTable').innerHTML=html;
+}
+function shiftDay(n){$('gDate').value=addDays($('gDate').value||today(),n);renderGrid();}
+
+function openForm(roomId,date,start,editId){
+  if(!rooms.length){alert('กรุณาเพิ่มห้องประชุมก่อน');return;}
+  $('bRoom').innerHTML=rooms.map(r=>'<option value="'+r.id+'">'+esc(r.name)+' · '+r.cap+' คน</option>').join('');
+  $('pickSvc').innerHTML=svcs.map(s=>'<option value="'+s.id+'">'+esc(s.name)+' — '+num(s.price)+'฿/'+esc(s.unit)+'</option>').join('')
+    +'<option value="__">+ รายการอื่น (พิมพ์เอง)</option>';
+  const op=slots().map(s=>'<option>'+s+'</option>').join('');
+  $('bStart').innerHTML=op;$('bEnd').innerHTML=op;
+  $('pDate').value=today();
+  const ed=editId?bookings.find(b=>b.id===editId):null;
+  $('btnDel').hidden=!ed;$('btnPrint').hidden=!ed;$('payBlock').style.display=ed?'block':'none';
+  if(ed){
+    $('mTitle').textContent='แก้ไขใบจอง';$('mDoc').textContent='เลขที่ '+ed.docNo;
+    $('bId').value=ed.id;$('bRoom').value=ed.roomId;$('bMode').value=ed.mode;$('bPax').value=ed.pax;
+    $('bDate').value=ed.date;$('bDateEnd').value=ed.dateEnd||ed.date;
+    $('bStart').value=ed.start;$('bEnd').value=ed.end;
+    $('bHalf').value=ed.half||'am';$('bMonths').value=ed.months||1;
+    $('bName').value=ed.name||'';$('bOrg').value=ed.org||'';$('bPhone').value=ed.phone||'';
+    $('bEmail').value=ed.email||'';$('bTax').value=ed.taxId||'';$('bAddr').value=ed.addr||'';
+    $('bDisc').value=ed.disc||0;$('bStatus').value=ed.status;$('bNote').value=ed.note||'';
+    curItems=JSON.parse(JSON.stringify(ed.items||[]));
+    curPays =JSON.parse(JSON.stringify(ed.pays||[]));
+  }else{
+    $('mTitle').textContent='ใบจองห้องประชุมใหม่';$('mDoc').textContent='(เลขที่จะออกเมื่อกดบันทึก)';
+    $('bId').value='';$('bRoom').value=roomId||rooms[0].id;$('bMode').value='hour';$('bPax').value=1;
+    const d0=date||$('gDate').value||today();
+    $('bDate').value=d0;$('bDateEnd').value=d0;
+    const s0=start||pad(CFG.open)+':00';
+    $('bStart').value=s0;
+    $('bEnd').value=pad(Math.min(parseInt(s0.split(':')[0],10)+1,CFG.close))+':00';
+    ['bName','bOrg','bPhone','bEmail','bTax','bAddr','bNote'].forEach(i=>$(i).value='');
+    $('bDisc').value=0;$('bStatus').value='pending';$('bHalf').value='am';$('bMonths').value=1;
+    curItems=[];curPays=[];
+  }
+  modeChanged();
+  $('ov').classList.add('show');
+  if(!ed)setTimeout(function(){$('bName').focus()},80);
+}
+function closeForm(){$('ov').classList.remove('show')}
+
+function modeChanged(){
+  const m=$('bMode').value;
+  $('wStart').hidden=(m!=='hour');
+  $('wStop').hidden =(m!=='hour');
+  $('wHalf').hidden =(m!=='half');
+  $('wMonths').hidden=(m!=='month');
+  $('wEnd').hidden  =(m!=='full');
+  if(m==='hour'||m==='half')$('bDateEnd').value=$('bDate').value;
+  calc();
+}
+
+function calc(){
+  const r=room($('bRoom').value),m=$('bMode').value,d=$('bDate').value||today();
+  let s,e,de=d,qty=1,unitName='',unitPrice=0,base=0;
+  if(m==='hour'){
+    s=$('bStart').value;e=$('bEnd').value;de=d;
+    qty=(toMin(e)-toMin(s))/60;unitPrice=r.h;unitName='ชั่วโมง';base=qty>0?qty*r.h:0;
+  }else if(m==='half'){
+    const am=$('bHalf').value==='am';s=am?CFG.amS:CFG.pmS;e=am?CFG.amE:CFG.pmE;de=d;
+    qty=1;unitPrice=r.half;unitName='ครึ่งวัน ('+(am?'เช้า':'บ่าย')+')';base=r.half;
+  }else if(m==='full'){
+    s=CFG.fdS;e=CFG.fdE;de=$('bDateEnd').value||d;
+    if(de<d){de=d;$('bDateEnd').value=d;}
+    qty=days(d,de);unitPrice=r.full;unitName='วัน';base=qty*r.full;
+  }else{
+    s=pad(CFG.open)+':00';e=pad(CFG.close)+':00';
+    qty=Math.max(1,parseInt($('bMonths').value,10)||1);
+    de=new Date(new Date(d+'T00:00').setMonth(new Date(d+'T00:00').getMonth()+qty)).toISOString().slice(0,10);
+    $('bDateEnd').value=de;
+    unitPrice=r.month;unitName='เดือน';base=qty*r.month;
+  }
+  const itemSum=curItems.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0);
+  const disc=+$('bDisc').value||0;
+  const sub=Math.max(0,base+itemSum-disc);
+  const vat=(+CFG.vatOn===1)?sub*CFG.vat/100:0;
+  const total=sub+vat;
+  const pd=curPays.reduce((a,p)=>a+(+p.amount||0),0),bal=total-pd;
+
+  $('sumTable').innerHTML=
+   '<tr><td>ค่าเช่าห้อง '+esc(r.name)+' ('+MODE[m]+')</td>'+
+   '<td style="text-align:right;width:130px">'+qty+' '+unitName+'</td>'+
+   '<td style="text-align:right;width:120px">'+money(unitPrice)+'</td>'+
+   '<td style="text-align:right;width:130px">'+money(base)+'</td></tr>'+
+   '<tr><td colspan="3">รวมอาหาร / บริการเสริม</td><td style="text-align:right">'+money(itemSum)+'</td></tr>'+
+   (disc?'<tr><td colspan="3">หักส่วนลด</td><td style="text-align:right;color:#dc2626">-'+money(disc)+'</td></tr>':'')+
+   '<tr><td colspan="3">ยอดก่อนภาษี</td><td style="text-align:right">'+money(sub)+'</td></tr>'+
+   ((+CFG.vatOn===1)?'<tr><td colspan="3">ภาษีมูลค่าเพิ่ม '+CFG.vat+'%</td><td style="text-align:right">'+money(vat)+'</td></tr>':'')+
+   '<tr style="font-weight:700;background:#f8fafc"><td colspan="3">ยอดรวมสุทธิ</td><td style="text-align:right">'+money(total)+'</td></tr>';
+  $('totalText').textContent=money(total)+' บาท';
+  $('balText').innerHTML= pd? 'ชำระแล้ว '+money(pd)+' ฿ · <b style="color:'+(bal>0.01?'#b45309':'#15803d')+'">'+
+      (bal>0.01?'คงเหลือ '+money(bal)+' ฿':'ชำระครบแล้ว')+'</b>' : 'ยอดรวมสุทธิที่ต้องชำระ';
+  renderItems();renderPays();
+  return {s:s,e:e,de:de,qty:qty,unitName:unitName,unitPrice:unitPrice,base:base,
+          itemSum:itemSum,disc:disc,sub:sub,vat:vat,total:total};
+}
+
+function addItem(){
+  const v=$('pickSvc').value,pax=+$('bPax').value||1,q=+$('pickQty').value;
+  if(v==='__'){
+    const n=prompt('ชื่อรายการ');if(!n)return;
+    const p=+prompt('ราคาต่อหน่วย (บาท)','0')||0;
+    curItems.push({name:n,unit:'หน่วย',price:p,qty:q||1});
+  }else{
+    const s=svc(v);if(!s)return;
+    curItems.push({name:s.name,unit:s.unit,price:s.price,qty:(q&&q!==1)?q:(s.unit==='ท่าน'?pax:1)});
+  }
+  $('pickQty').value=1;calc();
+}
+function editItem(i,k,v){curItems[i][k]=(k==='name'||k==='unit')?v:(+v||0);calc();}
+function delItem(i){curItems.splice(i,1);calc();}
+function renderItems(){
+  $('itemTable').innerHTML='<tr><th>รายการ</th><th style="width:90px">จำนวน</th><th style="width:85px">หน่วย</th>'+
+   '<th style="width:110px">ราคา/หน่วย</th><th style="width:120px">รวม</th><th style="width:55px"></th></tr>'+
+   (curItems.length?curItems.map(function(i,ix){return '<tr>'+
+      '<td><input value="'+esc(i.name)+'" onchange="editItem('+ix+',\'name\',this.value)"></td>'+
+      '<td><input type="number" value="'+i.qty+'" onchange="editItem('+ix+',\'qty\',this.value)"></td>'+
+      '<td><input value="'+esc(i.unit)+'" onchange="editItem('+ix+',\'unit\',this.value)"></td>'+
+      '<td><input type="number" value="'+i.price+'" onchange="editItem('+ix+',\'price\',this.value)"></td>'+
+      '<td style="text-align:right;padding-top:14px">'+money(i.qty*i.price)+'</td>'+
+      '<td><button class="btn red sm" onclick="delItem('+ix+')">ลบ</button></td></tr>'}).join('')
+     :'<tr><td colspan="6" style="text-align:center;color:#94a3b8">ยังไม่มีรายการเสริม</td></tr>');
+}
+
+function fillDeposit(){
+  const t=calc().total,pd=curPays.reduce((a,p)=>a+(+p.amount||0),0);
+  $('pAmt').value=Math.max(0,Math.round(t*CFG.dep/100-pd));
+}
+function addPay(){
+  const id=$('bId').value;
+  if(!id){alert('กรุณากดบันทึกใบจองก่อน จึงจะรับชำระเงินได้');return;}
+  const amt=+$('pAmt').value;
+  if(!amt||amt<=0){alert('กรุณาระบุจำนวนเงิน');return;}
+  curPays.push({id:'P'+Date.now().toString().slice(-7)+Math.floor(Math.random()*90+10),
+    no:nextNo('rc'),date:$('pDate').value||today(),amount:amt,
+    method:$('pMethod').value,type:$('pType').value});
+  $('pAmt').value='';
+  const b=bookings.find(x=>x.id===id);
+  b.pays=JSON.parse(JSON.stringify(curPays));
+  const t=calc().total,pd=paid(b);
+  if(pd>=t-0.01&&b.status!=='cancelled'){b.status='done';$('bStatus').value='done';}
+  else if(b.status==='pending'){b.status='confirmed';$('bStatus').value='confirmed';}
+  save();calc();renderGrid();renderList();
+  if(confirm('บันทึกรับเงินแล้ว ต้องการพิมพ์ใบเสร็จเลยหรือไม่?'))
+    printReceipt(id,curPays[curPays.length-1].id);
+}
+function delPay(ix){
+  if(!confirm('ลบรายการรับเงินนี้?'))return;
+  curPays.splice(ix,1);
+  const b=bookings.find(x=>x.id===$('bId').value);
+  if(b){b.pays=JSON.parse(JSON.stringify(curPays));save();}
+  calc();renderList();renderGrid();
+}
+function renderPays(){
+  $('payTable').innerHTML='<tr><th>เลขที่ใบเสร็จ</th><th>วันที่</th><th>ประเภท</th><th>ช่องทาง</th>'+
+   '<th style="text-align:right">จำนวนเงิน</th><th style="width:155px"></th></tr>'+
+   (curPays.length?curPays.map(function(p,ix){return '<tr>'+
+      '<td>'+p.no+'</td><td>'+thDate(p.date)+'</td><td>'+esc(p.type)+'</td><td>'+esc(p.method)+'</td>'+
+      '<td style="text-align:right">'+money(p.amount)+'</td>'+
+      '<td><button class="btn amber sm" onclick="printReceipt(document.getElementById(\'bId\').value,\''+p.id+'\')">🖨 ใบเสร็จ</button> '+
+      '<button class="btn red sm" onclick="delPay('+ix+')">ลบ</button></td></tr>'}).join('')
+     :'<tr><td colspan="6" style="text-align:center;color:#94a3b8">ยังไม่มีการรับชำระเงิน</td></tr>');
+}
+
+function saveBooking(){
+  const c=calc(),id=$('bId').value,roomId=$('bRoom').value,d=$('bDate').value;
+  const name=$('bName').value.trim();
+  if(!d||!name){alert('กรุณากรอกวันที่และชื่อผู้ติดต่อ');return;}
+  if($('bMode').value==='hour'&&toMin(c.e)<=toMin(c.s)){alert('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม');return;}
+  const r=room(roomId),pax=+$('bPax').value||1;
+  if(pax>r.cap&&!confirm('ผู้เข้าร่วม '+pax+' คน เกินความจุห้อง ('+r.cap+' คน) ต้องการจองต่อหรือไม่?'))return;
+  const status=$('bStatus').value;
+  if(status!=='cancelled'){
+    const cl=bookings.find(b=>b.id!==id&&b.roomId===roomId&&b.status!=='cancelled'
+      &&!((b.dateEnd||b.date)<d||b.date>c.de)
+      &&toMin(c.s)<toMin(b.end)&&toMin(c.start)<toMin(c.e));
+    if(cl){alert('⛔ ห้องนี้ถูกจองแล้ว\n'+thDate(cl.date)+' เวลา '+cl.start+'-'+cl.end+'\nโดย '+(cl.org||cl.name)+' ('+cl.docNo+')');return;}
+  }
+  const data={roomId:roomId,mode:$('bMode').value,date:d,dateEnd:c.de,start:c.s,end:c.e,
+    half:$('bHalf').value,months:parseInt($('bMonths').value,10)||1,
+    qty:c.qty,unitName:c.unitName,unitPrice:c.unitPrice,
+    name:name,org:$('bOrg').value.trim(),phone:$('bPhone').value.trim(),email:$('bEmail').value.trim(),
+    taxId:$('bTax').value.trim(),addr:$('bAddr').value.trim(),pax:pax,status:status,
+    note:$('bNote').value.trim(),
+    items:JSON.parse(JSON.stringify(curItems)),pays:JSON.parse(JSON.stringify(curPays)),
+    base:c.base,itemSum:c.itemSum,disc:c.disc,sub:c.sub,vat:c.vat,total:c.total};
+  if(id){
+    Object.assign(bookings.find(b=>b.id===id),data);
+  }else{
+    const nb=Object.assign({id:'B'+Date.now().toString().slice(-8)+Math.floor(Math.random()*90+10),
+      docNo:nextNo('bk'),createdAt:new Date().toISOString()},data);
+    bookings.push(nb);
+    $('bId').value=nb.id;$('mDoc').textContent='เลขที่ '+nb.docNo;$('mTitle').textContent='แก้ไขใบจอง';
+    $('btnDel').hidden=false;$('btnPrint').hidden=false;$('payBlock').style.display='block';
+  }
+  save();renderGrid();renderList();
+  alert('บันทึกเรียบร้อย');
+}
+function delBooking(){
+  if(!confirm('ลบใบจองนี้ถาวร?'))return;
+  bookings=bookings.filter(b=>b.id!==$('bId').value);
+  save();closeForm();renderGrid();renderList();
+}
+function setStatus(id,st){const b=bookings.find(x=>x.id===id);if(b){b.status=st;save();renderList();renderGrid();}}
+
+function clearFilter(){['q','fFrom','fTo'].forEach(i=>$(i).value='');$('fStatus').value='';renderList();}
+function renderList(){
+  const q=$('q').value.toLowerCase(),st=$('fStatus').value,f=$('fFrom').value,t=$('fTo').value;
+  const rows=bookings.filter(b=>(!st||b.status===st)&&(!f||(b.dateEnd||b.date)>=f)&&(!t||b.date<=t)
+    &&(!q||((b.name||'')+(b.org||'')+(b.phone||'')+b.docNo).toLowerCase().includes(q)))
+    .sort((a,b)=>(b.date+b.start).localeCompare(a.date+a.start));
+  $('listTable').innerHTML='<tr><th>เลขที่</th><th>วันที่ใช้</th><th>เวลา</th><th>รูปแบบ</th><th>ห้อง</th>'+
+   '<th>ผู้เช่า</th><th>คน</th><th style="text-align:right">ยอดรวม</th><th style="text-align:right">ชำระแล้ว</th>'+
+   '<th style="text-align:right">คงเหลือ</th><th>สถานะ</th><th>จัดการ</th></tr>'+
+   (rows.length?rows.map(function(b){const pd=paid(b),bal=b.total-pd;return '<tr>'+
+      '<td>'+b.docNo+'</td>'+
+      '<td>'+thDate(b.date)+(b.dateEnd&&b.dateEnd!==b.date?'<div class="muted">ถึง '+thDate(b.dateEnd)+'</div>':'')+'</td>'+
+      '<td>'+b.start+'-'+b.end+'</td><td>'+MODE[b.mode]+'</td><td>'+esc(room(b.roomId).name)+'</td>'+
+      '<td>'+esc(b.org||b.name)+'<div class="muted">'+esc(b.name)+' '+esc(b.phone||'')+'</div></td>'+
+      '<td>'+b.pax+'</td><td style="text-align:right">'+money(b.total)+'</td>'+
+      '<td style="text-align:right">'+money(pd)+'</td>'+
+      '<td style="text-align:right;color:'+(bal>0.01?'#b45309':'#15803d')+'">'+money(bal)+'</td>'+
+      '<td><span class="pill p-'+b.status+'">'+ST[b.status]+'</span></td>'+
+      '<td style="white-space:nowrap">'+
+        '<button class="btn sm" onclick="openForm(null,null,null,\''+b.id+'\')">เปิด</button> '+
+        '<button class="btn amber sm" onclick="printBooking(\''+b.id+'\')">🖨 ใบจอง</button> '+
+        (b.status==='pending'?'<button class="btn green sm" onclick="setStatus(\''+b.id+'\',\'confirmed\')">ยืนยัน</button> ':'')+
+        (b.status!=='cancelled'?'<button class="btn red sm" onclick="setStatus(\''+b.id+'\',\'cancelled\')">ยกเลิก</button>':'')+
+      '</td></tr>'}).join('')
+     :'<tr><td colspan="12" style="text-align:center;color:#94a3b8;padding:24px">ไม่พบรายการ</td></tr>');
+}
+function exportCSV(){
+  const h=['เลขที่','วันที่เริ่ม','วันที่สิ้นสุด','เริ่ม','สิ้นสุด','รูปแบบ','ห้อง','ผู้ติดต่อ','บริษัท','โทร',
+           'ผู้เข้าร่วม','ค่าห้อง','ค่าอาหาร/บริการ','ส่วนลด','VAT','ยอดรวม','ชำระแล้ว','คงเหลือ','สถานะ','หมายเหตุ'];
+  const rows=bookings.map(b=>[b.docNo,b.date,b.dateEnd,b.start,b.end,MODE[b.mode],room(b.roomId).name,b.name,b.org,
+    b.phone,b.pax,b.base,b.itemSum,b.disc,b.vat,b.total,paid(b),b.total-paid(b),ST[b.status],b.note]);
+  const csv='\uFEFF'+[h].concat(rows).map(r=>r.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='bookings_'+today()+'.csv';a.click();
+}
+
+function renderRooms(){
+  $('roomTable').innerHTML='<tr><th>รหัส</th><th>ชื่อห้อง</th><th style="width:80px">ความจุ</th>'+
+   '<th style="width:100px">/ชั่วโมง</th><th style="width:100px">ครึ่งวัน</th><th style="width:100px">เต็มวัน</th>'+
+   '<th style="width:110px">รายเดือน</th><th>อุปกรณ์</th><th style="width:60px"></th></tr>'+
+   rooms.map(r=>'<tr><td>'+r.id+'</td>'+
+     '<td><input value="'+esc(r.name)+'" onchange="editRoom(\''+r.id+'\',\'name\',this.value)"></td>'+
+     '<td><input type="number" value="'+r.cap+'" onchange="editRoom(\''+r.id+'\',\'cap\',+this.value)"></td>'+
+     '<td><input type="number" value="'+r.h+'" onchange="editRoom(\''+r.id+'\',\'h\',+this.value)"></td>'+
+     '<td><input type="number" value="'+r.half+'" onchange="editRoom(\''+r.id+'\',\'half\',+this.value)"></td>'+
+     '<td><input type="number" value="'+r.full+'" onchange="editRoom(\''+r.id+'\',\'full\',+this.value)"></td>'+
+     '<td><input type="number" value="'+r.month+'" onchange="editRoom(\''+r.id+'\',\'month\',+this.value)"></td>'+
+     '<td><input value="'+esc(r.note||'')+'" onchange="editRoom(\''+r.id+'\',\'note\',this.value)"></td>'+
+     '<td><button class="btn red sm" onclick="delRoom(\''+r.id+'\')">ลบ</button></td></tr>').join('');
+}
+function editRoom(id,k,v){room(id)[k]=v;save();renderGrid();}
+function addRoom(){
+  const n=$('nName').value.trim();if(!n){alert('กรุณาใส่ชื่อห้อง');return;}
+  let i=rooms.length+1,id;do{id='R'+pad(i++)}while(rooms.some(r=>r.id===id));
+  rooms.push({id:id,name:n,cap:+$('nCap').value,h:+$('nH').value,half:+$('nHalf').value,
+    full:+$('nFull').value,month:+$('nMonth').value,note:$('nNote').value});
+  $('nName').value='';$('nNote').value='';save();renderRooms();renderGrid();
+}
+function delRoom(id){
+  if(bookings.some(b=>b.roomId===id&&b.status!=='cancelled')){alert('ห้องนี้มีการจองอยู่ ลบไม่ได้');return;}
+  if(!confirm('ลบห้องนี้?'))return;
+  rooms=rooms.filter(r=>r.id!==id);save();renderRooms();renderGrid();
+}
+
+function renderSvc(){
+  $('svcTable').innerHTML='<tr><th>รหัส</th><th>รายการ</th><th style="width:120px">ราคา</th>'+
+   '<th style="width:110px">หน่วย</th><th style="width:60px"></th></tr>'+
+   svcs.map(s=>'<tr><td>'+s.id+'</td>'+
+     '<td><input value="'+esc(s.name)+'" onchange="editSvc(\''+s.id+'\',\'name\',this.value)"></td>'+
+     '<td><input type="number" value="'+s.price+'" onchange="editSvc(\''+s.id+'\',\'price\',+this.value)"></td>'+
+     '<td><input value="'+esc(s.unit)+'" onchange="editSvc(\''+s.id+'\',\'unit\',this.value)"></td>'+
+     '<td><button class="btn red sm" onclick="delSvc(\''+s.id+'\')">ลบ</button></td></tr>').join('');
+}
+function editSvc(id,k,v){svc(id)[k]=v;save();}
+function addSvc(){
+  const n=$('sName').value.trim();if(!n){alert('กรุณาใส่ชื่อรายการ');return;}
+  let i=svcs.length+1,id;do{id='S'+pad(i++)}while(svcs.some(s=>s.id===id));
+  svcs.push({id:id,name:n,price:+$('sPrice').value,unit:$('sUnit').value});
+  $('sName').value='';save();renderSvc();
+}
+function delSvc(id){if(!confirm('ลบรายการนี้?'))return;svcs=svcs.filter(s=>s.id!==id);save();renderSvc();}
+
+function setRepPeriod(type){
+  const t=today();
+  if(type==='today'){$('repFrom').value=t;$('repTo').value=t;}
+  else if(type==='month'){$('repFrom').value=t.slice(0,8)+'01';$('repTo').value=t;}
+  else if(type==='all'){$('repFrom').value='2020-01-01';$('repTo').value='2099-12-31';}
+  renderReport();
+}
+
+function repData(){
+  const f=$('repFrom').value||'2020-01-01', t=$('repTo').value||'2099-12-31';
+  const q=($('repQuery').value||'').toLowerCase().trim();
+
+  const bk=bookings.filter(b=>{
+    if(b.status==='cancelled')return false;
+    const dateMatch=((b.dateEnd||b.date)>=f && b.date<=t);
+    if(!dateMatch)return false;
+    if(!q)return true;
+    const rName=room(b.roomId).name.toLowerCase();
+    const target=(b.name+' '+(b.org||'')+' '+rName+' '+b.docNo).toLowerCase();
+    return target.includes(q);
+  }).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
+
+  const bkIds=new Set(bk.map(x=>x.id));
+  const pays=[];
+  bookings.forEach(b=>{
+    if(!bkIds.has(b.id))return;
+    (b.pays||[]).forEach(p=>{
+      if(p.date>=f && p.date<=t)pays.push(Object.assign({},p,{b:b}));
+    });
+  });
+  pays.sort((a,b)=>a.date.localeCompare(b.date));
+
+  return{from:f,to:t,label:'ตั้งแต่วันที่ '+thDate(f)+' ถึง '+thDate(t),bk:bk,pays:pays,
+    rev:bk.reduce((s,b)=>s+b.total,0),roomRev:bk.reduce((s,b)=>s+b.base,0),
+    fnb:bk.reduce((s,b)=>s+b.itemSum,0),cash:pays.reduce((s,p)=>s+p.amount,0),
+    out:bk.reduce((s,b)=>s+(b.total-paid(b)),0)};
+}
+
+function renderReport(){
+  const D=repData();
+  $('stats').innerHTML=
+   '<div class="stat">จำนวนการจอง<b>'+D.bk.length+'</b></div>'+
+   '<div class="stat">ค่าเช่าห้อง<b>'+num(D.roomRev)+' ฿</b></div>'+
+   '<div class="stat">อาหาร/บริการ<b>'+num(D.fnb)+' ฿</b></div>'+
+   '<div class="stat">ยอดขายรวม<b style="color:#2563eb">'+num(D.rev)+' ฿</b></div>'+
+   '<div class="stat">เงินรับเข้าจริง<b style="color:#16a34a">'+num(D.cash)+' ฿</b></div>'+
+   '<div class="stat">ยอดค้างชำระ<b style="color:#d97706">'+num(D.out)+' ฿</b></div>';
+  
+  $('repRoom').innerHTML='<tr><th>ห้อง</th><th style="text-align:right">ครั้ง</th><th style="text-align:right">ค่าเช่า</th>'+
+   '<th style="text-align:right">อาหาร/บริการ</th><th style="text-align:right">รวม</th></tr>'+
+   rooms.map(function(r){const x=D.bk.filter(b=>b.roomId===r.id);if(!x.length)return '';
+     return '<tr><td>'+esc(r.name)+'</td><td style="text-align:right">'+x.length+'</td>'+
+      '<td style="text-align:right">'+money(x.reduce((s,b)=>s+b.base,0))+'</td>'+
+      '<td style="text-align:right">'+money(x.reduce((s,b)=>s+b.itemSum,0))+'</td>'+
+      '<td style="text-align:right">'+money(x.reduce((s,b)=>s+b.total,0))+'</td></tr>'}).join('')+
+   '<tr style="font-weight:700;background:#f8fafc"><td>รวมทั้งสิ้น</td><td style="text-align:right">'+D.bk.length+'</td>'+
+   '<td style="text-align:right">'+money(D.roomRev)+'</td><td style="text-align:right">'+money(D.fnb)+'</td>'+
+   '<td style="text-align:right">'+money(D.rev)+'</td></tr>';
+  
+  $('repBook').innerHTML='<tr><th>เลขที่</th><th>วันที่ใช้</th><th>ห้อง</th><th>ผู้เช่า / บริษัท</th><th>คน</th>'+
+   '<th style="text-align:right">ยอดรวม</th><th style="text-align:right">ชำระแล้ว</th><th style="text-align:right">คงเหลือ</th><th style="width:90px">จัดการ</th></tr>'+
+   (D.bk.length?D.bk.map(b=>'<tr><td>'+b.docNo+'</td>'+
+     '<td>'+thDate(b.date)+(b.dateEnd&&b.dateEnd!==b.date?'<br><span class="muted">ถึง '+thDate(b.dateEnd)+'</span>':'')+'</td>'+
+     '<td>'+esc(room(b.roomId).name)+'</td><td>'+esc(b.org||b.name)+'<div class="muted">ติดต่อ: '+esc(b.name)+'</div></td><td>'+b.pax+'</td>'+
+     '<td style="text-align:right">'+money(b.total)+'</td><td style="text-align:right">'+money(paid(b))+'</td>'+
+     '<td style="text-align:right">'+money(b.total-paid(b))+'</td>'+
+     '<td><button class="btn amber sm" onclick="printBooking(\''+b.id+'\')">🖨 ใบจอง</button></td></tr>').join('')
+    :'<tr><td colspan="9" style="text-align:center;color:#94a3b8">ไม่พบรายการตามเงื่อนไข</td></tr>');
+
+  $('repPay').innerHTML='<tr><th>เลขที่ใบเสร็จ</th><th>วันที่รับเงิน</th><th>อ้างอิงใบจอง</th><th>ผู้ชำระ / บริษัท</th>'+
+   '<th>ประเภท</th><th>ช่องทาง</th><th style="text-align:right">จำนวนเงิน</th><th style="width:90px">จัดการ</th></tr>'+
+   (D.pays.length?D.pays.map(p=>'<tr><td>'+p.no+'</td><td>'+thDate(p.date)+'</td><td>'+p.b.docNo+'</td>'+
+     '<td>'+esc(p.b.org||p.b.name)+'</td><td>'+esc(p.type)+'</td><td>'+esc(p.method)+'</td>'+
+     '<td style="text-align:right">'+money(p.amount)+'</td>'+
+     '<td><button class="btn amber sm" onclick="printReceipt(\''+p.b.id+'\',\''+p.id+'\')">🖨 ใบเสร็จ</button></td></tr>').join('')+
+     '<tr style="font-weight:700;background:#f8fafc"><td colspan="6">รวมเงินรับเข้า</td>'+
+     '<td colspan="2" style="text-align:right">'+money(D.cash)+'</td></tr>'
+    :'<tr><td colspan="8" style="text-align:center;color:#94a3b8">ไม่มีรายการรับเงินในช่วงนี้</td></tr>');
+}
+
+function head(title,no,date){
+  return '<table class="nb" style="width:100%"><tr>'+
+    '<td style="width:62%"><div class="co">'+esc(CFG.biz)+'</div>'+
+    '<div>'+esc(CFG.addr)+'</div>'+
+    '<div>โทร. '+esc(CFG.phone)+' · อีเมล '+esc(CFG.email)+'</div>'+
+    '<div>เลขประจำตัวผู้เสียภาษี '+esc(CFG.tax)+'</div></td>'+
+    '<td style="text-align:right;vertical-align:top">'+
+    '<div style="font-size:20px;font-weight:700">'+title+'</div>'+
+    '<div>เลขที่ <b>'+no+'</b></div><div>วันที่ '+thDate(date)+'</div></td></tr></table>'+
+    '<hr style="border:0;border-top:2px solid #000;margin:8px 0 12px">';
+}
+function doPrint(html){$('printArea').innerHTML='<div class="doc">'+html+'</div>';window.print();}
+
+function printBooking(id){
+  const b=bookings.find(x=>x.id===id);if(!b){alert('ไม่พบใบจอง');return;}
+  const r=room(b.roomId),pd=paid(b),bal=b.total-pd;
+  const period=(b.dateEnd&&b.dateEnd!==b.date)?(thLong(b.date)+' ถึง '+thLong(b.dateEnd)):thLong(b.date);
+  let lines='<tr><td>1</td><td>ค่าเช่า'+esc(r.name)+' ('+MODE[b.mode]+')<br>'+
+    '<span style="font-size:13px">'+period+' เวลา '+b.start+' - '+b.end+' น.</span></td>'+
+    '<td style="text-align:center">'+b.qty+' '+esc(b.unitName||'')+'</td>'+
+    '<td style="text-align:right">'+money(b.unitPrice||0)+'</td>'+
+    '<td style="text-align:right">'+money(b.base)+'</td></tr>';
+  (b.items||[]).forEach(function(i,ix){
+    lines+='<tr><td>'+(ix+2)+'</td><td>'+esc(i.name)+'</td>'+
+      '<td style="text-align:center">'+i.qty+' '+esc(i.unit)+'</td>'+
+      '<td style="text-align:right">'+money(i.price)+'</td>'+
+      '<td style="text-align:right">'+money(i.qty*i.price)+'</td></tr>';});
+  doPrint(head('ใบยืนยันการจองห้องประชุม',b.docNo,b.date)+
+   '<table class="nb" style="width:100%"><tr>'+
+   '<td style="width:55%"><b>ผู้เช่า:</b> '+esc(b.org||b.name)+'<br>'+
+     (b.org?'ผู้ติดต่อ: '+esc(b.name)+'<br>':'')+
+     (b.addr?esc(b.addr)+'<br>':'')+
+     'โทร. '+esc(b.phone||'-')+(b.email?' · '+esc(b.email):'')+
+     (b.taxId?'<br>เลขประจำตัวผู้เสียภาษี '+esc(b.taxId):'')+'</td>'+
+   '<td style="vertical-align:top"><b>ห้อง:</b> '+esc(r.name)+' (จุ '+r.cap+' คน)<br>'+
+     '<b>ผู้เข้าร่วม:</b> '+b.pax+' คน<br><b>รูปแบบการเช่า:</b> '+MODE[b.mode]+'<br>'+
+     '<b>สถานะ:</b> '+ST[b.status]+'</td></tr></table>'+
+   '<table style="width:100%;margin-top:10px">'+
+   '<tr><th style="width:38px">#</th><th>รายการ</th><th style="width:105px;text-align:center">จำนวน</th>'+
+   '<th style="width:95px;text-align:right">ราคา/หน่วย</th><th style="width:110px;text-align:right">จำนวนเงิน</th></tr>'+
+   lines+
+   (b.disc?'<tr><td colspan="4" style="text-align:right">หักส่วนลด</td><td style="text-align:right">-'+money(b.disc)+'</td></tr>':'')+
+   '<tr><td colspan="4" style="text-align:right">รวมเป็นเงิน</td><td style="text-align:right">'+money(b.sub)+'</td></tr>'+
+   (b.vat?'<tr><td colspan="4" style="text-align:right">ภาษีมูลค่าเพิ่ม '+CFG.vat+'%</td><td style="text-align:right">'+money(b.vat)+'</td></tr>':'')+
+   '<tr style="font-weight:700"><td colspan="4" style="text-align:right">ยอดรวมสุทธิ</td><td style="text-align:right">'+money(b.total)+'</td></tr>'+
+   '<tr><td colspan="4" style="text-align:right">ชำระแล้ว</td><td style="text-align:right">'+money(pd)+'</td></tr>'+
+   '<tr style="font-weight:700"><td colspan="4" style="text-align:right">คงเหลือต้องชำระ</td><td style="text-align:right">'+money(bal)+'</td></tr>'+
+   '</table>'+
+   '<p style="margin:6px 0 0">('+bahtText(b.total)+')</p>'+
+   (b.note?'<p style="margin:8px 0 0"><b>หมายเหตุ:</b> '+esc(b.note)+'</p>':'')+
+   '<p style="margin:10px 0 0"><b>ชำระเงินได้ที่:</b> '+esc(CFG.bank)+'</p>'+
+   '<div style="margin-top:12px;border:1px solid #000;padding:8px 10px"><b>เงื่อนไขการจอง</b>'+
+   '<div style="white-space:pre-line;font-size:13px">'+esc(CFG.terms)+'</div></div>'+
+   '<div class="sign">'+
+   '<div><div class="sline"></div>ผู้เช่า / ผู้จอง<br>วันที่ ............/............/............</div>'+
+   '<div><div class="sline"></div>'+esc(CFG.signer||'ผู้มีอำนาจลงนาม')+'<br>ในนาม '+esc(CFG.biz)+
+   '<br>วันที่ ............/............/............</div></div>');
+}
+
+function printReceipt(bid,pid){
+  const b=bookings.find(x=>x.id===bid);if(!b)return;
+  const p=(b.pays||[]).find(x=>x.id===pid);if(!p)return;
+  const r=room(b.roomId),pd=paid(b),bal=b.total-pd;
+  doPrint(head('ใบเสร็จรับเงิน / ใบรับเงินมัดจำ',p.no,p.date)+
+   '<table class="nb" style="width:100%"><tr>'+
+   '<td style="width:58%"><b>ได้รับเงินจาก:</b> '+esc(b.org||b.name)+'<br>'+
+     (b.addr?esc(b.addr)+'<br>':'')+'โทร. '+esc(b.phone||'-')+
+     (b.taxId?'<br>เลขประจำตัวผู้เสียภาษี '+esc(b.taxId):'')+'</td>'+
+   '<td style="vertical-align:top"><b>อ้างอิงใบจองเลขที่:</b> '+b.docNo+'<br>'+
+     '<b>ห้อง:</b> '+esc(r.name)+'<br><b>วันที่ใช้บริการ:</b> '+thDate(b.date)+
+     (b.dateEnd!==b.date?' - '+thDate(b.dateEnd):'')+'<br>'+
+     '<b>เวลา:</b> '+b.start+' - '+b.end+' น.</td></tr></table>'+
+   '<table style="width:100%;margin-top:10px">'+
+   '<tr><th style="width:38px">#</th><th>รายละเอียด</th><th style="width:140px;text-align:right">จำนวนเงิน</th></tr>'+
+   '<tr><td>1</td><td>'+esc(p.type)+' ค่าเช่าห้องประชุมและบริการ ตามใบจองเลขที่ '+b.docNo+'<br>'+
+   '<span style="font-size:13px">ชำระโดย: '+esc(p.method)+'</span></td>'+
+   '<td style="text-align:right">'+money(p.amount)+'</td></tr>'+
+   '<tr style="font-weight:700"><td colspan="2" style="text-align:right">รวมเงินที่รับในครั้งนี้</td>'+
+   '<td style="text-align:right">'+money(p.amount)+'</td></tr></table>'+
+   '<p style="margin:6px 0 0;font-weight:700">('+bahtText(p.amount)+')</p>'+
+   '<table class="nb" style="width:100%;margin-top:10px;font-size:14px">'+
+   '<tr><td>ยอดรวมตามใบจอง</td><td style="text-align:right;width:150px">'+money(b.total)+' บาท</td></tr>'+
+   '<tr><td>ชำระแล้วสะสม</td><td style="text-align:right">'+money(pd)+' บาท</td></tr>'+
+   '<tr><td><b>คงเหลือต้องชำระ</b></td><td style="text-align:right"><b>'+money(bal)+' บาท</b></td></tr></table>'+
+   '<div class="sign"><div><div class="sline"></div>ผู้ชำระเงิน</div>'+
+   '<div><div class="sline"></div>ผู้รับเงิน<br>ในนาม '+esc(CFG.biz)+'</div></div>');
+}
+
+function printReport(){
+  const D=repData();
+  let t1=rooms.map(function(r){const x=D.bk.filter(b=>b.roomId===r.id);if(!x.length)return '';
+    return '<tr><td>'+esc(r.name)+'</td><td style="text-align:right">'+x.length+'</td>'+
+     '<td style="text-align:right">'+money(x.reduce((s,b)=>s+b.base,0))+'</td>'+
+     '<td style="text-align:right">'+money(x.reduce((s,b)=>s+b.itemSum,0))+'</td>'+
+     '<td style="text-align:right">'+money(x.reduce((s,b)=>s+b.total,0))+'</td></tr>'}).join('');
+  let t2=D.bk.map(b=>'<tr><td>'+b.docNo+'</td><td>'+thDate(b.date)+'</td><td>'+esc(room(b.roomId).name)+'</td>'+
+    '<td>'+esc(b.org||b.name)+'</td><td style="text-align:right">'+money(b.total)+'</td>'+
+    '<td style="text-align:right">'+money(paid(b))+'</td><td style="text-align:right">'+money(b.total-paid(b))+'</td></tr>').join('')||'<tr><td colspan="7">ไม่พบรายการ</td></tr>';
+  let t3=D.pays.map(p=>'<tr><td>'+p.no+'</td><td>'+thDate(p.date)+'</td><td>'+p.b.docNo+'</td>'+
+    '<td>'+esc(p.b.org||p.b.name)+'</td><td>'+esc(p.type)+'</td><td>'+esc(p.method)+'</td>'+
+    '<td style="text-align:right">'+money(p.amount)+'</td></tr>').join('')||'<tr><td colspan="7">ไม่มีรายการ</td></tr>';
+  doPrint(head('รายงานสรุปการให้เช่าห้องประชุม','-',today())+
+   '<h2 style="margin:0 0 10px">รายงานช่วงเวลา: '+thDate(D.from)+' ถึง '+thDate(D.to)+'</h2>'+
+   '<table style="width:100%;margin-bottom:12px">'+
+   '<tr><th>จำนวนการจอง</th><th>ค่าเช่าห้อง</th><th>อาหาร/บริการ</th><th>ยอดขายรวม</th><th>เงินรับเข้า</th><th>ค้างชำระ</th></tr>'+
+   '<tr style="text-align:right"><td style="text-align:center">'+D.bk.length+'</td><td>'+money(D.roomRev)+'</td>'+
+   '<td>'+money(D.fnb)+'</td><td><b>'+money(D.rev)+'</b></td><td>'+money(D.cash)+'</td><td>'+money(D.out)+'</td></tr></table>'+
+   '<p style="font-weight:700;margin:12px 0 5px">1. สรุปตามห้องประชุม</p>'+
+   '<table style="width:100%"><tr><th>ห้อง</th><th style="text-align:right">ครั้ง</th>'+
+   '<th style="text-align:right">ค่าเช่า</th><th style="text-align:right">อาหาร/บริการ</th><th style="text-align:right">รวม</th></tr>'+
+   t1+'<tr style="font-weight:700"><td>รวม</td><td style="text-align:right">'+D.bk.length+'</td>'+
+   '<td style="text-align:right">'+money(D.roomRev)+'</td><td style="text-align:right">'+money(D.fnb)+'</td>'+
+   '<td style="text-align:right">'+money(D.rev)+'</td></tr></table>'+
+   '<p style="font-weight:700;margin:14px 0 5px">2. รายการจอง</p>'+
+   '<table style="width:100%"><tr><th>เลขที่</th><th>วันที่ใช้</th><th>ห้อง</th><th>ผู้เช่า / บริษัท</th>'+
+   '<th style="text-align:right">ยอดรวม</th><th style="text-align:right">ชำระแล้ว</th><th style="text-align:right">คงเหลือ</th></tr>'+
+   t2+'</table>'+
+   '<p style="font-weight:700;margin:14px 0 5px">3. เงินรับเข้า</p>'+
+   '<table style="width:100%"><tr><th>ใบเสร็จ</th><th>วันที่</th><th>ใบจอง</th><th>ผู้ชำระ</th><th>ประเภท</th>'+
+   '<th>ช่องทาง</th><th style="text-align:right">จำนวนเงิน</th></tr>'+t3+
+   '<tr style="font-weight:700"><td colspan="6">รวมเงินรับเข้า</td><td style="text-align:right">'+money(D.cash)+'</td></tr></table>'+
+   '<div class="sign"><div><div class="sline"></div>ผู้จัดทำรายงาน</div>'+
+   '<div><div class="sline"></div>ผู้ตรวจสอบ / อนุมัติ</div></div>');
+}
+
+const CFGMAP={cBiz:'biz',cTax:'tax',cAddr:'addr',cPhone:'phone',cEmail:'email',cSigner:'signer',cBank:'bank',
+ cOpen:'open',cClose:'close',cAmS:'amS',cAmE:'amE',cPmS:'pmS',cPmE:'pmE',cFdS:'fdS',cFdE:'fdE',
+ cVatOn:'vatOn',cVat:'vat',cDep:'dep',cPre:'pre',cTerms:'terms'};
+function loadCfg(){for(const k in CFGMAP)$(k).value=CFG[CFGMAP[k]];}
+function saveCfg(){
+  for(const k in CFGMAP){const key=CFGMAP[k],v=$(k).value;
+    CFG[key]=(['open','close','vat','dep','vatOn'].indexOf(key)>=0)?(+v||0):v;}
+  if(CFG.close<=CFG.open){alert('เวลาปิดต้องมากกว่าเวลาเปิด');CFG.close=CFG.open+1;$('cClose').value=CFG.close;}
+  save();renderGrid();alert('บันทึกการตั้งค่าเรียบร้อย');
+}
+function backup(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify({CFG:CFG,rooms:rooms,svcs:svcs,bookings:bookings,seq:seq},null,1)],
+    {type:'application/json'}));
+  a.download='meetingroom_backup_'+today()+'.json';a.click();
+}
+function restore(inp){
+  const f=inp.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=function(e){
+    try{
+      const d=JSON.parse(e.target.result);
+      if(!confirm('ข้อมูลปัจจุบันจะถูกแทนที่ทั้งหมด ยืนยันหรือไม่?'))return;
+      CFG=Object.assign({},CFG_DEF,d.CFG||{});
+      rooms=d.rooms||rooms;svcs=d.svcs||svcs;bookings=d.bookings||[];seq=d.seq||seq;
+      save();location.reload();
+    }catch(err){alert('ไฟล์ไม่ถูกต้อง')}
+  };
+  rd.readAsText(f);inp.value='';
+}
+
+// ============ ฟังก์ชันส่งออกและนำเข้า Excel (CSV) ============
+function exportExcelCSV(){
+  let csv = '\ufeff=== ข้อมูลห้องประชุม ===\nรหัส,ชื่อห้อง,ความจุ,ราคาชม,ครึ่งวัน,เต็มวัน,รายเดือน,อุปกรณ์\n';
+  rooms.forEach(r => {
+    csv += `"${r.id}","${r.name}","${r.cap}","${r.h}","${r.half}","${r.full}","${r.month}","${r.note || ''}"\n`;
+  });
+
+  csv += '\n\ufeff=== ข้อมูลรายการบริการ ===\nรหัส,ชื่อรายการ,ราคา,หน่วย\n';
+  svcs.forEach(s => {
+    csv += `"${s.id}","${s.name}","${s.price}","${s.unit}"\n`;
+  });
+
+  csv += '\n\ufeff=== ข้อมูลการจอง ===\nรหัสจอง,เลขที่ใบจอง,รหัสห้อง,รูปแบบ,วันที่เริ่ม,วันที่สิ้นสุด,เวลาเริ่ม,เวลาสิ้นสุด,ชื่อผู้ติดต่อ,บริษัท,โทรศัพท์,อีเมล,เลขผู้เสียภาษี,ที่อยู่,จำนวนคน,สถานะ,ยอดรวม,หมายเหตุ\n';
+  bookings.forEach(b => {
+    csv += `"${b.id}","${b.docNo}","${b.roomId}","${b.mode}","${b.date}","${b.dateEnd || b.date}","${b.start}","${b.end}","${b.name}","${b.org || ''}","${b.phone || ''}","${b.email || ''}","${b.taxId || ''}","${b.addr || ''}","${b.pax}","${b.status}","${b.total}","${b.note || ''}"\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `meetingroom_data_${today()}.csv`;
+  a.click();
+}
+
+function restoreExcelCSV(inp){
+  const f = inp.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = function(e){
+    try {
+      const text = e.target.result;
+      const lines = text.split(/\r\n|\n/);
+      let mode = '';
+      let rCount = 0, sCount = 0, bCount = 0;
+      let newRooms = [], newSvcs = [], newBookings = [];
+
+      lines.forEach(line => {
+        if (!line.trim()) return;
+        if (line.includes('=== ข้อมูลห้องประชุม ===')) { mode = 'rooms'; return; }
+        if (line.includes('=== ข้อมูลรายการบริการ ===')) { mode = 'svcs'; return; }
+        if (line.includes('=== ข้อมูลการจอง ===')) { mode = 'bookings'; return; }
+
+        const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/^["=]+|["']+$/g, '').trim());
+        if (mode === 'rooms' && cols[0] && cols[0] !== 'รหัส') {
+          newRooms.push({ id: cols[0], name: cols[1], cap: Number(cols[2])||10, h: Number(cols[3])||500, half: Number(cols[4])||1500, full: Number(cols[5])||3000, month: Number(cols[6])||30000, note: cols[7]||'' });
+          rCount++;
+        } else if (mode === 'svcs' && cols[0] && cols[0] !== 'รหัส') {
+          newSvcs.push({ id: cols[0], name: cols[1], price: Number(cols[2])||0, unit: cols[3]||'ชุด' });
+          sCount++;
+        } else if (mode === 'bookings' && cols[0] && cols[0] !== 'รหัสจอง') {
+          const bId = cols[0];
+          let existing = bookings.find(x => x.id === bId) || {};
+          newBookings.push({
+            id: bId, docNo: cols[1], roomId: cols[2], mode: cols[3], date: cols[4], dateEnd: cols[5],
+            start: cols[6], end: cols[7], name: cols[8], org: cols[9], phone: cols[10], email: cols[11],
+            taxId: cols[12], addr: cols[13], pax: Number(cols[14])||1, status: cols[15], total: Number(cols[16])||0,
+            note: cols[17], items: existing.items || [], pays: existing.pays || [], base: existing.base || 0,
+            itemSum: existing.itemSum || 0, disc: existing.disc || 0, sub: existing.sub || 0, vat: existing.vat || 0
+          });
+          bCount++;
+        }
+      });
+
+      if (!confirm('ข้อมูลปัจจุบันจะถูกผสานหรือแทนที่ ยืนยันการนำเข้าข้อมูล Excel (CSV) หรือไม่?')) return;
+      if (newRooms.length > 0) rooms = newRooms;
+      if (newSvcs.length > 0) svcs = newSvcs;
+      if (newBookings.length > 0) bookings = newBookings;
+      
+      save(); location.reload();
+      alert(`นำเข้าข้อมูลสำเร็จ!\n- ห้องประชุม: ${rCount} ห้อง\n- บริการ: ${sCount} รายการ\n- การจอง: ${bCount} รายการ`);
+    } catch(err) {
+      alert('เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาใช้ไฟล์ CSV ที่ส่งออกจากระบบเท่านั้น');
+    }
+  };
+  rd.readAsText(f, 'UTF-8');
+  inp.value = '';
+}
+
+function wipe(){
+  if(!confirm('ลบข้อมูลการจองทั้งหมดถาวร? (ห้องและรายการบริการยังอยู่)'))return;
+  if(!confirm('ยืนยันอีกครั้ง — ข้อมูลจะกู้คืนไม่ได้'))return;
+  bookings=[];seq={bk:0,rc:0};save();renderGrid();renderList();alert('ล้างข้อมูลแล้ว');
+}
+
+$('gDate').value=today();
+$('gDate').onchange=renderGrid;
+const tNow=today();
+$('repFrom').value=tNow.slice(0,8)+'01';
+$('repTo').value=tNow;
+$('ov').addEventListener('click',function(e){if(e.target.id==='ov')closeForm()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeForm()});
+save();loadCfg();renderGrid();
+</script>
+</div>
+<div id="printArea"></div>
+</body>
+</html>
