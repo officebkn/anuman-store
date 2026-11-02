@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบจัดการร้านเช่ารถ (รถยนต์, มอเตอร์ไซด์, EV)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Sarabun', sans-serif; }
+  @media print {
+    body * { visibility: hidden !important; }
+    #printArea, #printArea * { visibility: visible !important; }
+    #printArea { position: fixed; left: 0; top: 0; width: 100%; height: 100%; background: white; z-index: 99999; display: block !important; padding: 20px; }
+  }
+</style>
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-slate-900 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold flex items-center gap-2">🚗 ระบบจัดการร้านเช่ารถ & มอเตอร์ไซด์ & EV</h1>
+      <div id="shopInfo" class="text-sm text-slate-300"></div>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="bg-slate-800 text-white shadow">
+    <div class="max-w-7xl mx-auto px-4 flex gap-2 overflow-x-auto">
+      <button onclick="switchTab('dashboard')" class="tab-btn px-4 py-3 border-b-2 border-blue-500 font-semibold" data-tab="dashboard">📊 หน้าหลัก</button>
+      <button onclick="switchTab('rentals')" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-300 hover:text-white" data-tab="rentals">📝 ทำสัญญาเช่า</button>
+      <button onclick="switchTab('vehicles')" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-300 hover:text-white" data-tab="vehicles">🏍️ จัดการรถในร้าน (<span id="vehCountTab">20</span>)</button>
+      <button onclick="switchTab('customers')" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-300 hover:text-white" data-tab="customers">👥 ลูกค้า</button>
+      <button onclick="switchTab('settings')" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-300 hover:text-white" data-tab="settings">⚙️ ตั้งค่า & สำรองข้อมูล</button>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
+
+    <!-- 1. DASHBOARD -->
+    <section id="tab-dashboard" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-xl shadow border-l-4 border-blue-500">
+          <p class="text-slate-500 text-sm">รถทั้งหมดในร้าน</p>
+          <p id="statTotalVehicles" class="text-2xl font-bold mt-1">0 คัน</p>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow border-l-4 border-emerald-500">
+          <p class="text-slate-500 text-sm">รถว่างพร้อมเช่า</p>
+          <p id="statAvailableVehicles" class="text-2xl font-bold mt-1 text-emerald-600">0 คัน</p>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow border-l-4 border-amber-500">
+          <p class="text-slate-500 text-sm">กำลังถูกเช่าอยู่</p>
+          <p id="statRentingVehicles" class="text-2xl font-bold mt-1 text-amber-600">0 คัน</p>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow border-l-4 border-indigo-500">
+          <p class="text-slate-500 text-sm">รายได้รวมทั้งหมด</p>
+          <p id="statTotalIncome" class="text-2xl font-bold mt-1 text-indigo-600">0.00 ฿</p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow p-6">
+        <h3 class="font-bold text-lg mb-4">📋 รายการเช่าล่าสุด</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 border-b">
+              <tr>
+                <th class="p-3">เลขที่สัญญา</th>
+                <th class="p-3">ลูกค้า</th>
+                <th class="p-3">รถ / ทะเบียน</th>
+                <th class="p-3">ช่วงเวลาเช่า</th>
+                <th class="p-3 text-right">ยอดรวม</th>
+                <th class="p-3 text-center">สถานะ</th>
+              </tr>
+            </thead>
+            <tbody id="recentRentalsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. RENTALS (ทำสัญญาเช่า) -->
+    <section id="tab-rentals" class="hidden space-y-6">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-bold">📝 จัดการสัญญาเช่ารถ</h2>
+        <button onclick="openRentalModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold">+ สร้างสัญญาเช่าใหม่</button>
+      </div>
+
+      <div class="bg-white rounded-xl shadow overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 border-b">
+              <tr>
+                <th class="p-3">เลขสัญญา</th>
+                <th class="p-3">ลูกค้า</th>
+                <th class="p-3">รถ</th>
+                <th class="p-3">วันรับ - วันคืน</th>
+                <th class="p-3 text-right">ยอดรวม</th>
+                <th class="p-3 text-right">มัดจำ</th>
+                <th class="p-3 text-center">สถานะ</th>
+                <th class="p-3 text-center">จัดการเอกสาร</th>
+              </tr>
+            </thead>
+            <tbody id="rentalsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. VEHICLES (จัดการรถ) -->
+    <section id="tab-vehicles" class="hidden space-y-6">
+      <div class="flex justify-between items-center flex-wrap gap-4">
+        <h2 class="text-xl font-bold">🏍️ จัดการรถในร้าน (รถยนต์ / มอเตอร์ไซด์ / EV)</h2>
+        <div class="flex items-center gap-2">
+          <div class="inline-flex rounded-lg border border-slate-300 bg-white p-1 text-sm">
+            <button onclick="filterVehicleStatus('all')" id="btnFilterAll" class="px-3 py-1.5 rounded-md font-semibold bg-blue-600 text-white">ทั้งหมด</button>
+            <button onclick="filterVehicleStatus('available')" id="btnFilterAvail" class="px-3 py-1.5 rounded-md text-slate-600 hover:bg-slate-100">ว่าง</button>
+            <button onclick="filterVehicleStatus('busy')" id="btnFilterBusy" class="px-3 py-1.5 rounded-md text-slate-600 hover:bg-slate-100">ไม่ว่าง</button>
+          </div>
+          <button onclick="openVehicleModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold">+ เพิ่มรถใหม่</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="vehicleGrid"></div>
+    </section>
+
+    <!-- 4. CUSTOMERS (ลูกค้า) -->
+    <section id="tab-customers" class="hidden space-y-6">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-bold">👥 ข้อมูลลูกค้า</h2>
+        <button onclick="openCustomerModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold">+ เพิ่มลูกค้าใหม่</button>
+      </div>
+      <div class="bg-white rounded-xl shadow overflow-hidden">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-50 border-b">
+            <tr>
+              <th class="p-3">ชื่อ-นามสกุล</th>
+              <th class="p-3">เบอร์โทรศัพท์</th>
+              <th class="p-3">เลขบัตรประชาชน / Passport</th>
+              <th class="p-3">ที่อยู่</th>
+              <th class="p-3 text-center">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="customersTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 5. SETTINGS (ตั้งค่า) -->
+    <section id="tab-settings" class="hidden space-y-6">
+      <div class="bg-white rounded-xl shadow p-6 max-w-2xl">
+        <h2 class="text-xl font-bold mb-4">⚙️ ตั้งค่าข้อมูลร้าน</h2>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อร้านเช่ารถ</label>
+            <input type="text" id="settingShopName" class="w-full border rounded-lg p-2.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">เบอร์โทรศัพท์ร้าน</label>
+            <input type="text" id="settingPhone" class="w-full border rounded-lg p-2.5">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">ที่อยู่ร้าน</label>
+            <textarea id="settingAddress" rows="2" class="w-full border rounded-lg p-2.5"></textarea>
+          </div>
+          <button onclick="saveSettings()" class="bg-slate-900 text-white px-4 py-2 rounded-lg font-semibold">บันทึกการตั้งค่า</button>
+        </div>
+
+        <hr class="my-6">
+
+        <h3 class="font-bold text-lg mb-4">💾 สำรอง & กู้คืนข้อมูล (ระบบ JSON และ Excel)</h3>
+        <div class="flex flex-wrap gap-3">
+          <button onclick="exportData()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold">📥 สำรองข้อมูล (JSON)</button>
+          <button onclick="document.getElementById('importFile').click()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg font-semibold">📤 กู้คืนข้อมูล (JSON)</button>
+          <input type="file" id="importFile" accept=".json" class="hidden" onchange="importData(event)">
+          
+          <button onclick="exportExcelCSV()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold">📊 ส่งออก Excel (CSV)</button>
+          <button onclick="document.getElementById('importExcelFile').click()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-semibold">📥 นำเข้า Excel (CSV)</button>
+          <input type="file" id="importExcelFile" accept=".csv" class="hidden" onchange="importExcelCSV(event)">
+
+          <button onclick="clearAllData()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg font-semibold">🗑️ ล้างข้อมูลทั้งหมด</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: เพิ่ม/แก้ไข รถ -->
+  <div id="vehicleModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4">
+      <h3 id="vehicleModalTitle" class="text-lg font-bold">เพิ่มรถใหม่</h3>
+      <input type="hidden" id="vehId">
+      <div>
+        <label class="text-sm font-medium text-slate-700">ประเภทรถ</label>
+        <select id="vehType" class="w-full border rounded-lg p-2.5 mt-1">
+          <option value="รถยนต์">🚗 รถยนต์</option>
+          <option value="มอเตอร์ไซด์">🏍️ มอเตอร์ไซด์</option>
+          <option value="รถไฟฟ้า (EV)">⚡ รถไฟฟ้า (EV)</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-sm font-medium text-slate-700">ยี่ห้อ / รุ่น</label>
+        <input type="text" id="vehName" placeholder="เช่น Honda Civic / Yamaha NMAX" class="w-full border rounded-lg p-2.5 mt-1">
+      </div>
+      <div>
+        <label class="text-sm font-medium text-slate-700">เลขทะเบียน</label>
+        <input type="text" id="vehPlate" placeholder="กข 1234 กรุงเทพฯ" class="w-full border rounded-lg p-2.5 mt-1">
+      </div>
+      <div>
+        <label class="text-sm font-medium text-slate-700">ราคาเช่าต่อวัน (บาท)</label>
+        <input type="number" id="vehPrice" placeholder="1000" class="w-full border rounded-lg p-2.5 mt-1">
+      </div>
+      <div>
+        <label class="text-sm font-medium text-slate-700">สถานะรถ</label>
+        <select id="vehStatus" class="w-full border rounded-lg p-2.5 mt-1">
+          <option value="available">🟢 ว่างพร้อมเช่า</option>
+          <option value="rented">🔴 กำลังถูกเช่า</option>
+          <option value="maintenance">🟡 กำลังซ่อมบำรุง</option>
+        </select>
+      </div>
+      <div class="flex justify-end gap-2 pt-4">
+        <button onclick="closeVehicleModal()" class="px-4 py-2 border rounded-lg">ยกเลิก</button>
+        <button onclick="saveVehicle()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: เพิ่ม/แก้ไข ลูกค้า -->
+  <div id="customerModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4">
+      <h3 id="customerModalTitle" class="text-lg font-bold">เพิ่มลูกค้าใหม่</h3>
+      <input type="hidden" id="custId">
+      <div>
+        <label class="text-sm font-medium text-slate-700">ชื่อ - นามสกุล</label>
+        <input type="text" id="cusName" class="w-full border rounded-lg p-2.5 mt-1">
+      </div>
+      <div>
+        <label class="text-sm font-medium text-slate-700">เบอร์โทรศัพท์</label>
+        <input type="text" id="cusPhone" class="w-full border rounded-lg p-2.5 mt-1">
+      </div>
+      <div>
+        <label class="text-sm font-medium text-slate-700">เลขบัตรประชาชน / Passport</label>
+        <input type="text" id="cusIdCard" class="w-full border rounded-lg p-2.5 mt-1">
+      </div>
+      <div>
+        <label class="text-sm font-medium text-slate-700">ที่อยู่</label>
+        <textarea id="cusAddress" rows="2" class="w-full border rounded-lg p-2.5 mt-1"></textarea>
+      </div>
+      <div class="flex justify-end gap-2 pt-4">
+        <button onclick="closeCustomerModal()" class="px-4 py-2 border rounded-lg">ยกเลิก</button>
+        <button onclick="saveCustomer()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ทำสัญญาเช่า -->
+  <div id="rentalModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <h3 class="text-lg font-bold">📝 บันทึกสัญญาเช่ารถ</h3>
+      <input type="hidden" id="rentId">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-sm font-medium text-slate-700">เลือกลูกค้า</label>
+          <select id="rentCust" class="w-full border rounded-lg p-2.5 mt-1"></select>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">เลือกรถ (เฉพาะคันที่ว่าง)</label>
+          <select id="rentVeh" class="w-full border rounded-lg p-2.5 mt-1" onchange="calculateRentalTotal()"></select>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">วันที่รับรถ</label>
+          <input type="date" id="rentStartDate" class="w-full border rounded-lg p-2.5 mt-1" onchange="calculateRentalTotal()">
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">วันที่คืนรถ</label>
+          <input type="date" id="rentEndDate" class="w-full border rounded-lg p-2.5 mt-1" onchange="calculateRentalTotal()">
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">เงินมัดจำ (บาท)</label>
+          <input type="number" id="rentDeposit" value="1000" class="w-full border rounded-lg p-2.5 mt-1">
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">สถานะสัญญา</label>
+          <select id="rentStatus" class="w-full border rounded-lg p-2.5 mt-1">
+            <option value="active">กำลังเช่าอยู่</option>
+            <option value="completed">คืนรถเรียบร้อย</option>
+            <option value="cancelled">ยกเลิกสัญญา</option>
+          </select>
+        </div>
+      </div>
+      <div class="bg-slate-50 p-4 rounded-xl flex justify-between items-center">
+        <div>
+          <p class="text-sm text-slate-500">จำนวนวันเช่า: <span id="calcDays" class="font-bold text-slate-800">0</span> วัน</p>
+          <p class="text-sm text-slate-500">ราคาค่าเช่ารวม: <span id="calcTotal" class="font-bold text-blue-600 text-lg">0.00</span> บาท</p>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-4">
+        <button onclick="closeRentalModal()" class="px-4 py-2 border rounded-lg">ยกเลิก</button>
+        <button onclick="saveRental()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold">บันทึกสัญญาเช่า</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AREA: พิมพ์เอกสาร -->
+  <div id="printArea" class="hidden"></div>
+
+  <script>
+    // --- DATABASE & STATE ---
+    let db = JSON.parse(localStorage.getItem('car_rental_db')) || {
+      settings: { name: 'รุ่งเรือง รถเช่า & EV', phone: '***-***-****', address: '123 ถ.สุขุมวิท กรุงเทพฯ' },
+      vehicles: [
+        { id: 'v1', type: 'รถยนต์', name: 'Honda City', plate: 'กก 1234 กรุงเทพฯ', price: 1000, status: 'available' },
+        { id: 'v2', type: 'รถยนต์', name: 'Toyota Vios', plate: 'ขข 5678 กรุงเทพฯ', price: 1000, status: 'available' },
+        { id: 'v3', type: 'รถยนต์', name: 'Honda Civic', plate: 'กค 9999 เชียงใหม่', price: 1500, status: 'available' },
+        { id: 'v4', type: 'รถยนต์', name: 'Toyota Altis', plate: '1111 นครราชสีมา', price: 1400, status: 'available' },
+        { id: 'v5', type: 'รถยนต์', name: 'Mitsubishi Xpander (SUV)', plate: 'ฮฮ 8888 กรุงเทพฯ', price: 1800, status: 'available' },
+        { id: 'v6', type: 'รถยนต์', name: 'Toyota Fortuner (SUV)', plate: 'กต 5555 ภูเก็ต', price: 2500, status: 'available' },
+        { id: 'v7', type: 'รถยนต์', name: 'Isuzu D-Max (กระบะ)', plate: 'ผผ 3333 ชลบุรี', price: 1200, status: 'available' },
+        { id: 'v8', type: 'รถยนต์', name: 'Toyota Revo (กระบะ)', plate: 'ฒฒ 2222 ขอนแก่น', price: 1200, status: 'available' },
+        { id: 'v9', type: 'มอเตอร์ไซด์', name: 'Honda Click 125i', plate: '1กข 1111', price: 250, status: 'available' },
+        { id: 'v10', type: 'มอเตอร์ไซด์', name: 'Honda Scoopy i', plate: '1กข 2222', price: 250, status: 'available' },
+        { id: 'v11', type: 'มอเตอร์ไซด์', name: 'Yamaha Fino', plate: '1กข 3333', price: 250, status: 'available' },
+        { id: 'v12', type: 'มอเตอร์ไซด์', name: 'Yamaha NMAX 155', plate: '2กค 4444', price: 400, status: 'available' },
+        { id: 'v13', type: 'มอเตอร์ไซด์', name: 'Honda PCX 160', plate: '2กค 5555', price: 450, status: 'available' },
+        { id: 'v14', type: 'มอเตอร์ไซด์', name: 'Honda ADV 160', plate: '2กค 6666', price: 500, status: 'available' },
+        { id: 'v15', type: 'รถไฟฟ้า (EV)', name: 'BYD Dolphin', plate: 'EV 1001 กรุงเทพฯ', price: 1200, status: 'available' },
+        { id: 'v16', type: 'รถไฟฟ้า (EV)', name: 'BYD Atto 3', plate: 'EV 1002 กรุงเทพฯ', price: 1600, status: 'available' },
+        { id: 'v17', type: 'รถไฟฟ้า (EV)', name: 'ORA Good Cat', plate: 'EV 1003 เชียงใหม่', price: 1300, status: 'available' },
+        { id: 'v18', type: 'รถไฟฟ้า (EV)', name: 'MG 4 Electric', plate: 'EV 1004 ชลบุรี', price: 1400, status: 'available' },
+        { id: 'v19', type: 'รถไฟฟ้า (EV)', name: 'Tesla Model 3', plate: 'EV 8888 กรุงเทพฯ', price: 3000, status: 'available' },
+        { id: 'v20', type: 'รถไฟฟ้า (EV)', name: 'Tesla Model Y', plate: 'EV 9999 กรุงเทพฯ', price: 3500, status: 'available' }
+      ],
+      customers: [
+        { id: 'c1', name: 'คุณสมชาย ใจดี', phone: '***-***-****', idCard: '*************', address: 'เชียงใหม่' },
+        { id: 'c2', name: 'คุณวิชุดา รักสงบ', phone: '***-***-****', idCard: '*************', address: 'กรุงเทพฯ' }
+      ],
+      rentals: []
+    };
+
+    let currentVehicleFilter = 'all';
+
+    function saveData() {
+      localStorage.setItem('car_rental_db', JSON.stringify(db));
+      initApp();
+    }
+
+    // --- NAVIGATION ---
+    function switchTab(tabName) {
+      document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+      document.getElementById('tab-' + tabName).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        if(btn.dataset.tab === tabName) {
+          btn.classList.add('border-blue-500', 'font-semibold');
+          btn.classList.remove('border-transparent', 'text-slate-300');
+        } else {
+          btn.classList.remove('border-blue-500', 'font-semibold');
+          btn.classList.add('border-transparent', 'text-slate-300');
+        }
+      });
+    }
+
+    // --- INIT & DASHBOARD ---
+    function initApp() {
+      document.getElementById('shopInfo').textContent = `${db.settings.name} | โทร: ${db.settings.phone}`;
+      document.getElementById('settingShopName').value = db.settings.name;
+      document.getElementById('settingPhone').value = db.settings.phone;
+      document.getElementById('settingAddress').value = db.settings.address;
+
+      const totalVeh = db.vehicles.length;
+      document.getElementById('vehCountTab').textContent = totalVeh;
+
+      const availVeh = db.vehicles.filter(v => v.status === 'available').length;
+      const rentVeh = db.vehicles.filter(v => v.status === 'rented' || v.status === 'maintenance').length;
+      const totalInc = db.rentals.reduce((sum, r) => r.status !== 'cancelled' ? sum + r.totalPrice : sum, 0);
+
+      document.getElementById('statTotalVehicles').textContent = totalVeh + ' คัน';
+      document.getElementById('statAvailableVehicles').textContent = availVeh + ' คัน';
+      document.getElementById('statRentingVehicles').textContent = rentVeh + ' คัน';
+      document.getElementById('statTotalIncome').textContent = totalInc.toLocaleString() + ' ฿';
+
+      renderVehicles();
+      renderCustomers();
+      renderRentals();
+    }
+
+    // --- VEHICLES & FILTER ---
+    function filterVehicleStatus(status) {
+      currentVehicleFilter = status;
+      ['all', 'avail', 'busy'].forEach(s => {
+        const btn = document.getElementById('btnFilter' + s.charAt(0).toUpperCase() + s.slice(1));
+        if(btn) {
+          btn.className = 'px-3 py-1.5 rounded-md text-slate-600 hover:bg-slate-100';
+        }
+      });
+      const activeBtn = document.getElementById('btnFilter' + status.charAt(0).toUpperCase() + status.slice(1));
+      if(activeBtn) {
+        activeBtn.className = 'px-3 py-1.5 rounded-md font-semibold bg-blue-600 text-white';
+      }
+      renderVehicles();
+    }
+
+    function renderVehicles() {
+      const grid = document.getElementById('vehicleGrid');
+      let filteredVehicles = db.vehicles;
+
+      if(currentVehicleFilter === 'available') {
+        filteredVehicles = db.vehicles.filter(v => v.status === 'available');
+      } else if(currentVehicleFilter === 'busy') {
+        filteredVehicles = db.vehicles.filter(v => v.status === 'rented' || v.status === 'maintenance');
+      }
+
+      grid.innerHTML = filteredVehicles.map(v => {
+        let badgeColor = 'bg-emerald-100 text-emerald-700';
+        let statusText = 'ว่างพร้อมเช่า';
+        if(v.status === 'rented') { badgeColor = 'bg-amber-100 text-amber-700'; statusText = 'กำลังถูกเช่า'; }
+        if(v.status === 'maintenance') { badgeColor = 'bg-rose-100 text-rose-700'; statusText = 'กำลังซ่อมบำรุง'; }
+
+        return `
+          <div class="bg-white rounded-xl shadow p-5 border flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-start">
+                <span class="text-xs font-semibold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md">${v.type}</span>
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${badgeColor}">${statusText}</span>
+              </div>
+              <h3 class="font-bold text-lg mt-3">${v.name}</h3>
+              <p class="text-slate-500 text-sm">ทะเบียน: <b class="text-slate-800">${v.plate}</b></p>
+            </div>
+            <div class="mt-4 pt-4 border-t flex justify-between items-center">
+              <div>
+                <p class="text-xs text-slate-400">ราคาเช่า/วัน</p>
+                <p class="text-blue-600 font-bold text-lg">${v.price.toLocaleString()} ฿</p>
+              </div>
+              <div class="flex gap-1">
+                <button onclick="openVehicleModal('${v.id}')" class="p-2 text-slate-500 hover:bg-slate-100 rounded-lg">✏️</button>
+                <button onclick="deleteVehicle('${v.id}')" class="p-2 text-rose-500 hover:bg-rose-50 rounded-lg">🗑️</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('') || '<div class="col-span-3 text-center py-8 text-slate-400">ไม่พบข้อมูลรถในเงื่อนไขนี้</div>';
+    }
+
+    function openVehicleModal(id = null) {
+      document.getElementById('vehicleModal').classList.remove('hidden');
+      if(id) {
+        const v = db.vehicles.find(x => x.id === id);
+        document.getElementById('vehicleModalTitle').textContent = 'แก้ไขข้อมูลรถ';
+        document.getElementById('vehId').value = v.id;
+        document.getElementById('vehType').value = v.type;
+        document.getElementById('vehName').value = v.name;
+        document.getElementById('vehPlate').value = v.plate;
+        document.getElementById('vehPrice').value = v.price;
+        document.getElementById('vehStatus').value = v.status;
+      } else {
+        document.getElementById('vehicleModalTitle').textContent = 'เพิ่มรถใหม่';
+        document.getElementById('vehId').value = '';
+        document.getElementById('vehType').value = 'รถยนต์';
+        document.getElementById('vehName').value = '';
+        document.getElementById('vehPlate').value = '';
+        document.getElementById('vehPrice').value = '';
+        document.getElementById('vehStatus').value = 'available';
+      }
+    }
+    function closeVehicleModal() { document.getElementById('vehicleModal').classList.add('hidden'); }
+
+    function saveVehicle() {
+      const id = document.getElementById('vehId').value;
+      const data = {
+        id: id ? id : 'v_' + Date.now(),
+        type: document.getElementById('vehType').value,
+        name: document.getElementById('vehName').value,
+        plate: document.getElementById('vehPlate').value,
+        price: Number(document.getElementById('vehPrice').value),
+        status: document.getElementById('vehStatus').value
+      };
+      if(!data.name || !data.plate) return alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      if(id) {
+        const idx = db.vehicles.findIndex(x => x.id === id);
+        db.vehicles[idx] = data;
+      } else {
+        db.vehicles.push(data);
+      }
+      closeVehicleModal();
+      saveData();
+    }
+
+    function deleteVehicle(id) {
+      if(confirm('ต้องการลบรถคันนี้ใช่หรือไม่?')) {
+        db.vehicles = db.vehicles.filter(x => x.id !== id);
+        saveData();
+      }
+    }
+
+    // --- CUSTOMERS ---
+    function renderCustomers() {
+      const tbody = document.getElementById('customersTableBody');
+      tbody.innerHTML = db.customers.map(c => `
+        <tr class="border-b hover:bg-slate-50">
+          <td class="p-3 font-semibold">${c.name}</td>
+          <td class="p-3">${c.phone}</td>
+          <td class="p-3">${c.idCard}</td>
+          <td class="p-3">${c.address || '-'}</td>
+          <td class="p-3 text-center">
+            <button onclick="openCustomerModal('${c.id}')" class="text-blue-600 hover:underline mr-2">แก้ไข</button>
+            <button onclick="deleteCustomer('${c.id}')" class="text-rose-600 hover:underline">ลบ</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openCustomerModal(id = null) {
+      document.getElementById('customerModal').classList.remove('hidden');
+      if(id) {
+        const c = db.customers.find(x => x.id === id);
+        document.getElementById('customerModalTitle').textContent = 'แก้ไขข้อมูลลูกค้า';
+        document.getElementById('custId').value = c.id;
+        document.getElementById('cusName').value = c.name;
+        document.getElementById('cusPhone').value = c.phone;
+        document.getElementById('cusIdCard').value = c.idCard;
+        document.getElementById('cusAddress').value = c.address;
+      } else {
+        document.getElementById('customerModalTitle').textContent = 'เพิ่มลูกค้าใหม่';
+        document.getElementById('custId').value = '';
+        document.getElementById('cusName').value = '';
+        document.getElementById('cusPhone').value = '';
+        document.getElementById('cusIdCard').value = '';
+        document.getElementById('cusAddress').value = '';
+      }
+    }
+    function closeCustomerModal() { document.getElementById('customerModal').classList.add('hidden'); }
+
+    function saveCustomer() {
+      const id = document.getElementById('custId').value;
+      const data = {
+        id: id ? id : 'c_' + Date.now(),
+        name: document.getElementById('cusName').value,
+        phone: document.getElementById('cusPhone').value,
+        idCard: document.getElementById('cusIdCard').value,
+        address: document.getElementById('cusAddress').value
+      };
+      if(!data.name || !data.phone) return alert('กรุณากรอกชื่อและเบอร์โทรศัพท์');
+      if(id) {
+        const idx = db.customers.findIndex(x => x.id === id);
+        db.customers[idx] = data;
+      } else {
+        db.customers.push(data);
+      }
+      closeCustomerModal();
+      saveData();
+    }
+
+    function deleteCustomer(id) {
+      if(confirm('ต้องการลบลูกค้ารายนี้ใช่หรือไม่?')) {
+        db.customers = db.customers.filter(x => x.id !== id);
+        saveData();
+      }
+    }
+
+    // --- RENTALS ---
+    function renderRentals() {
+      const tbody = document.getElementById('rentalsTableBody');
+      const recentBody = document.getElementById('recentRentalsTable');
+      
+      const htmlRows = db.rentals.slice().reverse().map(r => {
+        const c = db.customers.find(x => x.id === r.custId) || { name: 'ไม่พบข้อมูล' };
+        const v = db.vehicles.find(x => x.id === r.vehId) || { name: 'ไม่พบรถ', plate: '' };
+        
+        let statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">กำลังเช่า</span>';
+        if(r.status === 'completed') statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">คืนรถแล้ว</span>';
+        if(r.status === 'cancelled') statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">ยกเลิก</span>';
+
+        return `
+          <tr class="border-b hover:bg-slate-50">
+            <td class="p-3 font-semibold">${r.contractNo}</td>
+            <td class="p-3">${c.name}</td>
+            <td class="p-3">${v.name} (${v.plate})</td>
+            <td class="p-3 text-xs">${r.startDate} ถึง ${r.endDate}</td>
+            <td class="p-3 text-right font-bold">${r.totalPrice.toLocaleString()} ฿</td>
+            <td class="p-3 text-right text-slate-600">${r.deposit.toLocaleString()} ฿</td>
+            <td class="p-3 text-center">${statusBadge}</td>
+            <td class="p-3 text-center space-x-1 whitespace-nowrap">
+              <button onclick="printContract('${r.id}')" class="bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-1 rounded text-xs font-semibold hover:bg-indigo-100">📄 สัญญาเช่า</button>
+              <button onclick="printReceipt('${r.id}')" class="bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-1 rounded text-xs font-semibold hover:bg-emerald-100">💵 ใบเสร็จ</button>
+              <button onclick="deleteRental('${r.id}')" class="text-rose-600 hover:underline text-xs ml-1">ลบ</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      tbody.innerHTML = htmlRows || '<tr><td colspan="8" class="p-4 text-center text-slate-400">ยังไม่มีรายการสัญญาเช่า</td></tr>';
+      recentBody.innerHTML = htmlRows || '<tr><td colspan="6" class="p-4 text-center text-slate-400">ยังไม่มีรายการเช่าล่าสุด</td></tr>';
+    }
+
+    function openRentalModal() {
+      if(db.customers.length === 0) return alert('กรุณาเพิ่มข้อมูลลูกค้าก่อนสร้างสัญญาเช่า');
+      if(db.vehicles.filter(v => v.status === 'available').length === 0) return alert('ไม่มีรถว่างพร้อมเช่าในขณะนี้');
+
+      document.getElementById('rentalModal').classList.remove('hidden');
+      
+      document.getElementById('rentCust').innerHTML = db.customers.map(c => `<option value="${c.id}">${c.name} (${c.phone})</option>`).join('');
+      document.getElementById('rentVeh').innerHTML = db.vehicles.filter(v => v.status === 'available').map(v => `<option value="${v.id}" data-price="${v.price}">[${v.type}] ${v.name} (${v.plate}) - ${v.price}฿/วัน</option>`).join('');
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      document.getElementById('rentStartDate').value = todayStr;
+      document.getElementById('rentEndDate').value = todayStr;
+      calculateRentalTotal();
+    }
+    function closeRentalModal() { document.getElementById('rentalModal').classList.add('hidden'); }
+
+    function calculateRentalTotal() {
+      const start = new Date(document.getElementById('rentStartDate').value);
+      const end = new Date(document.getElementById('rentEndDate').value);
+      let diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      if(isNaN(diffDays) || diffDays < 1) diffDays = 1;
+
+      const vehSelect = document.getElementById('rentVeh');
+      const selectedOption = vehSelect.options[vehSelect.selectedIndex];
+      const pricePerDay = selectedOption ? Number(selectedOption.getAttribute('data-price')) : 0;
+
+      const total = diffDays * pricePerDay;
+      document.getElementById('calcDays').textContent = diffDays;
+      document.getElementById('calcTotal').textContent = total.toLocaleString();
+    }
+
+    function saveRental() {
+      const vehId = document.getElementById('rentVeh').value;
+      const startDate = document.getElementById('rentStartDate').value;
+      const endDate = document.getElementById('rentEndDate').value;
+      
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      let diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      if(isNaN(diffDays) || diffDays < 1) diffDays = 1;
+
+      const vehSelect = document.getElementById('rentVeh');
+      const pricePerDay = Number(vehSelect.options[vehSelect.selectedIndex].getAttribute('data-price'));
+      const totalPrice = diffDays * pricePerDay;
+
+      const contractNo = 'CNT-' + Math.floor(100000 + Math.random() * 900000);
+
+      const rental = {
+        id: 'r_' + Date.now(),
+        contractNo,
+        custId: document.getElementById('rentCust').value,
+        vehId,
+        startDate,
+        endDate,
+        deposit: Number(document.getElementById('rentDeposit').value),
+        totalPrice,
+        status: document.getElementById('rentStatus').value
+      };
+
+      const veh = db.vehicles.find(v => v.id === vehId);
+      if(veh && rental.status === 'active') {
+        veh.status = 'rented';
+      }
+
+      db.rentals.push(rental);
+      closeRentalModal();
+      saveData();
+    }
+
+    function deleteRental(id) {
+      if(confirm('ต้องการลบสัญญานี้ใช่หรือไม่?')) {
+        const r = db.rentals.find(x => x.id === id);
+        if(r && r.status === 'active') {
+          const v = db.vehicles.find(x => x.id === r.vehId);
+          if(v) v.status = 'available';
+        }
+        db.rentals = db.rentals.filter(x => x.id !== id);
+        saveData();
+      }
+    }
+
+    // --- PRINT CONTRACT (สัญญาเช่า) ---
+    function printContract(id) {
+      const r = db.rentals.find(x => x.id === id);
+      const c = db.customers.find(x => x.id === r.custId);
+      const v = db.vehicles.find(x => x.id === r.vehId);
+
+      const printArea = document.getElementById('printArea');
+      printArea.innerHTML = `
+        <div style="padding: 20px; font-family: 'Sarabun', sans-serif; color: #111; line-height: 1.6; max-width: 800px; margin: auto;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="font-size: 22px; font-weight: bold; margin: 0;">${db.settings.name}</h2>
+            <p style="font-size: 13px; color: #555; margin: 4px 0;">${db.settings.address} | โทร: ${db.settings.phone}</p>
+            <h3 style="font-size: 18px; font-weight: bold; margin-top: 15px; text-decoration: underline;">สัญญาเช่ารถ / สัญญารับมอบรถ</h3>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 15px; background: #f8fafc; padding: 12px; border-radius: 6px;">
+            <div>
+              <p><b>เลขที่สัญญา:</b> ${r.contractNo}</p>
+              <p><b>ชื่อผู้เช่า:</b> ${c.name}</p>
+              <p><b>เลขบัตรประชาชน:</b> ${c.idCard}</p>
+              <p><b>เบอร์โทรศัพท์:</b> ${c.phone}</p>
+              <p><b>ที่อยู่:</b> ${c.address || '-'}</p>
+            </div>
+            <div>
+              <p><b>วันที่ทำสัญญา:</b> ${r.startDate}</p>
+              <p><b>ประเภทรถ:</b> ${v.type}</p>
+              <p><b>รุ่นรถ:</b> ${v.name}</p>
+              <p><b>เลขทะเบียน:</b> ${v.plate}</p>
+            </div>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 15px;">
+            <thead>
+              <tr style="background: #e2e8f0;">
+                <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: left;">รายการ</th>
+                <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">กำหนดการ</th>
+                <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: right;">จำนวนเงิน (บาท)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="border: 1px solid #cbd5e1; padding: 6px;">ค่าเช่ารถ ${v.name} (${v.plate}) ตั้งแต่วันที่ ${r.startDate} ถึง ${r.endDate}</td>
+                <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">ค่าเช่ารวม</td>
+                <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: right;">${r.totalPrice.toLocaleString()}</td>
+              </tr>
+              <tr>
+                <td style="border: 1px solid #cbd5e1; padding: 6px;">เงินมัดจำความเสียหาย (คืนให้เมื่อตรวจรับรถปกติหลังสิ้นสุดสัญญา)</td>
+                <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">เงินมัดจำ</td>
+                <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: right;">${r.deposit.toLocaleString()}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="font-size: 14px; text-align: right; font-weight: bold;">ยอดรวมทั้งสิ้น: ${r.totalPrice.toLocaleString()} บาท (มัดจำ ${r.deposit.toLocaleString()} บาท)</p>
+          <div style="font-size: 12px; margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
+            <p><b>เงื่อนไขสัญญาย่อ:</b> ผู้เช่าตกลงใช้อย่างระมัดระวัง ห้ามนำไปใช้ผิดกฎหมาย ห้ามต่อเติมดัดแปลง และยินยอมชดใช้ค่าเสียหายตามจริงหากเกิดอุบัติเหตุหรือความเสียหายต่อตัวรถ</p>
+          </div>
+          <div style="margin-top: 40px; display: flex; justify-content: space-between; font-size: 14px;">
+            <div style="text-align: center; width: 40%;">
+              <p>......................................................</p>
+              <p>(${c.name})</p>
+              <p>ผู้เช่า / ผู้รับรถ</p>
+            </div>
+            <div style="text-align: center; width: 40%;">
+              <p>......................................................</p>
+              <p>(${db.settings.name})</p>
+              <p>ผู้ให้เช่า / ตัวแทน</p>
+            </div>
+          </div>
+        </div>
+      `;
+      window.print();
+    }
+
+    // --- PRINT RECEIPT (ใบเสร็จรับเงิน) ---
+    function printReceipt(id) {
+      const r = db.rentals.find(x => x.id === id);
+      const c = db.customers.find(x => x.id === r.custId);
+      const v = db.vehicles.find(x => x.id === r.vehId);
+
+      const printArea = document.getElementById('printArea');
+      printArea.innerHTML = `
+        <div style="padding: 20px; font-family: 'Sarabun', sans-serif; color: #111; line-height: 1.6; max-width: 800px; margin: auto;">
+          <div style="text-align: center; margin-bottom: 25px;">
+            <h2 style="font-size: 22px; font-weight: bold; margin: 0;">${db.settings.name}</h2>
+            <p style="font-size: 13px; color: #555; margin: 4px 0;">${db.settings.address} | โทร: ${db.settings.phone}</p>
+            <h3 style="font-size: 18px; font-weight: bold; margin-top: 15px; text-decoration: underline;">ใบเสร็จรับเงิน / ใบรับเงินมัดจำ</h3>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 15px; background: #f8fafc; padding: 12px; border-radius: 6px;">
+            <div>
+              <p><b>ได้รับเงินจาก:</b> ${c.name} (โทร: ${c.phone})</p>
+              <p><b>ที่อยู่:</b> ${c.address || '-'}</p>
+            </div>
+            <div>
+              <p><b>เลขที่สัญญาอ้างอิง:</b> ${r.contractNo}</p>
+              <p><b>วันที่ออกใบเสร็จ:</b> ${new Date().toISOString().split('T')[0]}</p>
+            </div>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 15px;">
+            <thead>
+              <tr style="background: #e2e8f0;">
+                <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: left;">รายการชำระ</th>
+                <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">อ้างอิงรถ</th>
+                <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: right;">จำนวนเงิน (บาท)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="border: 1px solid #cbd5e1; padding: 6px;">ค่าเช่ารถ ${v.name} (${r.startDate} ถึง ${r.endDate})</td>
+                <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${v.plate}</td>
+                <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: right;">${r.totalPrice.toLocaleString()}</td>
+              </tr>
+              <tr>
+                <td style="border: 1px solid #cbd5e1; padding: 6px;">เงินมัดจำความเสียหาย</td>
+                <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">ประกันรถ</td>
+                <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: right;">${r.deposit.toLocaleString()}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="font-size: 15px; text-align: right; font-weight: bold;">รับเงินรวมทั้งสิ้น: ${(r.totalPrice + r.deposit).toLocaleString()} บาท</p>
+          <div style="margin-top: 50px; display: flex; justify-content: space-between; font-size: 14px;">
+            <div style="text-align: center; width: 40%;">
+              <p>......................................................</p>
+              <p>ผู้ชำระเงิน</p>
+            </div>
+            <div style="text-align: center; width: 40%;">
+              <p>......................................................</p>
+              <p>(${db.settings.name})</p>
+              <p>ผู้รับเงิน</p>
+            </div>
+          </div>
+        </div>
+      `;
+      window.print();
+    }
+
+    // --- SETTINGS, JSON BACKUP & EXCEL (CSV) ---
+    function saveSettings() {
+      db.settings.name = document.getElementById('settingShopName').value;
+      db.settings.phone = document.getElementById('settingPhone').value;
+      db.settings.address = document.getElementById('settingAddress').value;
+      saveData();
+      alert('บันทึกการตั้งค่าเรียบร้อยแล้ว');
+    }
+
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+      const dlAnchor = document.createElement('a');
+      dlAnchor.setAttribute("href", dataStr);
+      dlAnchor.setAttribute("download", "car_rental_backup.json");
+      document.body.appendChild(dlAnchor);
+      dlAnchor.click();
+      dlAnchor.remove();
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          db = JSON.parse(e.target.result);
+          saveData();
+          alert('กู้คืนข้อมูลสำเร็จ!');
+        } catch(err) {
+          alert('ไฟล์ข้อมูลไม่ถูกต้อง');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // EXPORT EXCEL (CSV)
+    function exportExcelCSV() {
+      let csv = '\ufeff=== ข้อมูลรถในร้าน ===\nรหัสรถ,ประเภท,ชื่อรุ่น,ทะเบียน,ราคาต่อวัน,สถานะ\n';
+      db.vehicles.forEach(v => {
+        csv += `"${v.id}","${v.type}","${v.name}","${v.plate}","${v.price}","${v.status}"\n`;
+      });
+
+      csv += '\n\ufeff=== ข้อมูลลูกค้า ===\nรหัสลูกค้า,ชื่อ-นามสกุล,เบอร์โทร,เลขบัตรประชาชน,ที่อยู่\n';
+      db.customers.forEach(c => {
+        csv += `"${c.id}","${c.name}","${c.phone}","${c.idCard}","${c.address || ''}"\n`;
+      });
+
+      csv += '\n\ufeff=== ข้อมูลสัญญาเช่า ===\nเลขสัญญา,รหัสลูกค้า,รหัสรถ,วันรับรถ,วันคืนรถ,มัดจำ,ยอดรวม,สถานะ\n';
+      db.rentals.forEach(r => {
+        csv += `"${r.contractNo}","${r.custId}","${r.vehId}","${r.startDate}","${r.endDate}","${r.deposit}","${r.totalPrice}","${r.status}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `car_rental_data_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+    }
+
+    // IMPORT EXCEL (CSV)
+    function importExcelCSV(event) {
+      const file = event.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const text = e.target.result;
+          const lines = text.split(/\r\n|\n/);
+          let mode = '';
+          let vCount = 0, cCount = 0, rCount = 0;
+          let newVehicles = [], newCustomers = [], newRentals = [];
+
+          lines.forEach(line => {
+            if(!line.trim()) return;
+            if(line.includes('=== ข้อมูลรถในร้าน ===')) { mode = 'veh'; return; }
+            if(line.includes('=== ข้อมูลลูกค้า ===')) { mode = 'cus'; return; }
+            if(line.includes('=== ข้อมูลสัญญาเช่า ===')) { mode = 'rent'; return; }
+
+            const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/^["=]+|["']+$/g, '').trim());
+            if(mode === 'veh' && cols[0] && cols[0] !== 'รหัสรถ') {
+              newVehicles.push({ id: cols[0], type: cols[1], name: cols[2], plate: cols[3], price: Number(cols[4])||1000, status: cols[5]||'available' });
+              vCount++;
+            } else if(mode === 'cus' && cols[0] && cols[0] !== 'รหัสลูกค้า') {
+              newCustomers.push({ id: cols[0], name: cols[1], phone: cols[2], idCard: cols[3], address: cols[4] });
+              cCount++;
+            } else if(mode === 'rent' && cols[0] && cols[0] !== 'เลขสัญญา') {
+              newRentals.push({ id: 'r_' + Math.random(), contractNo: cols[0], custId: cols[1], vehId: cols[2], startDate: cols[3], endDate: cols[4], deposit: Number(cols[5])||0, totalPrice: Number(cols[6])||0, status: cols[7]||'active' });
+              rCount++;
+            }
+          });
+
+          if(!confirm('ข้อมูลปัจจุบันจะถูกแทนที่ด้วยข้อมูลจากไฟล์ Excel ยืนยันการนำเข้าหรือไม่?')) return;
+          if(newVehicles.length > 0) db.vehicles = newVehicles;
+          if(newCustomers.length > 0) db.customers = newCustomers;
+          if(newRentals.length > 0) db.rentals = newRentals;
+
+          saveData();
+          alert(`นำเข้าข้อมูลสำเร็จ!\n- รถ: ${vCount} คัน\n- ลูกค้า: ${cCount} คน\n- สัญญา: ${rCount} รายการ`);
+        } catch(err) {
+          alert('เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาใช้ไฟล์ CSV ที่ส่งออกจากระบบเท่านั้น');
+        }
+      };
+      reader.readAsText(file, 'UTF-8');
+      event.target.value = '';
+    }
+
+    // --- CLEAR ALL DATA ---
+    function clearAllData() {
+      if(confirm('⚠️ คำเตือน: คุณต้องการลบข้อมูลทั้งหมดในระบบใช่หรือไม่? ข้อมูลรถ ลูกค้า และสัญญาเช่าจะหายทั้งหมด')) {
+        if(confirm('❗ ยืนยันครั้งสุดท้าย ข้อมูลทั้งหมดจะถูกลบและรีเซ็ตเป็นค่าเริ่มต้น')) {
+          localStorage.removeItem('car_rental_db');
+          db = {
+            settings: { name: 'รุ่งเรือง รถเช่า & EV', phone: '***-***-****', address: '123 ถ.สุขุมวิท กรุงเทพฯ' },
+            vehicles: [],
+            customers: [],
+            rentals: []
+          };
+          localStorage.setItem('car_rental_db', JSON.stringify(db));
+          alert('ล้างข้อมูลทั้งหมดเรียบร้อยแล้ว');
+          location.reload();
+        }
+      }
+    }
+
+    // Run initial
+    initApp();
+  </script>
+</body>
+</html>
