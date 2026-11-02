@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stock Card พัสดุ</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--tx:#1b2333;--mu:#6b7690;--bd:#e3e8f2;--pri:#2f6fed;--in:#12a150;--out:#e5484d;--warn:#fff1d6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1420;--card:#171e2e;--tx:#e8ecf6;--mu:#8e9ab5;--bd:#27314a;--pri:#5b8cff;--in:#3ddc84;--out:#ff6b70;--warn:#3a2f14}}
+:root[data-theme="dark"]{--bg:#0f1420;--card:#171e2e;--tx:#e8ecf6;--mu:#8e9ab5;--bd:#27314a;--pri:#5b8cff;--in:#3ddc84;--out:#ff6b70;--warn:#3a2f14}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:'Sarabun',system-ui,sans-serif;font-size:15px}
+.wrap{max-width:980px;margin:0 auto;padding:14px}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+h1{font-size:20px;margin:0}
+.badge{font-size:12px;color:var(--mu);border:1px solid var(--bd);border-radius:99px;padding:3px 10px;background:var(--card)}
+nav{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px}
+nav button{flex:1;white-space:nowrap;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:9px 12px;border-radius:10px;font:inherit;cursor:pointer}
+nav button.on{background:var(--pri);color:#fff;border-color:var(--pri);font-weight:600}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+label{font-size:12px;color:var(--mu);display:block;margin-bottom:3px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--bd);border-radius:9px;background:var(--bg);color:var(--tx);font:inherit}
+textarea{min-height:130px}
+.btn{background:var(--pri);color:#fff;border:0;border-radius:10px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer}
+.btn.g{background:transparent;color:var(--pri);border:1px solid var(--pri)}
+.seg{display:flex;gap:6px}.seg label{flex:1;margin:0;text-align:center;border:1px solid var(--bd);border-radius:9px;padding:9px;cursor:pointer;color:var(--tx);font-size:15px}
+.seg input{display:none}.seg input:checked+span{font-weight:700}
+.seg label.in.on{background:var(--in);color:#fff}.seg label.out.on{background:var(--out);color:#fff}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:520px}
+th,td{padding:8px 8px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
+th{font-size:12px;color:var(--mu);background:var(--bg);position:sticky;top:0}
+td.n,th.n{text-align:right}
+.in{color:var(--in)}.out{color:var(--out)}
+tr.low td{background:var(--warn)}tr.clk{cursor:pointer}
+.hint{color:var(--mu);font-size:13px;margin:6px 0 0}
+.sum{display:flex;gap:16px;flex-wrap:wrap;margin:6px 0 10px}.sum b{font-size:18px}
+.x{background:none;border:0;color:var(--out);cursor:pointer;font-size:16px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#222;color:#fff;padding:9px 16px;border-radius:10px;display:none;z-index:9}
+.stk{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:10px 12px}.big{font-size:22px;font-weight:700;color:var(--pri)}.sgl{display:flex;flex-direction:column;gap:6px;margin-top:8px}.sgb{display:flex;justify-content:space-between;gap:8px;text-align:left;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:9px;padding:9px 11px;font:inherit;cursor:pointer}
+.pr{display:none}.bar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+@media print{.pr{display:block!important;margin-bottom:10px}nav,header .badge,.noprint,#toast{display:none!important}body{background:#fff;color:#000}.card{border:0}}
+</style><script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script></head><body><div class="wrap">
+<header><h1>📦 Stock Card พัสดุ</h1><span class="badge" id="mode"></span></header>
+<nav id="nav"></nav><div id="view"></div></div><div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),LS='stockcard_v1';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const iid=c=>String(c).trim().replace(/[^\w\u0E00-\u0E7F-]/g,'_');
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const fd=s=>{const[y,m,d]=s.split('-');return d+'/'+m+'/'+(+y+543)};
+const fn=n=>Number(n).toLocaleString('th-TH');
+let items={},txs={},tab='entry',cur='',q='',db=null,ty='in';
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2200)}
+try{const d=JSON.parse(localStorage.getItem(LS)||'{}');items=d.items||{};txs=d.txs||{}}catch(e){}
+const saveL=()=>{try{localStorage.setItem(LS,JSON.stringify({items,txs}))}catch(e){}};
+async function put(col,id,o){(col==='items'?items:txs)[id]=o;if(db){try{await db.collection(col).doc(id).set(o)}catch(e){toast('บันทึกไม่สำเร็จ')}}else saveL()}
+async function del(col,id){delete(col==='items'?items:txs)[id];if(db){try{await db.collection(col).doc(id).delete()}catch(e){}}else saveL()}
+function ledger(code){let b=0;return Object.entries(txs).map(([id,t])=>({id,...t})).filter(t=>iid(t.code)===iid(code)).sort((a,b)=>a.date.localeCompare(b.date)||a.ts-b.ts).map(t=>{b+=t.type==='in'?t.qty:-t.qty;return{...t,bal:b}})}
+function totals(){const r={};for(const k in items)r[k]={in:0,out:0};Object.values(txs).forEach(t=>{const x=r[iid(t.code)];if(x)x[t.type]+=t.qty});return r}
+const bal=code=>{const l=ledger(code);return l.length?l[l.length-1].bal:0};
+const sorted=()=>Object.values(items).sort((a,b)=>a.code.localeCompare(b.code,'th',{numeric:true}));
+function render(){
+ $('#mode').textContent=db?'☁️ บันทึกบนคลาวด์ อัพเดทอัตโนมัติ':'💾 บันทึกในเครื่องนี้';
+ const T=[['entry','บันทึกรับ-จ่าย'],['card','Stock Card'],['log','เคลื่อนไหวรายวัน'],['sum','ภาพรวมทั้งหมด'],['items','จัดการสินค้า']];
+ $('#nav').innerHTML=T.map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="go('${k}')">${l}</button>`).join('');
+ const active=document.activeElement&&document.activeElement.id;
+ ({entry:vEntry,card:vCard,log:vLog,sum:vSum,items:vItems})[tab]();
+ if(tab==='entry')info();
+ if(active&&$('#'+active)&&active==='q'){const e=$('#q');e.focus();e.setSelectionRange(e.value.length,e.value.length)}
+}
+function go(t,c){tab=t;if(c!==undefined)cur=c;render();scrollTo(0,0)}
+function opts(){const T=totals();return sorted().map(i=>{const t=T[iid(i.code)]||{in:0,out:0};return`<option value="${esc(i.code)}" label="${esc(i.name)} · คงเหลือ ${fn(t.in-t.out)} ${esc(i.unit||'')}"></option>`}).join('')}
+function vEntry(){
+ $('#view').innerHTML=`<div class="card"><div class="grid">
+ <div><label>วันที่</label><input type="date" id="d" value="${today()}"></div>
+ <div><label>รหัสสินค้า (พิมพ์หรือเลือก)</label><input id="c" list="dl" oninput="info()" autocomplete="off"><datalist id="dl">${opts()}</datalist></div>
+ <div><label>จำนวน</label><input type="number" id="qt" min="0" step="any" inputmode="decimal" oninput="info()"></div></div>
+ <div id="inf" style="margin-top:8px"></div><div id="sg" class="sgl"></div>
+ <div class="seg" style="margin:10px 0"><label class="in ${ty==='in'?'on':''}" onclick="setTy('in')">➕ รับเข้า</label><label class="out ${ty==='out'?'on':''}" onclick="setTy('out')">➖ จ่ายออก</label></div>
+ <label>หมายเหตุ (เช่น เลขที่ใบเบิก / ผู้เบิก / แหล่งที่มา)</label><input id="nt"><br><br>
+ <button class="btn" onclick="addTx()">บันทึกรายการ</button></div>
+ <div class="card"><b>รายการล่าสุด</b><div class="tw"><table><tr><th>วันที่</th><th>รหัส</th><th>ชื่อ</th><th class="n">รับ</th><th class="n">จ่าย</th><th>หมายเหตุ</th></tr>${
+ Object.values(txs).sort((a,b)=>b.ts-a.ts).slice(0,12).map(t=>`<tr><td>${fd(t.date)}</td><td>${esc(t.code)}</td><td>${esc(items[iid(t.code)]?.name||'')}</td><td class="n in">${t.type==='in'?fn(t.qty):''}</td><td class="n out">${t.type==='out'?fn(t.qty):''}</td><td>${esc(t.note)}</td></tr>`).join('')||'<tr><td colspan="6" class="hint">ยังไม่มีรายการ</td></tr>'}</table></div></div>`;
+}
+function info(){
+ const c=$('#c').value.trim(),i=items[iid(c)],box=$('#inf'),sg=$('#sg');if(!box)return;
+ const qty=parseFloat($('#qt').value);
+ if(i){const b=bal(c);
+  box.innerHTML=`<div class="stk"><div>${esc(i.code)} — <b>${esc(i.name)}</b></div><div>คงเหลือปัจจุบัน <span class="big">${fn(b)}</span> ${esc(i.unit||'')}</div>${ty==='out'&&qty>b?'<div class="out"><b>⚠️ จำนวนจ่ายเกินยอดคงเหลือ</b></div>':''}</div>`;sg.innerHTML='';return}
+ const qq=c.toLowerCase(),T=totals();
+ const m=c?sorted().filter(x=>(x.code+' '+x.name).toLowerCase().includes(qq)).slice(0,8):[];
+ box.innerHTML=c&&!m.length?'<span class="hint">ไม่พบสินค้านี้ — เพิ่มได้ที่แท็บ "จัดการสินค้า"</span>':'<span class="hint">พิมพ์รหัสหรือชื่อสินค้า แล้วเลือกจากรายการ จะเห็นยอดคงเหลือปัจจุบัน</span>';
+ sg.innerHTML=m.map(x=>{const t=T[iid(x.code)]||{in:0,out:0};return`<button class="sgb" onclick="pick('${esc(x.code)}')"><span><b>${esc(x.code)}</b> ${esc(x.name)}</span><span>คงเหลือ <b>${fn(t.in-t.out)}</b> ${esc(x.unit||'')}</span></button>`}).join('');
+}
+function pick(c){$('#c').value=c;info();$('#qt').focus()}
+function setTy(t){ty=t;document.querySelectorAll('.seg label').forEach(l=>l.classList.toggle('on',l.classList.contains(t)));info()}
+async function addTx(){
+ const code=$('#c').value.trim(),qty=parseFloat($('#qt').value),date=$('#d').value;
+ if(!items[iid(code)])return toast('ไม่พบรหัสสินค้า');
+ if(!(qty>0))return toast('กรอกจำนวนให้ถูกต้อง');
+ if(!date)return toast('เลือกวันที่');
+ if(ty==='out'&&qty>bal(code))return toast('จ่ายเกินยอดคงเหลือ ('+fn(bal(code))+')');
+ const ts=Date.now(),id='t'+ts+Math.floor(Math.random()*1000);
+ const n=$('#nt').value;
+ await put('tx',id,{code,date,type:ty,qty,note:n,ts});
+ toast('บันทึกแล้ว ✓');render();info();$('#c').focus();
+}
+function vCard(){
+ const it=items[iid(cur)],l=cur?ledger(cur):[];
+ const tin=l.filter(t=>t.type==='in').reduce((a,t)=>a+t.qty,0),tout=l.filter(t=>t.type==='out').reduce((a,t)=>a+t.qty,0);
+ $('#view').innerHTML=`<div class="card noprint"><label>เลือกสินค้า</label><input id="c" list="dl" value="${esc(cur)}" onchange="go('card',this.value.trim())" placeholder="พิมพ์รหัสสินค้า"><datalist id="dl">${opts()}</datalist></div>
+ <div class="card">${it?`<h2 style="margin:0 0 4px;font-size:18px">บัตรควบคุมวัสดุ (Stock Card)</h2><div>${esc(it.code)} — <b>${esc(it.name)}</b> · หน่วย: ${esc(it.unit||'-')}</div>
+ <div class="sum"><span>รับรวม <b class="in">${fn(tin)}</b></span><span>จ่ายรวม <b class="out">${fn(tout)}</b></span><span>คงเหลือ <b>${fn(tin-tout)}</b></span></div>
+ <div class="tw"><table><tr><th>วันที่</th><th class="n">รับ</th><th class="n">จ่าย</th><th class="n">คงเหลือ</th><th>หมายเหตุ</th><th class="noprint"></th></tr>${
+ l.map(t=>`<tr><td>${fd(t.date)}</td><td class="n in">${t.type==='in'?fn(t.qty):''}</td><td class="n out">${t.type==='out'?fn(t.qty):''}</td><td class="n"><b>${fn(t.bal)}</b></td><td>${esc(t.note)}</td><td class="noprint"><button class="x" onclick="rmTx('${t.id}')">✕</button></td></tr>`).join('')||'<tr><td colspan="6" class="hint">ยังไม่มีรายการเคลื่อนไหว</td></tr>'}</table></div>
+ <p class="noprint"><button class="btn g" onclick="print()">🖨️ พิมพ์ / PDF</button> <button class="btn g" onclick="expCard()">⬇️ ดาวน์โหลด CSV</button></p>`:'<p class="hint">เลือกสินค้าเพื่อดู Stock Card ของรายการนั้น</p>'}</div>`;
+}
+const csvq=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+async function dl(name,rows){
+ const data='\ufeff'+rows.map(r=>r.map(csvq).join(',')).join('\r\n');
+ try{const d=window.claude?await claude.use('downloads'):null;
+  if(d){await d.save({filename:name,data});toast('ดาวน์โหลดแล้ว ✓');return}}catch(e){if(e&&e.code==='declined')return}
+ try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'text/csv;charset=utf-8'}));a.download=name;document.body.appendChild(a);a.click();a.remove();toast('ดาวน์โหลดแล้ว ✓')}catch(e){toast('ดาวน์โหลดไม่สำเร็จ')}
+}
+function expLog(){
+ const b={},all=Object.values(txs).sort((x,y)=>x.date.localeCompare(y.date)||x.ts-y.ts);
+ all.forEach(t=>{const k=iid(t.code);b[k]=(b[k]||0)+(t.type==='in'?t.qty:-t.qty);t.bal=b[k]});
+ const r=all.filter(t=>(!lf||t.date>=lf)&&(!lt||t.date<=lt));
+ dl('เคลื่อนไหวรายวัน.csv',[['วันที่','รหัส','ชื่อสินค้า','หน่วย','รับ','จ่าย','คงเหลือ','หมายเหตุ'],...r.map(t=>{const i=items[iid(t.code)]||{};return[fd(t.date),t.code,i.name||'',i.unit||'',t.type==='in'?t.qty:'',t.type==='out'?t.qty:'',t.bal,t.note||'']})]);
+}
+function expCard(){
+ const i=items[iid(cur)];if(!i)return toast('เลือกสินค้าก่อน');
+ dl('stockcard-'+i.code+'.csv',[['รหัส',i.code,'ชื่อ',i.name,'หน่วย',i.unit||''],['วันที่','รับ','จ่าย','คงเหลือ','หมายเหตุ'],...ledger(cur).map(t=>[fd(t.date),t.type==='in'?t.qty:'',t.type==='out'?t.qty:'',t.bal,t.note||''])]);
+}
+function expSum(){
+ const T=totals();
+ dl('ยอดคงเหลือทั้งหมด.csv',[['รหัส','ชื่อสินค้า','หน่วย','รับรวม','จ่ายรวม','คงเหลือ','จุดสั่งซื้อ'],...sorted().map(i=>{const t=T[iid(i.code)]||{in:0,out:0};return[i.code,i.name,i.unit||'',t.in,t.out,t.in-t.out,i.min||0]})]);
+}
+function parseCSV(t){t=t.replace(/^\ufeff/,'');const l=t.split('\n')[0],d=l.split('\t').length>l.split(',').length?'\t':',';
+ const R=[];let r=[],c='',q=false;
+ for(let i=0;i<t.length;i++){const ch=t[i];
+  if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}
+  else if(ch==='"')q=true;else if(ch===d){r.push(c);c=''}
+  else if(ch==='\n'){r.push(c);R.push(r);r=[];c=''}else if(ch!=='\r')c+=ch}
+ if(c||r.length){r.push(c);R.push(r)}
+ return R.filter(r=>r.some(x=>x.trim()))}
+function pd(s){s=String(s).trim();let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/),y,mo,d;
+ if(m){y=+m[1];mo=+m[2];d=+m[3]}else{m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);if(!m)return null;d=+m[1];mo=+m[2];y=+m[3]}
+ if(y>2400)y-=543;return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0')}
+const nm=v=>{const x=parseFloat(String(v??'').replace(/,/g,''));return isNaN(x)?0:x};
+let impBase=0,impN=0;
+async function impRows(R){
+ R=R.map(r=>r.map(x=>x==null?'':String(x)));
+ let ni=0,nt=0,sk=0,ok=true;const h=(R[0]||[]).map(x=>x.trim());
+ const mkItem=async(code,name,unit,min)=>{code=String(code||'').trim();if(!code)return false;
+  if(!items[iid(code)]){await put('items',iid(code),{code,name:(name||'').trim()||code,unit:(unit||'').trim(),min:min||0});ni++}return true};
+ const mkTx=async(code,date,i,o,note)=>{
+  for(const [type,qty] of [['in',i],['out',o]]){if(!(qty>0))continue;note=(note||'').trim();
+   if(Object.values(txs).some(t=>iid(t.code)===iid(code)&&t.date===date&&t.type===type&&t.qty===qty&&(t.note||'')===note)){sk++;continue}
+   if(impN%25===0)toast('กำลังนำเข้า... '+impN);
+   await put('tx','t'+impBase+'_'+impN,{code:String(code).trim(),date,type,qty,note,ts:impBase+impN});impN++;nt++}};
+ const x=k=>h.indexOf(k);
+ if(h[0]==='รหัส'&&h[2]==='ชื่อ'){
+  const code=h[1];if(!await mkItem(code,h[3],h[5]))return{ok:false};
+  for(const r of R.slice(2)){const d=pd(r[0]);if(!d){sk++;continue}await mkTx(code,d,nm(r[1]),nm(r[2]),r[4])}
+ }else if(h.includes('ชื่อสินค้า')&&h.includes('รับ')&&h.includes('วันที่')){
+  for(const r of R.slice(1)){const d=pd(r[x('วันที่')]);const c=(r[x('รหัส')]||'').trim();if(!d||!c){sk++;continue}
+   await mkItem(c,r[x('ชื่อสินค้า')],r[x('หน่วย')]);await mkTx(c,d,nm(r[x('รับ')]),nm(r[x('จ่าย')]),r[x('หมายเหตุ')])}
+ }else if(h.includes('รับรวม')&&h.includes('ชื่อสินค้า')){
+  for(const r of R.slice(1)){const c=(r[x('รหัส')]||'').trim();if(!c||items[iid(c)]){sk++;continue}
+   await mkItem(c,r[x('ชื่อสินค้า')],r[x('หน่วย')],nm(r[x('จุดสั่งซื้อ')]));
+   const b=nm(r[x('คงเหลือ')]);if(b>0)await mkTx(c,today(),b,0,'ยอดยกมา')}
+ }else if(h.includes('ชื่อสินค้า')&&h.includes('จุดสั่งซื้อ')){
+  for(const r of R.slice(1)){const c=(r[x('รหัส')]||'').trim();if(!c||items[iid(c)]){sk++;continue}
+   await mkItem(c,r[x('ชื่อสินค้า')],r[x('หน่วย')],nm(r[x('จุดสั่งซื้อ')]))}
+ }else ok=false;
+ return{ni,nt,sk,ok};
+}
+async function impFile(f){
+ if(!f)return;impBase=Date.now();impN=0;let sheets=[];
+ try{
+  if(/\.xls[xm]?$/i.test(f.name)){
+   if(!window.XLSX)return toast('ต้องต่ออินเทอร์เน็ตเพื่ออ่านไฟล์ Excel (หรือบันทึกเป็น CSV แล้วนำเข้า)');
+   const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
+   const cv=v=>{if(!(v instanceof Date))return v;const d=new Date(v.getTime()+43200000),y=d.getFullYear();return(y>2400?y-543:y)+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+   sheets=wb.SheetNames.map(nme=>XLSX.utils.sheet_to_json(wb.Sheets[nme],{header:1,raw:true,defval:''}).map(r=>r.map(cv)).filter(r=>r.some(c=>String(c).trim())));
+  }else sheets=[parseCSV(await f.text())];
+ }catch(e){return toast('อ่านไฟล์ไม่สำเร็จ')}
+ let ni=0,nt=0,sk=0,any=false;
+ for(const R of sheets){if(!R.length)continue;const r=await impRows(R);if(r.ok){any=true;ni+=r.ni;nt+=r.nt;sk+=r.sk}}
+ if(!any)return toast('รูปแบบไฟล์ไม่ตรงกับที่ระบบส่งออก');
+ toast(`นำเข้า: สินค้าใหม่ ${ni}, เคลื่อนไหว ${nt}`+(sk?` (ข้าม ${sk})`:''));render();
+}
+async function saveBin(name,buf,mime){
+ let d=null;try{d=window.claude?await claude.use('downloads'):null}catch(e){}
+ try{
+  if(d){await d.save({filename:name,data:buf});return true}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buf],{type:mime}));a.download=name;document.body.appendChild(a);a.click();a.remove();return true
+ }catch(e){return e&&e.code==='declined'?'declined':false}
+}
+async function expBackup(){
+ const it=sorted();if(!it.length)return toast('ยังไม่มีข้อมูลให้สำรอง');
+ const b={},all=Object.values(txs).map(t=>({...t})).sort((x,y)=>x.date.localeCompare(y.date)||x.ts-y.ts);
+ all.forEach(t=>{const k=iid(t.code);b[k]=(b[k]||0)+(t.type==='in'?t.qty:-t.qty);t.bal=b[k]});
+ const H1=['รหัส','ชื่อสินค้า','หน่วย','จุดสั่งซื้อ'],H2=['วันที่','รหัส','ชื่อสินค้า','หน่วย','รับ','จ่าย','คงเหลือ','หมายเหตุ'];
+ const R1=it.map(i=>[i.code,i.name,i.unit||'',i.min||0]);
+ const R2=all.map(t=>{const i=items[iid(t.code)]||{};return[fd(t.date),t.code,i.name||'',i.unit||'',t.type==='in'?t.qty:'',t.type==='out'?t.qty:'',t.bal,t.note||'']});
+ const st=today();
+ if(window.XLSX){
+  const wb=XLSX.utils.book_new(),w1=XLSX.utils.aoa_to_sheet([H1,...R1]),w2=XLSX.utils.aoa_to_sheet([H2,...R2]);
+  w1['!cols']=[{wch:12},{wch:32},{wch:10},{wch:12}];w2['!cols']=[{wch:12},{wch:12},{wch:32},{wch:10},{wch:10},{wch:10},{wch:10},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,w1,'สินค้า');XLSX.utils.book_append_sheet(wb,w2,'รายการเคลื่อนไหว');
+  const r=await saveBin('สำรองข้อมูล-StockCard-'+st+'.xlsx',XLSX.write(wb,{bookType:'xlsx',type:'array'}),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  if(r==='declined')return;if(r)return toast('สำรองข้อมูลแล้ว ✓');
+ }
+ toast('สร้างไฟล์ Excel ไม่ได้ จึงสำรองเป็น CSV 2 ไฟล์แทน');
+ await dl('สำรอง-สินค้า-'+st+'.csv',[H1,...R1]);await dl('สำรอง-เคลื่อนไหว-'+st+'.csv',[H2,...R2]);
+}
+let lf='',lt='';
+function vLog(){
+ const b={},all=Object.entries(txs).map(([id,t])=>({id,...t})).sort((x,y)=>x.date.localeCompare(y.date)||x.ts-y.ts);
+ all.forEach(t=>{const k=iid(t.code);b[k]=(b[k]||0)+(t.type==='in'?t.qty:-t.qty);t.bal=b[k]});
+ const rows=all.filter(t=>(!lf||t.date>=lf)&&(!lt||t.date<=lt)).reverse();
+ const days={};rows.forEach(t=>(days[t.date]=days[t.date]||[]).push(t));
+ const ds=Object.keys(days).sort().reverse();
+ $('#view').innerHTML=`<div class="card noprint"><div class="grid"><div><label>ตั้งแต่วันที่</label><input type="date" value="${lf}" onchange="lf=this.value;render()"></div><div><label>ถึงวันที่</label><input type="date" value="${lt}" onchange="lt=this.value;render()"></div><div style="display:flex;align-items:end;gap:6px"><button class="btn g" onclick="lf=lt=today();render()">วันนี้</button><button class="btn g" onclick="lf=lt='';render()">ทั้งหมด</button><button class="btn g" onclick="print()">🖨️</button><button class="btn g" onclick="expLog()">⬇️ CSV</button></div></div></div>`+
+ (ds.map(d=>{const L=days[d],si=L.filter(t=>t.type==='in').length,so=L.length-si;return`<div class="card"><b>${fd(d)}</b> <span class="hint">· ${L.length} รายการ (รับ ${si} / จ่าย ${so})</span><div class="tw"><table><tr><th>รหัส</th><th>ชื่อ</th><th class="n">รับ</th><th class="n">จ่าย</th><th class="n">คงเหลือ</th><th>หมายเหตุ</th></tr>${L.map(t=>`<tr class="clk" onclick="go('card','${esc(t.code)}')"><td>${esc(t.code)}</td><td>${esc(items[iid(t.code)]?.name||'')}</td><td class="n in">${t.type==='in'?fn(t.qty):''}</td><td class="n out">${t.type==='out'?fn(t.qty):''}</td><td class="n"><b>${fn(t.bal)}</b></td><td>${esc(t.note)}</td></tr>`).join('')}</table></div></div>`}).join('')||'<div class="card hint">ไม่มีรายการในช่วงที่เลือก</div>');
+}
+async function rmTx(id){if(confirm('ลบรายการนี้?')){await del('tx',id);render()}}
+let onlyStock=false;
+function vSum(){
+ const T=totals(),qq=q.toLowerCase(),bl=i=>{const t=T[iid(i.code)]||{in:0,out:0};return t.in-t.out};
+ const rows=sorted().filter(i=>(!qq||(i.code+' '+i.name).toLowerCase().includes(qq))&&(!onlyStock||bl(i)>0));
+ $('#view').innerHTML=`<div class="card"><div class="pr"><h2 style="margin:0 0 4px">รายงานยอดคงเหลือพัสดุ</h2><div>ณ วันที่ ${fd(today())} · ${rows.length} รายการ</div></div>
+ <div class="noprint"><input id="q" value="${esc(q)}" placeholder="ค้นหารหัส / ชื่อสินค้า" oninput="q=this.value;render()">
+ <div class="bar"><button class="btn g" onclick="expSum()">⬇️ ดาวน์โหลด CSV</button>
+ <button class="btn ${onlyStock?'':'g'}" onclick="onlyStock=!onlyStock;render()">📋 ยอดคงเหลือทั้งหมด</button>
+ <button class="btn g" onclick="printStock()">🖨️ ปริ้นยอดคงเหลือ</button>
+ <button class="btn g" onclick="expXlsx()">📊 ส่งออก EXCEL</button></div>
+ <p class="hint">${rows.length} รายการ${onlyStock?' · แสดงเฉพาะสินค้าที่มียอดคงเหลือ (ไม่แสดงยอด 0)':''} · แถวสีเหลือง = คงเหลือต่ำกว่าจุดสั่งซื้อ · กดแถวเพื่อดู Stock Card</p></div>
+ <div class="tw"><table><tr><th>รหัส</th><th>ชื่อ</th><th>หน่วย</th><th class="n">รับรวม</th><th class="n">จ่ายรวม</th><th class="n">คงเหลือ</th></tr>${
+ rows.map(i=>{const t=T[iid(i.code)]||{in:0,out:0},b=t.in-t.out;return`<tr class="clk ${i.min>0&&b<=i.min?'low':''}" onclick="go('card','${esc(i.code)}')"><td>${esc(i.code)}</td><td>${esc(i.name)}</td><td>${esc(i.unit)}</td><td class="n in">${fn(t.in)}</td><td class="n out">${fn(t.out)}</td><td class="n"><b>${fn(b)}</b></td></tr>`}).join('')||'<tr><td colspan="6" class="hint">ไม่พบข้อมูล</td></tr>'}</table></div></div>`;
+}
+function printStock(){
+ const o=onlyStock,oq=q;onlyStock=true;q='';render();
+ const back=()=>{onlyStock=o;q=oq;render()};
+ window.addEventListener('afterprint',back,{once:true});print();
+}
+async function expXlsx(){
+ const T=totals(),head=['รหัส','ชื่อสินค้า','หน่วย','รับรวม','จ่ายรวม','คงเหลือ','จุดสั่งซื้อ'];
+ const rows=sorted().map(i=>{const t=T[iid(i.code)]||{in:0,out:0};return[i.code,i.name,i.unit||'',t.in,t.out,t.in-t.out,i.min||0]}).filter(r=>r[5]>0);
+ if(!rows.length)return toast('ไม่มีสินค้าที่มียอดคงเหลือ');
+ const name='ยอดคงเหลือ-'+today()+'.xlsx';
+ try{
+  if(!window.XLSX)throw 0;
+  const ws=XLSX.utils.aoa_to_sheet([head,...rows]);ws['!cols']=[{wch:12},{wch:32},{wch:10},{wch:10},{wch:10},{wch:10},{wch:12}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'ยอดคงเหลือ');
+  const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  let d=null;try{d=window.claude?await claude.use('downloads'):null}catch(e){}
+  if(d){await d.save({filename:name,data:buf});toast('ดาวน์โหลดแล้ว ✓');return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.download=name;document.body.appendChild(a);a.click();a.remove();toast('ดาวน์โหลดแล้ว ✓');
+ }catch(e){
+  if(e&&e.code==='declined')return;
+  toast('ส่งออกเป็น CSV แทน (เปิดใน Excel ได้)');
+  dl('ยอดคงเหลือ-'+today()+'.csv',[head,...rows]);
+ }
+}
+function vItems(){
+ $('#view').innerHTML=`<div class="card"><b>เพิ่มสินค้าทีละรายการ</b><div class="grid" style="margin-top:8px">
+ <div><label>รหัส</label><input id="ic"></div><div><label>ชื่อสินค้า</label><input id="in"></div><div><label>หน่วย</label><input id="iu"></div><div><label>จุดสั่งซื้อ (ขั้นต่ำ)</label><input id="im" type="number" inputmode="decimal"></div></div><br>
+ <button class="btn" onclick="addItem()">เพิ่มสินค้า</button></div>
+ <div class="card"><b>สำรอง / นำเข้าข้อมูลทั้งหมด (Excel)</b>
+ <div class="bar"><button class="btn" onclick="expBackup()">💾 สำรองข้อมูลทั้งหมด EXCEL</button><button class="btn g" onclick="$('#xf').click()">📥 นำเข้าข้อมูลทั้งหมด EXCEL</button></div>
+ <input type="file" id="xf" accept=".xlsx,.xls,.csv,text/csv" style="display:none" onchange="impFile(this.files[0]);this.value=''">
+ <p class="hint">สำรอง = ได้ไฟล์ Excel 2 ชีต (สินค้า / รายการเคลื่อนไหว) · นำเข้า = เลือกไฟล์ .xlsx ที่สำรองไว้ นำเข้ากลับเข้าเครื่องใหม่หรือรวมข้อมูลได้ รายการที่ซ้ำจะถูกข้าม · รองรับไฟล์ CSV ที่ดาวน์โหลดจากระบบนี้ทั้ง 3 แบบด้วย</p></div>
+ <div class="card"><b>นำเข้าหลายรายการพร้อมกัน (วางจาก Excel ได้)</b>
+ <p class="hint">1 บรรทัด = 1 สินค้า คั่นด้วย Tab หรือ , ตามลำดับ: รหัส, ชื่อ, หน่วย, จุดสั่งซื้อ, ยอดยกมา (สองช่องท้ายไม่ใส่ก็ได้)</p>
+ <textarea id="bulk" placeholder="A001, กระดาษ A4, รีม, 20, 150&#10;A002, ปากกาลูกลื่น, ด้าม, 50, 300"></textarea><br><br>
+ <button class="btn" onclick="bulkAdd()">นำเข้า</button></div>
+ <div class="card"><b>สินค้าทั้งหมด ${Object.keys(items).length} รายการ</b><div class="tw"><table><tr><th>รหัส</th><th>ชื่อ</th><th>หน่วย</th><th class="n">ขั้นต่ำ</th><th></th></tr>${
+ sorted().map(i=>`<tr><td>${esc(i.code)}</td><td>${esc(i.name)}</td><td>${esc(i.unit)}</td><td class="n">${fn(i.min||0)}</td><td><button class="x" onclick="rmItem('${esc(i.code)}')">✕</button></td></tr>`).join('')}</table></div></div>`;
+}
+async function addItem(){
+ const code=$('#ic').value.trim(),name=$('#in').value.trim();
+ if(!code||!name)return toast('กรอกรหัสและชื่อสินค้า');
+ if(items[iid(code)])return toast('มีรหัสนี้อยู่แล้ว');
+ await put('items',iid(code),{code,name,unit:$('#iu').value.trim(),min:+$('#im').value||0});
+ toast('เพิ่มสินค้าแล้ว ✓');render();
+}
+async function bulkAdd(){
+ const lines=$('#bulk').value.split('\n').map(s=>s.trim()).filter(Boolean);let n=0,sk=0;
+ for(const ln of lines){
+  const p=ln.split(/\t|,/).map(s=>s.trim());
+  if(p.length<2||!p[0]||!p[1]){sk++;continue}
+  if(items[iid(p[0])]){sk++;continue}
+  await put('items',iid(p[0]),{code:p[0],name:p[1],unit:p[2]||'',min:+p[3]||0});
+  const o=parseFloat(p[4]);
+  if(o>0){const ts=Date.now()+n;await put('tx','t'+ts+n,{code:p[0],date:today(),type:'in',qty:o,note:'ยอดยกมา',ts})}
+  n++;
+ }
+ toast(`นำเข้า ${n} รายการ`+(sk?` (ข้าม ${sk})`:''));render();
+}
+async function rmItem(c){
+ if(!confirm('ลบสินค้า '+c+' และรายการเคลื่อนไหวทั้งหมดของสินค้านี้?'))return;
+ for(const [id,t] of Object.entries(txs))if(iid(t.code)===iid(c))await del('tx',id);
+ await del('items',iid(c));render();
+}
+render();
+(async()=>{try{db=window.claude?await claude.use('db'):null}catch(e){db=null}
+ if(db){items={};txs={};
+  db.collection('items').onSnapshot(s=>{items={};s.docs.forEach(d=>items[d.id]=d.data());render()});
+  db.collection('tx').onSnapshot(s=>{txs={};s.docs.forEach(d=>txs[d.id]=d.data());render()});}
+})();
+</script></body></html>
