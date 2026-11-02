@@ -1,0 +1,19 @@
+<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Meeting Room Booking - P005</title><link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600&display=swap" rel="stylesheet"><style>*{font-family:'Kanit',sans-serif;box-sizing:border-box;margin:0;padding:0}body{background:#f0f9ff}header{background:#0369a1;color:#fff;padding:14px 20px;display:flex;justify-content:space-between} .layout{display:grid;grid-template-columns:260px 1fr;gap:12px;padding:12px;height:calc(100vh - 56px)}@media(max-width:900px){.layout{grid-template-columns:1fr}}.card{background:#fff;border-radius:12px;padding:12px;box-shadow:0 2px 10px rgba(0,0,0,.05)}.room{border:1px solid #e0f2fe;padding:10px;border-radius:10px;margin:6px 0;display:flex;justify-content:space-between;align-items:center}.room b{font-size:14px}.slot{display:inline-block;padding:6px 10px;margin:2px;border-radius:8px;border:1px solid #bae6fd;background:#f0f9ff;cursor:pointer;font-size:12px}.slot.booked{background:#fecaca;border-color:#fca5a5;color:#991b1b;cursor:not-allowed}.slot.mine{background:#0284c7;color:#fff}</style></head><body>
+<header><h2>🏢 ระบบจองห้องประชุม</h2><div>📅 16/10/2026</div></header>
+<div class="layout">
+<div class="card"><h3>ห้องทั้งหมด</h3><div id="rooms"></div><button onclick="addRoom()" style="width:100%;margin-top:10px;border:1px dashed #0284c7;color:#0284c7;background:#fff;padding:8px;border-radius:8px;cursor:pointer">+ เพิ่มห้อง</button></div>
+<div class="card"><div style="display:flex;justify-content:space-between"><h3>ตารางจอง - 16/10/2026</h3><button onclick="bookPrompt()" style="background:#0284c7;color:#fff;border:none;padding:6px 14px;border-radius:8px;cursor:pointer">+ จอง</button></div><div id="schedule" style="margin-top:12px"></div></div>
+</div>
+<script>
+let rooms=[
+{name:"Meeting A1",cap:"4คน",price:300},{name:"A2",cap:"4คน",price:300},{name:"A3",cap:"6คน",price:400},{name:"B1",cap:"10คน",price:600},{name:"B2",cap:"10คน",price:600},{name:"B3",cap:"12คน",price:700},{name:"Training C1",cap:"20คน",price:1000},{name:"C2",cap:"24คน",price:1200},{name:"Board Room",cap:"15คน",price:800}
+];
+let bookings=[];
+const slots=["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00"];
+function renderRooms(){document.getElementById('rooms').innerHTML=rooms.map(r=>'<div class=room><div><b>'+r.name+'</b><div style="font-size:12px;color:#666">'+r.cap+' • '+r.price+'฿/ชม</div></div><span style="font-size:18px">📺</span></div>').join('');}
+function renderSchedule(){let html='';rooms.forEach(r=>{html+='<div style="margin:10px 0"><b>'+r.name+'</b> <div style="margin-top:4px">'+slots.map(s=>{const b=bookings.find(x=>x.room===r.name&&x.slot===s);let cls='slot';if(b)cls+=' '+(b.mine?'mine':'booked');return '<span class=\''+cls+'\' onclick="toggleBook(\''+r.name+'\',\''+s+'\')">'+s+(b?' • '+b.name:'')+'</span>';}).join('')+'</div></div>';});document.getElementById('schedule').innerHTML=html;}
+function toggleBook(room,slot){const ex=bookings.find(x=>x.room===room&&x.slot===slot);if(ex){if(ex.mine){if(confirm('ยกเลิกจอง?')){bookings=bookings.filter(x=>!(x.room===room&&x.slot===slot));renderSchedule();}}return;}const name=prompt('ชื่อผู้จอง สำหรับ '+room+' '+slot);if(!name)return;bookings.push({room,slot,name,mine:true});renderSchedule();}
+function bookPrompt(){const room=prompt('ห้อง: '+rooms.map(r=>r.name).join(', '));if(!rooms.find(r=>r.name===room))return alert('ไม่พบห้อง');const slot=prompt('เวลา: '+slots.join(', '));if(!slots.includes(slot))return alert('เวลาไม่ถูกต้อง');toggleBook(room,slot);}
+function addRoom(){const n=prompt('ชื่อห้องใหม่');if(!n)return;rooms.push({name:n,cap:'4คน',price:300});renderRooms();renderSchedule();}
+renderRooms();renderSchedule();
+</script></body></html>

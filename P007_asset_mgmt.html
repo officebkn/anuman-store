@@ -1,0 +1,19 @@
+<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Asset Management - P007</title><link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600&display=swap" rel="stylesheet"><style>*{font-family:'Kanit',sans-serif;box-sizing:border-box;margin:0;padding:0}body{background:#f8fafc}header{background:#0f172a;color:#fff;padding:14px 20px}header small{color:#94a3b8}nav{background:#e2e8f0;padding:8px 12px;display:flex;gap:6px;overflow:auto}nav button{border:none;padding:6px 12px;border-radius:8px;background:#fff;cursor:pointer}nav button.active{background:#0f172a;color:#fff}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:12px}@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}}.stat{background:#fff;padding:12px;border-radius:10px;text-align:center;box-shadow:0 1px 6px rgba(0,0,0,.05)}</style></head><body>
+<header><h2>🏛️ ระบบจัดการทรัพย์สินองค์กร</h2><small>ทะเบียนสินทรัพย์ ยืม-คืน ขาย/จำหน่าย ตรวจนับ นำเข้า/ส่งออก</small></header>
+<nav id="nav"></nav>
+<div class="grid">
+<div class="stat"><small>ทั้งหมด</small><b id="total">0</b></div>
+<div class="stat"><small>ใช้งาน</small><b id="inuse">0</b></div>
+<div class="stat"><small>ยืม</small><b id="borrow">0</b></div>
+<div class="stat"><small>ชำรุด/ซ่อม</small><b id="repair">0</b></div>
+<div class="stat"><small>ขายแล้ว</small><b id="sold">0</b></div>
+</div>
+<div style="padding:12px"><div style="background:#fff;border-radius:12px;padding:14px"><div style="display:flex;justify-content:space-between"><h3>ภาพรวม</h3><button onclick="addAsset()" style="background:#0f172a;color:#fff;border:none;padding:6px 12px;border-radius:8px;cursor:pointer">+ เพิ่มทรัพย์สิน</button></div><div id="list" style="margin-top:12px;text-align:center;color:#888;padding:30px">ยังไม่มีข้อมูล</div></div></div>
+<script>
+const TABS=["Dashboard","สินทรัพย์","ยืม-คืน","ขาย/จำหน่าย","ตรวจนับ","Excel/สำรองข้อมูล"];
+let assets=[];
+function renderNav(){document.getElementById('nav').innerHTML=TABS.map((t,i)=>'<button class="'+(i==0?'active':'')+'">'+t+'</button>').join('');}
+function render(){document.getElementById('total').textContent=assets.length;document.getElementById('inuse').textContent=assets.filter(a=>a.status==='ใช้งาน').length;document.getElementById('borrow').textContent=assets.filter(a=>a.status==='ยืม').length;document.getElementById('repair').textContent=assets.filter(a=>a.status==='ชำรุด').length;document.getElementById('sold').textContent=assets.filter(a=>a.status==='ขาย').length;document.getElementById('list').innerHTML=assets.length?assets.map(a=>'<div style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #eee"><span><b>'+a.code+'</b> '+a.name+'</span><span style="background:#e2e8f0;padding:2px 8px;border-radius:8px;font-size:12px">'+a.status+'</span></div>').join(''):'<div style="text-align:center;color:#888;padding:30px">ยังไม่มีข้อมูล</div>';}
+function addAsset(){const code=prompt('รหัสทรัพย์สิน');if(!code)return;const name=prompt('ชื่อทรัพย์สิน');assets.push({code,name,status:'ใช้งาน'});render();}
+renderNav();render();
+</script></body></html>

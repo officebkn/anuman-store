@@ -1,0 +1,18 @@
+<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EV Car Rental - P002</title><link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600&display=swap" rel="stylesheet"><style>*{font-family:'Kanit',sans-serif;box-sizing:border-box;margin:0;padding:0}body{background:#0f1115;color:#e5e7eb}header{padding:18px 24px;display:flex;justify-content:space-between;border-bottom:1px solid #222}nav{display:flex;gap:8px;padding:12px;background:#181a20;overflow:auto}nav button{background:#2a2d36;color:#9ca3af;border:none;padding:8px 14px;border-radius:10px;cursor:pointer}nav button.active{background:#3b82f6;color:#fff}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px}@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}}.stat{background:#181a20;border:1px solid #272a33;border-radius:14px;padding:16px}.stat b{font-size:28px;display:block}.list{background:#181a20;border-radius:14px;margin:0 16px 16px;padding:16px}.car{padding:10px;border-bottom:1px solid #222;display:flex;justify-content:space-between}</style></head><body>
+<header><h2>⚡ EV RENTAL - บริการเช่ารถไฟฟ้า</h2><span style="color:#60a5fa">20 คันทั้งหมด</span></header>
+<nav id="nav"></nav>
+<div class="grid">
+<div class="stat"><small style="color:#9ca3af">รถทั้งหมด</small><b>20</b></div>
+<div class="stat"><small style="color:#9ca3af">ว่างให้เช่า</small><b style="color:#22c55e" id="available">20</b></div>
+<div class="stat"><small style="color:#9ca3af">กำลังเช่า</small><b style="color:#f59e0b" id="rented">0</b></div>
+<div class="stat"><small style="color:#9ca3af">รายรับรวม</small><b style="color:#3b82f6"><span id="rev">0</span> ฿</b></div>
+</div>
+<div class="list"><div style="display:flex;justify-content:space-between;margin-bottom:10px"><h3>รายการเช่าล่าสุด</h3><button onclick="addRent()" style="background:#3b82f6;color:#fff;border:none;padding:6px 12px;border-radius:8px;cursor:pointer">+ ทำสัญญาเช่า</button></div><div id="rents"><div style="text-align:center;color:#6b7280;padding:30px">ยังไม่มีรายการเช่าล่าสุด</div></div></div>
+<script>
+const TABS=["หน้าหลัก","ทำสัญญาเช่า","จัดการรถในร้าน(20)","ลูกค้า","ตั้งค่า & สำรองข้อมูล"];
+let rents=[],rev=0,cars=20;
+function renderNav(){document.getElementById('nav').innerHTML=TABS.map((t,i)=>'<button class="'+(i==0?'active':'')+'" onclick="this.parentNode.querySelectorAll(\'button\').forEach(b=>b.classList.remove(\'active\'));this.classList.add(\'active\')">'+t+'</button>').join('');}
+function addRent(){const name=prompt('ชื่อผู้เช่า');if(!name)return;const carNo='EV-'+String(Math.floor(Math.random()*20)+1).padStart(2,'0');const days=parseInt(prompt('จำนวนวัน','1')||'1');const price=days*1200;rents.unshift({name,carNo,days,price,date:new Date().toLocaleString('th-TH')});rev+=price;render();} 
+function render(){if(!rents.length){document.getElementById('rents').innerHTML='<div style="text-align:center;color:#6b7280;padding:30px">ยังไม่มีรายการเช่าล่าสุด</div>';}else{document.getElementById('rents').innerHTML=rents.map(r=>'<div class=car><div><b>'+r.carNo+'</b> - '+r.name+' ('+r.days+'วัน)<div style="font-size:12px;color:#9ca3af">'+r.date+'</div></div><b>'+r.price+'฿</b></div>').join('');}document.getElementById('rented').textContent=rents.length;document.getElementById('available').textContent=20-rents.length;document.getElementById('rev').textContent=rev.toLocaleString();}
+renderNav();render();
+</script></body></html>

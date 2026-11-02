@@ -1,0 +1,25 @@
+<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Auto Parts POS - P003</title><link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600&display=swap" rel="stylesheet"><style>*{font-family:'Kanit',sans-serif;box-sizing:border-box;margin:0;padding:0}body{background:#fff7ed;color:#1f2937}header{background:#ea580c;color:#fff;padding:14px 20px;display:flex;justify-content:space-between}nav{background:#ffedd5;padding:8px 12px;display:flex;gap:8px;overflow:auto}nav button{border:none;padding:6px 14px;border-radius:20px;background:#fff;color:#c2410c;cursor:pointer}nav button.active{background:#ea580c;color:#fff}main{display:grid;grid-template-columns:1fr 360px;gap:12px;padding:12px}@media(max-width:900px){main{grid-template-columns:1fr}}.card{background:#fff;border-radius:14px;padding:12px;box-shadow:0 2px 12px rgba(0,0,0,.06)}.part{border-bottom:1px solid #ffedd5;padding:12px 0;display:flex;justify-content:space-between}.part b{font-size:14px}button.add{background:#ea580c;color:#fff;border:none;padding:6px 12px;border-radius:8px;cursor:pointer}</style></head><body>
+<header><h2>🔧 ร้านอะไหล่ยนต์ - Parts Store</h2><span style="background:#fff;color:#ea580c;padding:4px 10px;border-radius:20px;font-size:12px">POS</span></header>
+<nav><button class="active">ขายหน้าร้าน</button><button>คลังสินค้า</button><button>รับเข้า</button><button>ลูกค้า</button><button>รายงาน</button><button>ตั้งค่า</button></nav>
+<main>
+<div class="card"><input id="search" placeholder="ค้นหาอะไหล่ รหัส หรือรุ่นรถ" style="width:100%;padding:10px;border:1px solid #fed7aa;border-radius:10px"><div id="list" style="margin-top:10px"></div></div>
+<div class="card"><h3>🛒 ตะกร้า</h3><div id="cart" style="margin-top:8px"></div><div style="margin:8px 0"><label><input type="checkbox" id="vat" checked> VAT 7%</label></div><div style="text-align:right;font-weight:600;font-size:18px;border-top:2px solid #ea580c;padding-top:8px">รวม <span id="total">0.00</span> ฿</div><button onclick="checkout()" style="width:100%;margin-top:10px;background:#ea580c;color:#fff;border:none;padding:10px;border-radius:10px;cursor:pointer">ชำระเงิน</button></div>
+</main>
+<script>
+const PARTS=[
+{code:"OEL-01",name:"น้ำมันเครื่องกึ่งสังเคราะห์ 10W-40 (4L)",stock:"15 แกลลอน",retail:950,wholesale:800},
+{code:"FLT-02",name:"กรองน้ำมัน Vios/Yaris",stock:"2 ลูก",retail:220,wholesale:170},
+{code:"BRK-03",name:"ผ้าเบรก Honda Civic FB",stock:"4 ชุด",retail:1500,wholesale:1200},
+{code:"SPK-04",name:"หัวเทียน Iridium",stock:"8 กล่อง",retail:750,wholesale:600},
+{code:"BAT-05",name:"แบตเตอรี่ 12V 75Ah",stock:"6 ลูก",retail:2800,wholesale:2300}
+];
+let cart=[];
+function renderList(f=''){const filtered=PARTS.filter(p=> (p.code+p.name).toLowerCase().includes(f.toLowerCase()));document.getElementById('list').innerHTML=filtered.map(p=>'<div class=part><div><b>'+p.code+' - '+p.name+'</b><div style="font-size:12px;color:#666">เหลือ '+p.stock+' • ปลีก '+p.retail+' ส่ง '+p.wholesale+'</div></div><button class=add onclick="add(\''+p.code+'\')">+ เพิ่ม</button></div>').join('');}
+function add(code){const part=PARTS.find(p=>p.code===code);let c=cart.find(x=>x.code===code);if(c)c.qty++;else cart.push({...part,qty:1});renderCart();}
+function renderCart(){document.getElementById('cart').innerHTML=cart.map(i=>'<div style="display:flex;justify-content:space-between;margin:6px 0;font-size:14px"><span>'+i.code+' x'+i.qty+'</span><span>'+(i.retail*i.qty)+'฿ <button onclick="remove(\''+i.code+'\')" style="border:none;background:#fee2e2;color:#c00;border-radius:4px;padding:2px 6px">x</button></span></div>').join('')||'<div style="color:#999">ตะกร้าว่าง</div>';calc();}
+function remove(code){cart=cart.filter(c=>c.code!==code);renderCart();}
+function calc(){let s=cart.reduce((a,i)=>a+i.retail*i.qty,0);if(document.getElementById('vat').checked)s*=1.07;document.getElementById('total').textContent=s.toFixed(2);}
+function checkout(){if(!cart.length)return alert('ตะกร้าว่าง');alert('ขายสำเร็จ '+document.getElementById('total').textContent+'฿');cart=[];renderCart();}
+document.getElementById('search').addEventListener('input',e=>renderList(e.target.value));document.getElementById('vat').addEventListener('change',calc);
+renderList();renderCart();
+</script></body></html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Auto Repair - P004</title><link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600&display=swap" rel="stylesheet"><style>*{font-family:'Kanit',sans-serif;box-sizing:border-box;margin:0;padding:0}body{background:#f8fafc}header{background:#1e293b;color:#fff;padding:14px 20px}nav{display:flex;gap:6px;background:#e2e8f0;padding:8px 12px;overflow:auto}nav button{border:none;padding:6px 12px;border-radius:8px;background:#fff;cursor:pointer}nav button.active{background:#0f172a;color:#fff}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:12px}@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}}.stat{background:#fff;padding:14px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.05)}.warn{background:#fff3cd;border:1px solid #facc15;padding:10px;border-radius:10px;margin:12px}</style></head><body>
+<header><h2>🚗 อู่ซ่อมรถ - ระบบจัดการงานซ่อม</h2></header>
+<nav id="nav"></nav>
+<div class="grid">
+<div class="stat"><small>งานค้าง</small><b id="pending">0</b></div>
+<div class="stat"><small>นัดหมายวันนี้</small><b id="appt">0</b></div>
+<div class="stat"><small>รับงานวันนี้</small><b id="received">0</b></div>
+<div class="stat"><small>รายรับวันนี้</small><b><span id="rev">0.00</span> THB</b></div>
+</div>
+<div class="warn"><b>⚠️ อะไหล่ใกล้หมด (2 รายการ)</b><div style="margin-top:6px;font-size:13px">• ผ้าเบรกหน้า (เหลือ 3 ชุด / ขั้นต่ำ 4)<br>• แบตเตอรี่ 12V 60Ah (เหลือ 2 ลูก / ขั้นต่ำ 2)</div></div>
+<div style="padding:12px"><div style="background:#fff;border-radius:12px;padding:14px"><div style="display:flex;justify-content:space-between"><h3>ใบงานซ่อมล่าสุด</h3><button onclick="addJob()" style="background:#0f172a;color:#fff;border:none;padding:6px 12px;border-radius:8px;cursor:pointer">+ เปิดใบงาน</button></div><div id="jobs" style="margin-top:12px;text-align:center;color:#888;padding:20px">ยังไม่มีใบงาน</div></div></div>
+<script>
+const TABS=["หน้าหลัก","นัดหมาย","ใบงานซ่อม","ลูกค้า & รถ","สต็อกอะไหล่","รายงาน","ตั้งค่า"];
+let jobs=[],rev=0;
+function renderNav(){document.getElementById('nav').innerHTML=TABS.map((t,i)=>'<button class="'+(i==0?'active':'')+'">'+t+'</button>').join('');}
+function addJob(){const plate=prompt('ทะเบียนรถ');if(!plate)return;const issue=prompt('อาการ/งานซ่อม');if(!issue)return;jobs.unshift({plate,issue,date:new Date().toLocaleDateString('th-TH'),status:'รอซ่อม'});rev+=500;render();}
+function render(){document.getElementById('pending').textContent=jobs.length;document.getElementById('appt').textContent=jobs.length;document.getElementById('received').textContent=jobs.length;document.getElementById('rev').textContent=rev.toFixed(2);document.getElementById('jobs').innerHTML=jobs.length?jobs.map(j=>'<div style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #eee"><span><b>'+j.plate+'</b> - '+j.issue+'</span><span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:10px;font-size:12px">'+j.status+'</span></div>').join(''):'<div style="text-align:center;color:#888;padding:20px">ยังไม่มีใบงาน</div>';}
+renderNav();render();
+</script></body></html>
