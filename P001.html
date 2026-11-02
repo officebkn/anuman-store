@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการร้านขายยา (Pharmacy POS)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        @media print {
+            body * { visibility: hidden; }
+            #receipt-print-area, #receipt-print-area * { visibility: visible; }
+            #receipt-print-area { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Navigation Header -->
+    <header class="bg-emerald-600 text-white shadow-md no-print">
+        <div class="container mx-auto px-4 py-3 flex flex-wrap justify-between items-center">
+            <h1 id="header-shop-name" class="text-xl font-bold flex items-center gap-2">
+                💊 ระบบร้านขายยา
+            </h1>
+            <nav class="flex flex-wrap gap-1 mt-2 sm:mt-0">
+                <button onclick="switchTab('pos')" id="btn-pos" class="px-3 py-1.5 bg-emerald-700 rounded text-sm font-medium transition">ขายหน้าร้าน (POS)</button>
+                <button onclick="switchTab('stock')" id="btn-stock" class="px-3 py-1.5 bg-emerald-800 opacity-70 rounded text-sm font-medium transition">คลังสินค้า</button>
+                <button onclick="switchTab('stock-in')" id="btn-stock-in" class="px-3 py-1.5 bg-emerald-800 opacity-70 rounded text-sm font-medium transition">รับเข้ายา</button>
+                <button onclick="switchTab('patient')" id="btn-patient" class="px-3 py-1.5 bg-emerald-800 opacity-70 rounded text-sm font-medium transition">คนไข้/แพ้ยา</button>
+                <button onclick="switchTab('report')" id="btn-report" class="px-3 py-1.5 bg-emerald-800 opacity-70 rounded text-sm font-medium transition">รายงานประวัติ</button>
+                <button onclick="switchTab('settings')" id="btn-settings" class="px-3 py-1.5 bg-emerald-800 opacity-70 rounded text-sm font-medium transition">ตั้งค่าร้าน</button>
+                <button onclick="switchTab('backup')" id="btn-backup" class="px-3 py-1.5 bg-emerald-800 opacity-70 rounded text-sm font-medium transition">สำรองข้อมูล</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-6">
+
+        <!-- ================= TAB 1: POS (ขายหน้าร้าน) ================= -->
+        <div id="tab-pos" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-white p-4 rounded-xl shadow-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-emerald-700">รายการยาและสินค้า</h2>
+                    <input type="text" id="search-pos" placeholder="ค้นหาชื่อยา..." oninput="renderPosProducts()" class="border px-3 py-1.5 rounded-lg text-sm w-1/2 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div id="pos-product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto p-1"></div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-md flex flex-col justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-emerald-700 mb-3">ตะกร้าสินค้า</h2>
+                    <div class="mb-3">
+                        <label class="block text-xs text-gray-500 mb-1">เลือกคนไข้ / ลูกค้า</label>
+                        <select id="pos-patient-select" class="w-full border px-3 py-1.5 rounded-lg text-sm bg-gray-50">
+                            <option value="">-- ลูกค้าทั่วไป --</option>
+                        </select>
+                    </div>
+                    <!-- VAT Toggle -->
+                    <div class="mb-3 bg-emerald-50 p-2 rounded-lg border border-emerald-200 flex items-center justify-between">
+                        <label class="text-xs font-bold text-emerald-800 flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" id="pos-vat-toggle" onchange="renderCart()" class="w-4 h-4 text-emerald-600 rounded">
+                            คิดภาษีมูลค่าเพิ่ม (VAT 7%)
+                        </label>
+                        <span class="text-[10px] text-emerald-600">ภาษีการค้า</span>
+                    </div>
+                    <div class="border-t border-b py-2 max-h-[30vh] overflow-y-auto mb-2" id="cart-items-container">
+                        <p class="text-gray-400 text-center text-sm py-4">ยังไม่มีสินค้าในตะกร้า</p>
+                    </div>
+                </div>
+                <div>
+                    <div class="space-y-1 mb-3 text-sm">
+                        <div class="flex justify-between text-gray-500 text-xs" id="subtotal-row">
+                            <span>ยอดรวม (ไม่รวม VAT):</span>
+                            <span id="cart-subtotal">0.00 ฿</span>
+                        </div>
+                        <div class="flex justify-between text-gray-500 text-xs hidden" id="vat-row">
+                            <span>VAT 7% :</span>
+                            <span id="cart-vat">0.00 ฿</span>
+                        </div>
+                        <div class="flex justify-between font-bold text-lg pt-1 border-t">
+                            <span>ยอดชำระสุทธิ:</span>
+                            <span id="cart-total" class="text-emerald-600">0.00 บาท</span>
+                        </div>
+                    </div>
+                    <button onclick="checkout()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow">
+                        ชำระเงิน / ออกใบเสร็จ
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 2: STOCK (จัดการสต็อก) ================= -->
+        <div id="tab-stock" class="hidden bg-white p-6 rounded-xl shadow-md">
+            <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                <h2 class="text-lg font-bold text-emerald-700">คลังสินค้าและยา</h2>
+                <div class="flex gap-2">
+                    <button onclick="openProductModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">+ เพิ่มยาใหม่</button>
+                </div>
+            </div>
+            <div class="mb-4">
+                <input type="text" id="search-stock" placeholder="ค้นหายาในคลัง..." oninput="renderStockTable()" class="border px-3 py-1.5 rounded-lg text-sm w-full sm:w-1/3">
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-emerald-50 text-emerald-800 border-b">
+                            <th class="p-3">ชื่อยา</th>
+                            <th class="p-3">หมวดหมู่</th>
+                            <th class="p-3">ราคาขาย (บาท)</th>
+                            <th class="p-3">คงเหลือ</th>
+                            <th class="p-3">วันหมดอายุ</th>
+                            <th class="p-3 text-center">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stock-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= TAB 3: STOCK-IN (รับเข้ายา) ================= -->
+        <div id="tab-stock-in" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-xl shadow-md h-fit">
+                <h2 class="text-lg font-bold text-emerald-700 mb-4">📥 บันทึกรับเข้ายาเข้าคลัง</h2>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">เลือกรายการยา</label>
+                        <select id="stock-in-product" class="w-full border px-3 py-2 rounded-lg text-sm bg-gray-50"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">จำนวนที่รับเข้าเพิ่ม</label>
+                        <input type="number" id="stock-in-qty" min="1" value="1" class="w-full border px-3 py-2 rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">หมายเหตุ / เลขที่ใบส่งของ (Notes)</label>
+                        <input type="text" id="stock-in-note" placeholder="เช่น ซื้อจากบริษัท A / Lot.6602" class="w-full border px-3 py-2 rounded-lg text-sm">
+                    </div>
+                    <button onclick="processStockIn()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow mt-2">
+                        ยืนยันการรับเข้ายา
+                    </button>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md">
+                <h2 class="text-lg font-bold text-emerald-700 mb-4">ประวัติการรับเข้ายาล่าสุด</h2>
+                <div class="overflow-x-auto max-h-[50vh] overflow-y-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-emerald-50 text-emerald-800 border-b">
+                                <th class="p-3">วัน-เวลา</th>
+                                <th class="p-3">ชื่อยา</th>
+                                <th class="p-3">จำนวนที่รับ</th>
+                                <th class="p-3">หมายเหตุ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stock-in-history-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 4: PATIENT (คนไข้ / ประวัติแพ้ยา) ================= -->
+        <div id="tab-patient" class="hidden bg-white p-6 rounded-xl shadow-md">
+            <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                <h2 class="text-lg font-bold text-emerald-700">ทะเบียนคนไข้ / ประวัติการแพ้ยา</h2>
+                <button onclick="openPatientModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">+ เพิ่มคนไข้ใหม่</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-emerald-50 text-emerald-800 border-b">
+                            <th class="p-3">ชื่อ-นามสกุล</th>
+                            <th class="p-3">เบอร์โทรศัพท์</th>
+                            <th class="p-3">โรคประจำตัว</th>
+                            <th class="p-3 text-red-600">ประวัติแพ้ยา</th>
+                            <th class="p-3 text-center">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patient-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= TAB 5: REPORT (รายงานประวัติพร้อมค้นหา) ================= -->
+        <div id="tab-report" class="hidden space-y-6">
+            <!-- Sales Report -->
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                    <h2 class="text-lg font-bold text-emerald-700">📊 รายงานประวัติการขายออก (Sales History)</h2>
+                    <input type="text" id="search-sales-report" placeholder="ค้นหาประวัติการขาย (ชื่อลูกค้า, วันที่)..." oninput="renderReports()" class="border px-3 py-1.5 rounded-lg text-sm w-full sm:w-1/3">
+                </div>
+                <div class="overflow-x-auto max-h-[40vh] overflow-y-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-emerald-50 text-emerald-800 border-b">
+                                <th class="p-3">วัน-เวลา</th>
+                                <th class="p-3">ลูกค้า</th>
+                                <th class="p-3">รายการสินค้า</th>
+                                <th class="p-3 text-right">ยอดรวม</th>
+                                <th class="p-3 text-center">ใบเสร็จ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sales-report-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Stock In Report -->
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                    <h2 class="text-lg font-bold text-emerald-700">📥 รายงานประวัติการรับเข้ายา (Stock In History)</h2>
+                    <input type="text" id="search-stockin-report" placeholder="ค้นหาประวัติรับเข้า (ชื่อยา, หมายเหตุ)..." oninput="renderReports()" class="border px-3 py-1.5 rounded-lg text-sm w-full sm:w-1/3">
+                </div>
+                <div class="overflow-x-auto max-h-[40vh] overflow-y-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-emerald-50 text-emerald-800 border-b">
+                                <th class="p-3">วัน-เวลา</th>
+                                <th class="p-3">ชื่อยา</th>
+                                <th class="p-3">จำนวนรับเข้า</th>
+                                <th class="p-3">หมายเหตุ / ล๊อต</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-stock-in-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 6: SETTINGS (ตั้งค่าร้านค้า) ================= -->
+        <div id="tab-settings" class="hidden bg-white p-6 rounded-xl shadow-md max-w-xl mx-auto">
+            <h2 class="text-lg font-bold text-emerald-700 mb-4">⚙️ ตั้งค่าข้อมูลร้านค้า (แสดงบนใบเสร็จ)</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">ชื่อร้านขายยา</label>
+                    <input type="text" id="set-shop-name" class="w-full border px-3 py-2 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">ที่อยู่ร้าน</label>
+                    <textarea id="set-shop-address" rows="2" class="w-full border px-3 py-2 rounded-lg text-sm"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">เบอร์โทรศัพท์ร้าน</label>
+                    <input type="text" id="set-shop-phone" class="w-full border px-3 py-2 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">เลขทะเบียนพาณิชย์ / ใบอนุญาตขายยา</label>
+                    <input type="text" id="set-shop-license" class="w-full border px-3 py-2 rounded-lg text-sm">
+                </div>
+                <button onclick="saveShopSettings()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold transition shadow mt-2">
+                    บันทึกการตั้งค่า
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= TAB 7: BACKUP (สำรองข้อมูล) ================= -->
+        <div id="tab-backup" class="hidden bg-white p-6 rounded-xl shadow-md max-w-xl mx-auto">
+            <h2 class="text-lg font-bold text-emerald-700 mb-4">สำรองและกู้คืนข้อมูล</h2>
+            <div class="space-y-4">
+                <div class="p-4 border rounded-xl bg-gray-50">
+                    <h3 class="font-bold text-sm mb-1">สำรองข้อมูลเป็นไฟล์ JSON (ครบถ้วนทุกระบบ)</h3>
+                    <button onclick="exportJSON()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition mt-2">ดาวน์โหลดไฟล์ JSON</button>
+                </div>
+                <div class="p-4 border rounded-xl bg-gray-50">
+                    <h3 class="font-bold text-sm mb-1">ส่งออกข้อมูลสินค้าเป็น Excel (CSV)</h3>
+                    <button onclick="exportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition mt-2">ดาวน์โหลดไฟล์ CSV (Excel)</button>
+                </div>
+                <div class="p-4 border rounded-xl bg-gray-50">
+                    <h3 class="font-bold text-sm mb-1">นำเข้าข้อมูล JSON (Restore JSON)</h3>
+                    <input type="file" id="import-file" accept=".json" onchange="importJSON(event)" class="text-sm mt-2">
+                </div>
+                <div class="p-4 border rounded-xl bg-emerald-50 border-emerald-200">
+                    <h3 class="font-bold text-sm mb-1 text-emerald-800">นำเข้าข้อมูลสต็อกยาจาก Excel (CSV)</h3>
+                    <input type="file" id="import-csv-file" accept=".csv" onchange="importCSV(event)" class="text-sm mt-2">
+                </div>
+                <div class="p-4 border border-red-200 rounded-xl bg-red-50">
+                    <h3 class="font-bold text-sm mb-1 text-red-700">ล้างข้อมูลทั้งหมดในระบบ (Reset Data)</h3>
+                    <button onclick="resetAllData()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition mt-2">ล้างข้อมูลทั้งหมด</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: Standard Receipt / Invoice -->
+    <div id="receipt-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-xl w-full max-w-md shadow-2xl flex flex-col max-h-[90vh]">
+            <div id="receipt-print-area" class="bg-white p-4 text-xs text-gray-800 overflow-y-auto flex-1 border border-gray-100 rounded">
+                <div class="text-center mb-4 border-b pb-3">
+                    <h2 class="font-bold text-base text-emerald-700" id="rec-shop-name">ร้านขายยาฟาร์มาซี</h2>
+                    <p class="text-gray-500 text-[11px]" id="rec-shop-address">ที่อยู่...</p>
+                    <p class="text-gray-500 text-[11px]" id="rec-shop-phone">โทร: -</p>
+                    <p class="text-gray-500 text-[11px]" id="rec-shop-license">ใบอนุญาต: -</p>
+                </div>
+                <div class="text-center mb-3">
+                    <h3 class="font-bold text-sm text-gray-700 bg-gray-100 py-1 rounded">ใบเสร็จรับเงิน / ใบกำกับภาษีย่อย</h3>
+                </div>
+                <div class="flex justify-between border-b pb-2 mb-2 text-[11px]">
+                    <div>
+                        <p><strong>วันที่:</strong> <span id="rec-date">-</span></p>
+                        <p><strong>ลูกค้า:</strong> <span id="rec-patient">ลูกค้าทั่วไป</span></p>
+                    </div>
+                    <div class="text-right">
+                        <p><strong>เลขที่บิล:</strong> <span id="rec-no">-</span></p>
+                    </div>
+                </div>
+                <table class="w-full text-left mb-3 text-[11px]">
+                    <thead>
+                        <tr class="border-b bg-gray-50">
+                            <th class="py-1.5 px-1">รายการยา</th>
+                            <th class="py-1.5 px-1 text-center">จำนวน</th>
+                            <th class="py-1.5 px-1 text-right">ราคา/หน่วย</th>
+                            <th class="py-1.5 px-1 text-right">รวม</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rec-items-body"></tbody>
+                </table>
+                <div class="border-t pt-2 space-y-1 text-[11px]">
+                    <div class="flex justify-between text-gray-600" id="rec-subtotal-container">
+                        <span>ยอดรวม (Subtotal):</span>
+                        <span id="rec-subtotal">0.00 ฿</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600 hidden" id="rec-vat-container">
+                        <span>ภาษีมูลค่าเพิ่ม (VAT 7%):</span>
+                        <span id="rec-vat">0.00 ฿</span>
+                    </div>
+                    <div class="flex justify-between font-bold text-sm pt-1 border-t text-emerald-700">
+                        <span>ยอดชำระสุทธิ (Grand Total):</span>
+                        <span id="rec-total">0.00 ฿</span>
+                    </div>
+                </div>
+                <div class="text-center text-[10px] text-gray-400 mt-6 border-t pt-3">
+                    <p>ขอบคุณที่ใช้บริการ ขอให้ท่านมีสุขภาพแข็งแรง</p>
+                    <p>*** ยาซื้อแล้วไม่รับเปลี่ยนหรือคืนทุกกรณี ***</p>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-4 no-print">
+                <button onclick="window.print()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium transition shadow">พิมพ์ใบเสร็จ</button>
+                <button onclick="closeReceiptModal()" class="flex-1 border border-gray-300 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add/Edit Product -->
+    <div id="product-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-xl w-full max-w-md shadow-xl">
+            <h3 id="product-modal-title" class="text-lg font-bold text-emerald-700 mb-4">เพิ่มรายการยา</h3>
+            <input type="hidden" id="product-id">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">ชื่อยา</label>
+                    <input type="text" id="p-name" class="w-full border px-3 py-2 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">หมวดหมู่</label>
+                    <input type="text" id="p-cat" class="w-full border px-3 py-2 rounded-lg text-sm" placeholder="เช่น แก้ปวดลดไข้">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">ราคาขาย (บาท)</label>
+                        <input type="number" id="p-price" class="w-full border px-3 py-2 rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">จำนวนตั้งต้น</label>
+                        <input type="number" id="p-stock" class="w-full border px-3 py-2 rounded-lg text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">วันหมดอายุ (YYYY-MM-DD)</label>
+                    <input type="date" id="p-exp" class="w-full border px-3 py-2 rounded-lg text-sm">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-6">
+                <button onclick="closeProductModal()" class="px-4 py-2 border rounded-lg text-sm">ยกเลิก</button>
+                <button onclick="saveProduct()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add/Edit Patient -->
+    <div id="patient-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-xl w-full max-w-md shadow-xl">
+            <h3 id="patient-modal-title" class="text-lg font-bold text-emerald-700 mb-4">เพิ่มข้อมูลคนไข้</h3>
+            <input type="hidden" id="patient-id">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">ชื่อ-นามสกุล</label>
+                    <input type="text" id="pat-name" class="w-full border px-3 py-2 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">เบอร์โทรศัพท์</label>
+                    <input type="text" id="pat-phone" class="w-full border px-3 py-2 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">โรคประจำตัว</label>
+                    <input type="text" id="pat-congenital" class="w-full border px-3 py-2 rounded-lg text-sm" placeholder="เช่น ความดัน">
+                </div>
+                <div>
+                    <label class="block text-xs text-red-500 mb-1 font-bold">ประวัติแพ้ยา</label>
+                    <input type="text" id="pat-allergy" class="w-full border border-red-300 px-3 py-2 rounded-lg text-sm bg-red-50" placeholder="เช่น Penicillin">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-6">
+                <button onclick="closePatientModal()" class="px-4 py-2 border rounded-lg text-sm">ยกเลิก</button>
+                <button onclick="savePatient()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ MAIN APP SCRIPT ============ -->
+    <script>
+        let products = JSON.parse(localStorage.getItem('pharmacy_products')) || [];
+        let patients = JSON.parse(localStorage.getItem('pharmacy_patients')) || [];
+        let stockInHistory = JSON.parse(localStorage.getItem('pharmacy_stock_in_history')) || [];
+        let salesHistory = JSON.parse(localStorage.getItem('pharmacy_sales_history')) || [];
+        
+        let shopSettings = JSON.parse(localStorage.getItem('pharmacy_shop_settings')) || {
+            name: '💊 ร้านขายยาฟาร์มาซี',
+            address: '123/4 ถ.สุขุมวิท กทม.',
+            phone: '02-000-0000',
+            license: 'ฆอ.123456'
+        };
+
+        let cart = [];
+
+        function initApp() {
+            document.getElementById('header-shop-name').innerText = shopSettings.name;
+            document.getElementById('set-shop-name').value = shopSettings.name;
+            document.getElementById('set-shop-address').value = shopSettings.address;
+            document.getElementById('set-shop-phone').value = shopSettings.phone;
+            document.getElementById('set-shop-license').value = shopSettings.license || '';
+        }
+        window.onload = initApp;
+
+        function saveData() {
+            localStorage.setItem('pharmacy_products', JSON.stringify(products));
+            localStorage.setItem('pharmacy_patients', JSON.stringify(patients));
+            localStorage.setItem('pharmacy_stock_in_history', JSON.stringify(stockInHistory));
+            localStorage.setItem('pharmacy_sales_history', JSON.stringify(salesHistory));
+            localStorage.setItem('pharmacy_shop_settings', JSON.stringify(shopSettings));
+        }
+
+        function switchTab(tabName) {
+            ['pos', 'stock', 'stock-in', 'patient', 'report', 'settings', 'backup'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`btn-${t}`).classList.remove('bg-emerald-700', 'opacity-100');
+                document.getElementById(`btn-${t}`).classList.add('bg-emerald-800', 'opacity-70');
+            });
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`btn-${tabName}`).classList.remove('bg-emerald-800', 'opacity-70');
+            document.getElementById(`btn-${tabName}`).classList.add('bg-emerald-700', 'opacity-100');
+
+            if(tabName === 'pos') { renderPosProducts(); renderPatientDropdown(); }
+            if(tabName === 'stock') { renderStockTable(); }
+            if(tabName === 'stock-in') { renderStockInDropdown(); renderStockInHistory(); }
+            if(tabName === 'patient') { renderPatientTable(); }
+            if(tabName === 'report') { renderReports(); }
+        }
+
+        // --- SETTINGS ---
+        function saveShopSettings() {
+            shopSettings.name = document.getElementById('set-shop-name').value || 'ร้านขายยา';
+            shopSettings.address = document.getElementById('set-shop-address').value || '';
+            shopSettings.phone = document.getElementById('set-shop-phone').value || '';
+            shopSettings.license = document.getElementById('set-shop-license').value || '';
+            saveData();
+            initApp();
+            alert('บันทึกข้อมูลร้านค้าเรียบร้อยแล้ว');
+        }
+
+        // --- REPORTS WITH SEARCH ---
+        function renderReports() {
+            const searchSales = document.getElementById('search-sales-report').value.toLowerCase();
+            const searchStockIn = document.getElementById('search-stockin-report').value.toLowerCase();
+
+            // Sales Report
+            const salesBody = document.getElementById('sales-report-body');
+            salesBody.innerHTML = '';
+            const filteredSales = salesHistory.filter(s => 
+                s.patient.toLowerCase().includes(searchSales) || 
+                s.date.toLowerCase().includes(searchSales) ||
+                s.items.some(i => i.name.toLowerCase().includes(searchSales))
+            );
+
+            if(filteredSales.length === 0) {
+                salesBody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-4 text-sm">ไม่พบประวัติการขายออก</td></tr>`;
+            } else {
+                filteredSales.forEach(s => {
+                    let itemsStr = s.items.map(i => `${i.name} (×${i.qty})`).join(', ');
+                    salesBody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50 text-xs">
+                            <td class="p-3 text-gray-500">${s.date}</td>
+                            <td class="p-3 font-medium">${s.patient}</td>
+                            <td class="p-3">${itemsStr}</td>
+                            <td class="p-3 text-right font-bold text-emerald-600">${s.total.toLocaleString()} ฿</td>
+                            <td class="p-3 text-center">
+                                <button onclick='showReceiptModal(${JSON.stringify(s)})' class="bg-blue-50 text-blue-600 px-2.5 py-1 rounded hover:bg-blue-100 font-medium">ดูบิล</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // Stock In Report
+            const reportStockInBody = document.getElementById('report-stock-in-body');
+            reportStockInBody.innerHTML = '';
+            const filteredStockIn = stockInHistory.filter(h => 
+                h.name.toLowerCase().includes(searchStockIn) || 
+                h.date.toLowerCase().includes(searchStockIn) ||
+                h.note.toLowerCase().includes(searchStockIn)
+            );
+
+            if(filteredStockIn.length === 0) {
+                reportStockInBody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 py-4 text-sm">ไม่พบประวัติการรับเข้ายา</td></tr>`;
+            } else {
+                filteredStockIn.forEach(h => {
+                    reportStockInBody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50 text-xs">
+                            <td class="p-3 text-gray-500">${h.date}</td>
+                            <td class="p-3 font-medium">${h.name}</td>
+                            <td class="p-3 text-emerald-600 font-bold">+${h.qty}</td>
+                            <td class="p-3">${h.note}</td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        // --- POS & VAT FUNCTIONS ---
+        function renderPosProducts() {
+            const keyword = document.getElementById('search-pos').value.toLowerCase();
+            const grid = document.getElementById('pos-product-grid');
+            grid.innerHTML = '';
+            
+            const filtered = products.filter(p => p.name.toLowerCase().includes(keyword) || p.category.toLowerCase().includes(keyword));
+            
+            if(filtered.length === 0) {
+                grid.innerHTML = `<p class="col-span-full text-center text-gray-400 py-6 text-sm">ไม่พบรายการยาในคลัง</p>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                grid.innerHTML += `
+                    <div onclick="addToCart(${p.id})" class="border p-3 rounded-xl hover:border-emerald-500 cursor-pointer transition bg-gray-50 flex flex-col justify-between">
+                        <div>
+                            <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">${p.category}</span>
+                            <h3 class="font-bold text-sm mt-1 line-clamp-1">${p.name}</h3>
+                        </div>
+                        <div class="mt-2 flex justify-between items-end">
+                            <span class="text-emerald-600 font-bold text-sm">${p.price} ฿</span>
+                            <span class="text-xs text-gray-500">คงเหลือ: ${p.stock}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderPatientDropdown() {
+            const select = document.getElementById('pos-patient-select');
+            select.innerHTML = `<option value="">-- ลูกค้าทั่วไป --</option>`;
+            patients.forEach(pat => {
+                select.innerHTML += `<option value="${pat.name}">[แพ้ยา: ${pat.allergy}] ${pat.name}</option>`;
+            });
+        }
+
+        function addToCart(id) {
+            const product = products.find(p => p.id === id);
+            if(!product || product.stock <= 0) {
+                alert('ยาหมดสต็อก!');
+                return;
+            }
+            const item = cart.find(i => i.id === id);
+            if(item) {
+                if(item.qty < product.stock) { item.qty++; }
+                else { alert('สินค้าในสต็อกไม่เพียงพอ'); }
+            } else {
+                cart.push({ id: product.id, name: product.name, price: product.price, qty: 1 });
+            }
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            const totalEl = document.getElementById('cart-total');
+            const subtotalEl = document.getElementById('cart-subtotal');
+            const vatEl = document.getElementById('cart-vat');
+            const vatRow = document.getElementById('vat-row');
+            const subtotalRow = document.getElementById('subtotal-row');
+            const isVatChecked = document.getElementById('pos-vat-toggle').checked;
+
+            container.innerHTML = '';
+
+            if(cart.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 text-center text-sm py-4">ยังไม่มีสินค้าในตะกร้า</p>`;
+                subtotalEl.innerText = '0.00 ฿';
+                vatEl.innerText = '0.00 ฿';
+                totalEl.innerText = '0.00 บาท';
+                vatRow.classList.add('hidden');
+                return;
+            }
+
+            let subtotal = 0;
+            cart.forEach((item, index) => {
+                subtotal += item.price * item.qty;
+                container.innerHTML += `
+                    <div class="flex justify-between items-center py-2 border-b text-sm">
+                        <div>
+                            <p class="font-medium">${item.name}</p>
+                            <p class="text-xs text-gray-500">${item.price} ฿ × ${item.qty}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="changeQty(${index}, -1)" class="px-2 bg-gray-200 rounded text-xs">-</button>
+                            <span class="text-sm">${item.qty}</span>
+                            <button onclick="changeQty(${index}, 1)" class="px-2 bg-gray-200 rounded text-xs">+</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if(isVatChecked) {
+                vatRow.classList.remove('hidden');
+                let vatAmount = subtotal * 0.07;
+                let grandTotal = subtotal + vatAmount;
+                subtotalEl.innerText = subtotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ฿';
+                vatEl.innerText = vatAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ฿';
+                totalEl.innerText = grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' บาท';
+            } else {
+                vatRow.classList.add('hidden');
+                subtotalEl.innerText = subtotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ฿';
+                totalEl.innerText = subtotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' บาท';
+            }
+        }
+
+        function changeQty(index, delta) {
+            cart[index].qty += delta;
+            if(cart[index].qty <= 0) { cart.splice(index, 1); }
+            renderCart();
+        }
+
+        function checkout() {
+            if(cart.length === 0) {
+                alert('กรุณาเลือกสินค้าในตะกร้าก่อน');
+                return;
+            }
+
+            let currentCart = [...cart];
+            let subtotal = currentCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            let isVat = document.getElementById('pos-vat-toggle').checked;
+            let vat = isVat ? subtotal * 0.07 : 0;
+            let totalAmount = subtotal + vat;
+            let patientName = document.getElementById('pos-patient-select').value || 'ลูกค้าทั่วไป';
+            let timestamp = new Date().toLocaleString('th-TH');
+            let billNo = 'INV-' + Date.now().toString().slice(-6);
+
+            // ตัดสต็อก
+            currentCart.forEach(item => {
+                const prod = products.find(p => p.id === item.id);
+                if(prod) { prod.stock -= item.qty; }
+            });
+
+            let saleRecord = {
+                billNo: billNo,
+                date: timestamp,
+                patient: patientName,
+                items: currentCart,
+                subtotal: subtotal,
+                vat: vat,
+                total: totalAmount,
+                isVat: isVat
+            };
+
+            salesHistory.unshift(saleRecord);
+            saveData();
+
+            showReceiptModal(saleRecord);
+
+            cart = [];
+            renderCart();
+            renderPosProducts();
+        }
+
+        function showReceiptModal(record) {
+            document.getElementById('rec-shop-name').innerText = shopSettings.name;
+            document.getElementById('rec-shop-address').innerText = shopSettings.address;
+            document.getElementById('rec-shop-phone').innerText = 'โทร: ' + shopSettings.phone;
+            document.getElementById('rec-shop-license').innerText = shopSettings.license ? 'ใบอนุญาต: ' + shopSettings.license : '';
+            
+            document.getElementById('rec-no').innerText = record.billNo || 'INV-LOCAL';
+            document.getElementById('rec-date').innerText = record.date;
+            document.getElementById('rec-patient').innerText = record.patient;
+
+            let recBody = document.getElementById('rec-items-body');
+            recBody.innerHTML = '';
+            record.items.forEach(item => {
+                let sum = item.price * item.qty;
+                recBody.innerHTML += `
+                    <tr class="border-b border-dashed">
+                        <td class="py-1 px-1">${item.name}</td>
+                        <td class="py-1 px-1 text-center">${item.qty}</td>
+                        <td class="py-1 px-1 text-right">${item.price.toLocaleString()}</td>
+                        <td class="py-1 px-1 text-right">${sum.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('rec-subtotal').innerText = record.subtotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ฿';
+            
+            if(record.vat > 0) {
+                document.getElementById('rec-vat-container').classList.remove('hidden');
+                document.getElementById('rec-vat').innerText = record.vat.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ฿';
+            } else {
+                document.getElementById('rec-vat-container').classList.add('hidden');
+            }
+
+            document.getElementById('rec-total').innerText = record.total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ฿';
+            document.getElementById('receipt-modal').classList.remove('hidden');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receipt-modal').classList.add('hidden');
+        }
+
+        // --- STOCK FUNCTIONS ---
+        function renderStockTable() {
+            const keyword = document.getElementById('search-stock').value.toLowerCase();
+            const tbody = document.getElementById('stock-table-body');
+            tbody.innerHTML = '';
+
+            const filtered = products.filter(p => p.name.toLowerCase().includes(keyword) || p.category.toLowerCase().includes(keyword));
+
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-400 py-6 text-sm">ไม่พบข้อมูลยาในคลัง</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3 font-medium">${p.name}</td>
+                        <td class="p-3">${p.category}</td>
+                        <td class="p-3">${p.price}</td>
+                        <td class="p-3 ${p.stock < 10 ? 'text-red-600 font-bold' : ''}">${p.stock}</td>
+                        <td class="p-3">${p.exp}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="editProduct(${p.id})" class="text-blue-600 hover:underline mr-2">แก้ไข</button>
+                            <button onclick="deleteProduct(${p.id})" class="text-red-600 hover:underline">ลบ</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openProductModal(id = null) {
+            document.getElementById('product-modal').classList.remove('hidden');
+            if(id) {
+                document.getElementById('product-modal-title').innerText = 'แก้ไขข้อมูลยา';
+                const p = products.find(x => x.id === id);
+                document.getElementById('product-id').value = p.id;
+                document.getElementById('p-name').value = p.name;
+                document.getElementById('p-cat').value = p.category;
+                document.getElementById('p-price').value = p.price;
+                document.getElementById('p-stock').value = p.stock;
+                document.getElementById('p-exp').value = p.exp;
+            } else {
+                document.getElementById('product-modal-title').innerText = 'เพิ่มรายการยาใหม่';
+                document.getElementById('product-id').value = '';
+                document.getElementById('p-name').value = '';
+                document.getElementById('p-cat').value = '';
+                document.getElementById('p-price').value = '';
+                document.getElementById('p-stock').value = '0';
+                document.getElementById('p-exp').value = '2028-01-01';
+            }
+        }
+
+        function closeProductModal() { document.getElementById('product-modal').classList.add('hidden'); }
+
+        function saveProduct() {
+            const id = document.getElementById('product-id').value;
+            const name = document.getElementById('p-name').value;
+            const category = document.getElementById('p-cat').value;
+            const price = parseFloat(document.getElementById('p-price').value);
+            const stock = parseInt(document.getElementById('p-stock').value);
+            const exp = document.getElementById('p-exp').value;
+
+            if(!name || isNaN(price) || isNaN(stock)) {
+                alert('กรุณากรอกข้อมูลชื่อ ราคา และจำนวนให้ครบถ้วน');
+                return;
+            }
+
+            if(id) {
+                const p = products.find(x => x.id == id);
+                p.name = name; p.category = category; p.price = price; p.stock = stock; p.exp = exp;
+            } else {
+                const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+                products.push({ id: newId, name, category, price, stock, exp });
+            }
+
+            saveData();
+            closeProductModal();
+            renderStockTable();
+            alert('บันทึกข้อมูลยาเรียบร้อย');
+        }
+
+        function editProduct(id) { openProductModal(id); }
+
+        function deleteProduct(id) {
+            if(confirm('คุณต้องการลบรายการยานี้ใช่หรือไม่?')) {
+                products = products.filter(p => p.id !== id);
+                saveData();
+                renderStockTable();
+            }
+        }
+
+        // --- STOCK-IN ---
+        function renderStockInDropdown() {
+            const select = document.getElementById('stock-in-product');
+            select.innerHTML = '';
+            if(products.length === 0) {
+                select.innerHTML = `<option value="">-- ไม่มีรายการยาในคลัง --</option>`;
+                return;
+            }
+            products.forEach(p => {
+                select.innerHTML += `<option value="${p.id}">${p.name} (คงเหลือ: ${p.stock})</option>`;
+            });
+        }
+
+        function processStockIn() {
+            const productId = parseInt(document.getElementById('stock-in-product').value);
+            const qty = parseInt(document.getElementById('stock-in-qty').value);
+            const note = document.getElementById('stock-in-note').value.trim() || 'รับเข้าปกติ';
+
+            if(isNaN(productId)) { alert('กรุณาเลือกรายการยา'); return; }
+            if(isNaN(qty) || qty <= 0) { alert('กรุณากรอกจำนวนที่รับเข้า'); return; }
+
+            const product = products.find(p => p.id === productId);
+            if(!product) return;
+
+            product.stock += qty;
+            stockInHistory.unshift({
+                date: new Date().toLocaleString('th-TH'),
+                name: product.name,
+                qty: qty,
+                note: note
+            });
+
+            saveData();
+            document.getElementById('stock-in-qty').value = '1';
+            document.getElementById('stock-in-note').value = '';
+            renderStockInHistory();
+            renderStockInDropdown();
+            alert(`รับเข้ายา "${product.name}" เพิ่มจำนวน ${qty} เรียบร้อย!`);
+        }
+
+        function renderStockInHistory() {
+            const tbody = document.getElementById('stock-in-history-body');
+            tbody.innerHTML = '';
+            if(stockInHistory.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 py-4 text-sm">ยังไม่มีประวัติการรับเข้ายา</td></tr>`;
+                return;
+            }
+            stockInHistory.forEach(h => {
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50 text-xs">
+                        <td class="p-3 text-gray-500">${h.date}</td>
+                        <td class="p-3 font-medium">${h.name}</td>
+                        <td class="p-3 text-emerald-600 font-bold">+${h.qty}</td>
+                        <td class="p-3">${h.note}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- PATIENTS ---
+        function renderPatientTable() {
+            const tbody = document.getElementById('patient-table-body');
+            tbody.innerHTML = '';
+            if(patients.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-6 text-sm">ยังไม่มีข้อมูลคนไข้</td></tr>`;
+                return;
+            }
+            patients.forEach(pat => {
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3 font-medium">${pat.name}</td>
+                        <td class="p-3">${pat.phone}</td>
+                        <td class="p-3">${pat.congenital}</td>
+                        <td class="p-3 text-red-600 font-bold">${pat.allergy}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="editPatient(${pat.id})" class="text-blue-600 hover:underline mr-2">แก้ไข</button>
+                            <button onclick="deletePatient(${pat.id})" class="text-red-600 hover:underline">ลบ</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openPatientModal(id = null) {
+            document.getElementById('patient-modal').classList.remove('hidden');
+            if(id) {
+                document.getElementById('patient-modal-title').innerText = 'แก้ไขข้อมูลคนไข้';
+                const pat = patients.find(x => x.id === id);
+                document.getElementById('patient-id').value = pat.id;
+                document.getElementById('pat-name').value = pat.name;
+                document.getElementById('pat-phone').value = pat.phone;
+                document.getElementById('pat-congenital').value = pat.congenital;
+                document.getElementById('pat-allergy').value = pat.allergy;
+            } else {
+                document.getElementById('patient-modal-title').innerText = 'เพิ่มข้อมูลคนไข้ใหม่';
+                document.getElementById('patient-id').value = '';
+                document.getElementById('pat-name').value = '';
+                document.getElementById('pat-phone').value = '';
+                document.getElementById('pat-congenital').value = '';
+                document.getElementById('pat-allergy').value = '';
+            }
+        }
+
+        function closePatientModal() { document.getElementById('patient-modal').classList.add('hidden'); }
+
+        function savePatient() {
+            const id = document.getElementById('patient-id').value;
+            const name = document.getElementById('pat-name').value;
+            const phone = document.getElementById('pat-phone').value;
+            const congenital = document.getElementById('pat-congenital').value;
+            const allergy = document.getElementById('pat-allergy').value;
+
+            if(!name) { alert('กรุณากรอกชื่อคนไข้'); return; }
+
+            if(id) {
+                const pat = patients.find(x => x.id == id);
+                pat.name = name; pat.phone = phone; pat.congenital = congenital; pat.allergy = allergy;
+            } else {
+                const newId = patients.length > 0 ? Math.max(...patients.map(p => p.id)) + 1 : 1;
+                patients.push({ id: newId, name, phone, congenital, allergy });
+            }
+
+            saveData();
+            closePatientModal();
+            renderPatientTable();
+        }
+
+        function editPatient(id) { openPatientModal(id); }
+
+        function deletePatient(id) {
+            if(confirm('คุณต้องการลบข้อมูลคนไข้นี้ใช่หรือไม่?')) {
+                patients = patients.filter(p => p.id !== id);
+                saveData();
+                renderPatientTable();
+            }
+        }
+
+        // --- BACKUP / IMPORT / RESET ---
+        function exportJSON() {
+            const data = { products, patients, stockInHistory, salesHistory, shopSettings };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pharmacy_backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+        }
+
+        function exportCSV() {
+            let csv = '\uFEFFชื่อยา,หมวดหมู่,ราคาขาย,คงเหลือ,วันหมดอายุ\n';
+            products.forEach(p => {
+                csv += `"${p.name}","${p.category}",${p.price},${p.stock},"${p.exp}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pharmacy_stock_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+        }
+
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if(data.products) {
+                        products = data.products;
+                        if(data.patients) patients = data.patients;
+                        if(data.stockInHistory) stockInHistory = data.stockInHistory;
+                        if(data.salesHistory) salesHistory = data.salesHistory;
+                        if(data.shopSettings) shopSettings = data.shopSettings;
+                        saveData();
+                        alert('กู้คืนข้อมูลสำเร็จ!');
+                        location.reload();
+                    } else { alert('รูปแบบไฟล์ไม่ถูกต้อง'); }
+                } catch(err) { alert('เกิดข้อผิดพลาดในการอ่านไฟล์'); }
+            };
+            reader.readAsText(file);
+        }
+
+        function importCSV(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                let newProducts = [];
+                for(let i = 1; i < lines.length; i++) {
+                    let line = lines[i].trim();
+                    if(!line) continue;
+                    let row = [];
+                    let inQuotes = false;
+                    let currentVal = '';
+                    for(let char of line) {
+                        if(char === '"') { inQuotes = !inQuotes; }
+                        else if(char === ',' && !inQuotes) { row.push(currentVal.trim()); currentVal = ''; }
+                        else { currentVal += char; }
+                    }
+                    row.push(currentVal.trim());
+                    if(row.length >= 5) {
+                        let offset = row.length === 6 ? 1 : 0;
+                        let name = row[0 + offset].replace(/^["']|["']$/g, '');
+                        let category = row[1 + offset].replace(/^["']|["']$/g, '');
+                        let price = parseFloat(row[2 + offset]) || 0;
+                        let stock = parseInt(row[3 + offset]) || 0;
+                        let exp = row[4 + offset].replace(/^["']|["']$/g, '') || '2028-01-01';
+                        if(name) {
+                            newProducts.push({ id: newProducts.length + 1, name, category, price, stock, exp });
+                        }
+                    }
+                }
+                if(newProducts.length > 0) {
+                    if(confirm(`พบข้อมูลยา ${newProducts.length} รายการ แทนที่สต็อกเดิมหรือไม่? (Cancel = เพิ่มต่อท้าย)`)) {
+                        products = newProducts;
+                    } else {
+                        let maxId = products.length > 0 ? Math.max(...products.map(p => p.id)) : 0;
+                        newProducts.forEach((p, idx) => { p.id = maxId + idx + 1; products.push(p); });
+                    }
+                    saveData();
+                    alert('นำเข้าข้อมูลสำเร็จ!');
+                    location.reload();
+                } else { alert('ไม่พบข้อมูลที่ถูกต้องในไฟล์ CSV'); }
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        function resetAllData() {
+            if(confirm('⚠️ คำเตือน: คุณต้องการล้างข้อมูลทั้งหมดในระบบใช่หรือไม่?')) {
+                if(confirm('ยืนยันการลบข้อมูลอีกครั้ง')) {
+                    localStorage.clear();
+                    alert('ล้างข้อมูลทั้งหมดเรียบร้อยแล้ว');
+                    location.reload();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
