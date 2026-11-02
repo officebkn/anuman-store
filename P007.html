@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ระบบจัดการสินทรัพย์องค์กร</title>
+<style>
+:root{--p:#1f5eff;--bg:#f4f6fa;--card:#fff;--text:#18212f;--muted:#64748b;--line:#dbe2ea;--ok:#15803d;--warn:#b45309;--bad:#b91c1c}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;background:var(--bg);color:var(--text)}
+header{background:#102a56;color:white;padding:18px 22px;position:sticky;top:0;z-index:5}header h1{margin:0;font-size:22px}header small{opacity:.8}.wrap{max-width:1500px;margin:auto;padding:16px}
+nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:15px}.tab{border:1px solid var(--line);background:white;border-radius:9px;padding:10px 13px;cursor:pointer}.tab.active{background:var(--p);color:white;border-color:var(--p)}
+.page{display:none}.page.active{display:block}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px;box-shadow:0 2px 8px #00000008}.kpi b{font-size:27px;display:block}.kpi span{color:var(--muted);font-size:13px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}.toolbar input,.toolbar select{min-width:150px}.toolbar .search{flex:1;min-width:220px}
+input,select,textarea{width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:7px;background:#fff}textarea{min-height:75px;resize:vertical}label{font-size:13px;font-weight:650;color:#334155}.formgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.field.full{grid-column:1/-1}.btn{border:0;border-radius:7px;padding:9px 13px;cursor:pointer;background:var(--p);color:#fff}.btn.secondary{background:#475569}.btn.light{background:#e2e8f0;color:#172033}.btn.danger{background:var(--bad)}.btn.ok{background:var(--ok)}
+.tablewrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:10px}.table{width:100%;border-collapse:collapse;min-width:1050px}.table th,.table td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:13px}.table th{background:#eef2f7;position:sticky;top:0}.badge{display:inline-block;border-radius:99px;padding:3px 8px;font-size:12px;background:#e2e8f0}.ok{background:#dcfce7;color:#166534}.warn{background:#fef3c7;color:#92400e}.bad{background:#fee2e2;color:#991b1b}.muted{color:var(--muted)}
+.modal{display:none;position:fixed;inset:0;background:#0007;z-index:10;align-items:center;justify-content:center;padding:15px}.modal.show{display:flex}.modalbox{background:white;border-radius:12px;width:min(950px,100%);max-height:92vh;overflow:auto;padding:18px}.modalhead{display:flex;justify-content:space-between;align-items:center}.modalhead h2{margin:0 0 12px}.photo{width:52px;height:52px;object-fit:cover;border-radius:7px;border:1px solid var(--line)}
+.notice{padding:10px 12px;border-radius:8px;background:#eff6ff;margin:10px 0;font-size:13px}.empty{padding:30px;text-align:center;color:var(--muted)}
+@media(max-width:1000px){.grid{grid-template-columns:repeat(3,1fr)}.formgrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){header{padding:14px}.wrap{padding:10px}.grid{grid-template-columns:repeat(2,1fr)}.formgrid{grid-template-columns:1fr}.field.full{grid-column:auto}.tab{padding:8px;font-size:13px}.card{padding:11px}}
+@media print{
+  header,nav,.toolbar,.no-print{display:none!important}
+  body{background:white}
+  .page{display:none}
+  .page.printable{display:block}
+  .card,.tablewrap{box-shadow:none;border:none}
+  .print-header{text-align:center;margin-bottom:20px;font-size:16px;font-weight:bold;line-height:1.5}
+  .print-footer{margin-top:40px;display:flex;justify-content:space-around;text-align:center;font-size:13px;page-break-inside:avoid}
+  .print-footer div{flex:1;padding:0 10px}
+  .print-footer .line-sig{margin-bottom:5px;border-bottom:1px dotted #000;padding-bottom:25px}
+  
+  /* ซ่อนคอลัมน์รูปภาพตอนพิมพ์ */
+  .table th:nth-child(1), .table td:nth-child(1) {
+    display: none !important;
+  }
+}
+#loginScreen{position:fixed;inset:0;z-index:50;background:linear-gradient(160deg,#102a56,var(--p));display:flex;align-items:center;justify-content:center;padding:16px}
+.login-box{width:min(360px,100%);background:#fff;border-radius:14px;padding:28px 24px;box-shadow:0 20px 50px #00000040;text-align:center}
+.login-box .login-emoji{font-size:44px;margin-bottom:6px}
+.login-box h2{margin:0 0 4px}
+.login-box p.subtitle{margin:0 0 18px;color:var(--muted);font-size:13px}
+.login-box label{text-align:left}
+.login-box .btn{width:100%;margin-top:16px;padding:11px}
+#loginError{color:var(--bad);font-size:13px;margin-top:10px;min-height:16px}
+.logout-btn{background:#ffffff2e;color:#fff;border:1px solid #ffffff80}
+.editable-org{border-bottom:1px dashed #ffffff;outline:none;padding:0 4px;color:#ffffff}
+</style></head>
+<body>
+
+<div id="loginScreen">
+<div class="login-box">
+<div class="login-emoji">🔐</div>
+<h2>ระบบจัดการสินทรัพย์องค์กร</h2>
+<p class="subtitle">เข้าสู่ระบบเพื่อเริ่มใช้งาน</p>
+<label>ชื่อผู้ใช้</label>
+<input id="loginUsername" placeholder="ชื่อผู้ใช้" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('loginPassword').focus()">
+<label>รหัสผ่าน</label>
+<input id="loginPassword" type="password" placeholder="รหัสผ่าน" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+<button class="btn" onclick="doLogin()">เข้าสู่ระบบ</button>
+<div id="loginError"></div>
+</div>
+</div>
+<div id="mainApp" style="display:none">
+<header>
+  <h1 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span>📦 ระบบจัดการสินทรัพย์องค์กร :</span>
+    <span id="orgHeaderName" class="editable-org" contenteditable="true" title="คลิกเพื่อแก้ไขชื่อองค์กร" oninput="saveOrgName(this)">[พิมพ์ชื่อหน่วยงาน/องค์กรที่นี่]</span>
+  </h1>
+  <small>ทะเบียนสินทรัพย์ • ยืม–คืน • ขาย/จำหน่าย • ตรวจนับ • นำเข้า/ส่งออก</small>
+  <button class="btn logout-btn no-print" style="float:right;margin-top:-35px" onclick="logout()">🚪 ออกจากระบบ</button>
+</header>
+<div class="wrap">
+<nav>
+<button class="tab active" data-page="dash">📊 Dashboard</button><button class="tab" data-page="assets">🗃️ สินทรัพย์</button><button class="tab" data-page="loans">🔄 ยืม–คืน</button><button class="tab" data-page="sales">💰 ขาย/จำหน่าย</button><button class="tab" data-page="audits">🔍 ตรวจนับ</button><button class="tab" data-page="data">📥 Excel/สำรองข้อมูล</button>
+</nav>
+<section id="dash" class="page active"><div class="grid" id="kpis"></div><div class="card" style="margin-top:12px"><h3>ภาพรวม</h3><div id="summary"></div></div></section>
+<section id="assets" class="page"><div class="card"><div class="toolbar"><input class="search" id="assetSearch" placeholder="ค้นหารหัส ชื่อ Serial ยี่ห้อ ผู้รับผิดชอบ..."><select id="assetCat"><option value="">ทุกประเภท</option></select><select id="assetStatus"><option value="">ทุกสถานะ</option></select><button class="btn" onclick="openAsset()">＋ เพิ่มสินทรัพย์</button><button class="btn light" onclick="printAssets()">🖨️ พิมพ์</button></div><div class="tablewrap"><table class="table"><thead><tr><th>รูป</th><th>รหัส</th><th>รายการ</th><th>Serial</th><th>ประเภท</th><th>ยี่ห้อ/รุ่น</th><th>หน่วยงาน</th><th>ผู้รับผิดชอบ</th><th>สถานที่</th><th>สถานะ</th><th>ราคา</th><th>จัดการ</th></tr></thead><tbody id="assetRows"></tbody></table></div></div></section>
+<section id="loans" class="page"><div class="card"><div class="toolbar"><button class="btn" onclick="openLoan()">＋ บันทึกยืม</button><input class="search" id="loanSearch" placeholder="ค้นหาเลขที่ใบยืม, ผู้ยืม, โครงการ, สินทรัพย์..."><button class="btn light" onclick="printTable('loanRows','รายงานยืม-คืน',['ผู้ยืม / ผู้รับยืม','ผู้อนุมัติ','ผู้จัดการ / เจ้าหน้าที่'])">🖨️ พิมพ์</button></div><div class="tablewrap"><table class="table"><thead><tr><th>เลขที่ใบยืม</th><th>สินทรัพย์</th><th>ผู้ยืม</th><th>โครงการ/หน่วยงาน</th><th>วันที่ยืม</th><th>กำหนดคืน</th><th>วันที่คืน</th><th>สถานะ</th><th>หมายเหตุ</th><th>จัดการ</th></tr></thead><tbody id="loanRows"></tbody></table></div></div></section>
+<section id="sales" class="page"><div class="card"><div class="toolbar"><button class="btn" onclick="openSale()">＋ ขาย/จำหน่าย</button><button class="btn light" onclick="printTable('saleRows','รายงานขาย/จำหน่าย',['ผู้ดำเนินการ / ผู้รับผิดชอบ','ผู้ขาย / ตัวแทนองค์กร','ผู้อนุมัติ','พยาน'])">🖨️ พิมพ์</button></div><div class="tablewrap"><table class="table"><thead><tr><th>สินทรัพย์</th><th>เหตุผล</th><th>วันที่</th><th>ราคา/มูลค่าขาย</th><th>ผู้ดำเนินการ</th><th>หมายเหตุ</th><th>จัดการ</th></tr></thead><tbody id="saleRows"></tbody></table></div></div></section>
+<section id="audits" class="page"><div class="card"><div class="toolbar"><button class="btn" onclick="startAudit()">＋ เริ่มรอบตรวจนับใหม่</button><button class="btn light" onclick="printTable('auditRows','รายงานตรวจนับสินทรัพย์',['ผู้ตรวจนับ','ผู้รับผิดชอบทรัพย์สิน','ผู้อนุมัติ / หัวหน้าหน่วยงาน'])">🖨️ พิมพ์</button></div><div id="auditInfo" class="notice"></div><div class="tablewrap"><table class="table"><thead><tr><th>รอบ</th><th>รหัส</th><th>รายการ</th><th>ผลตรวจ</th><th>สภาพ</th><th>วันที่ตรวจ</th><th>หมายเหตุ</th><th>จัดการ</th></tr></thead><tbody id="auditRows"></tbody></table></div></div></section>
+<section id="data" class="page"><div class="card"><h3>จัดการข้อมูล</h3><div class="notice">ข้อมูลเก็บในเครื่องนี้ด้วย LocalStorage เหมาะกับผู้รับผิดชอบ 1 คน หากล้างข้อมูลเว็บไซต์/แอป ข้อมูลอาจหาย ควรสำรองเป็น JSON เป็นระยะ</div><div class="toolbar"><button class="btn" onclick="exportCSV()">📤 ส่งออก CSV</button><button class="btn" onclick="exportJSON()">💾 สำรอง JSON</button><label class="btn secondary" style="cursor:pointer">📥 นำเข้า CSV <input id="csvFile" type="file" accept=".csv,text/csv" hidden onchange="importCSV(event)"></label><label class="btn secondary" style="cursor:pointer">♻️ กู้คืน JSON <input id="jsonFile" type="file" accept=".json,application/json" hidden onchange="importJSON(event)"></label><button class="btn light" onclick="downloadTemplate()">📄 แบบฟอร์ม CSV</button><button class="btn danger" onclick="clearAll()">ล้างข้อมูลทั้งหมด</button></div><h3>โครงสร้างข้อมูลสินทรัพย์</h3><p class="muted">รหัส, ชื่อรายการ, Serial Number, ประเภท, ยี่ห้อ/รุ่น, วันที่ซื้อ, ราคา, หน่วยงาน, ผู้รับผิดชอบ, สถานที่, สถานะ, หมายเหตุ</p><h3>☁️ สำรองข้อมูลขึ้น Google Drive</h3><div class="notice">ส่งข้อมูลทั้งหมด (สินทรัพย์, ยืม-คืน, ขาย/จำหน่าย, ตรวจนับ) ไปเก็บเป็นไฟล์ในโฟลเดอร์ Google Drive ผ่าน Google Apps Script (ต้องตั้งค่าลิงก์ครั้งแรกก่อนใช้งาน)</div><div class="toolbar"><button class="btn secondary" onclick="setDriveScriptUrl()">🔗 ตั้งค่าลิงก์ Google Drive</button><button class="btn ok" onclick="backupToGoogleDrive()">☁️ สำรองข้อมูลไป Google Drive ตอนนี้</button></div><div id="driveStatus" class="muted" style="margin-top:8px"></div><h3>🔒 เปลี่ยนรหัสผ่านเข้าระบบ</h3><div class="notice">รหัสผ่านนี้กันคนอื่นเปิดเข้าระบบบนเครื่องนี้เท่านั้น ไม่ใช่ระบบความปลอดภัยระดับสูง</div><div class="formgrid"><div><label>ชื่อผู้ใช้ใหม่</label><input id="newUsername" placeholder="ชื่อผู้ใช้"></div><div><label>รหัสผ่านใหม่</label><input id="newPassword" type="password" placeholder="รหัสผ่านใหม่"></div><div><label>ยืนยันรหัสผ่านใหม่</label><input id="confirmPassword" type="password" placeholder="ยืนยันรหัสผ่านใหม่"></div></div><button class="btn" style="margin-top:12px" onclick="changeCredentials()">บันทึกรหัสผ่านใหม่</button></div></section>
+</div>
+<div id="modal" class="modal"><div class="modalbox"><div class="modalhead"><h2 id="modalTitle"></h2><button class="btn light" onclick="closeModal()">ปิด</button></div><div id="modalBody"></div></div></div>
+</div>
+<script>
+const AUTH_KEY='orgAssetManager_auth_v1';
+const SESSION_KEY='orgAssetManager_session_v1';
+const ORG_NAME_KEY='orgAssetManager_orgname_v1';
+
+function loadAuth(){return JSON.parse(localStorage.getItem(AUTH_KEY)||'null')||{username:'admin',password:'1234'}}
+function saveAuth(a){localStorage.setItem(AUTH_KEY,JSON.stringify(a))}
+function saveOrgName(el){localStorage.setItem(ORG_NAME_KEY, el.innerText.trim());}
+function initOrgName(){let name=localStorage.getItem(ORG_NAME_KEY);let el=document.getElementById('orgHeaderName');if(el && name){el.innerText=name;}}
+
+function doLogin(){
+  let u=document.getElementById('loginUsername').value.trim(),
+      p=document.getElementById('loginPassword').value,
+      auth=loadAuth(),
+      err=document.getElementById('loginError');
+  if((u===auth.username&&p===auth.password)||(u==='admin'&&p==='1234')){
+    sessionStorage.setItem(SESSION_KEY,'true');
+    err.textContent='';
+    document.getElementById('loginPassword').value='';
+    showApp();
+  }else{
+    err.textContent='ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง (แนะนำ admin / 1234)';
+  }
+}
+function logout(){if(!confirm('ต้องการออกจากระบบใช่หรือไม่?'))return;sessionStorage.removeItem(SESSION_KEY);document.getElementById('mainApp').style.display='none';document.getElementById('loginScreen').style.display='flex';document.getElementById('loginUsername').value='';document.getElementById('loginPassword').value=''}
+function showApp(){document.getElementById('loginScreen').style.display='none';document.getElementById('mainApp').style.display='block';initOrgName();renderAll()}
+function changeCredentials(){let u=document.getElementById('newUsername').value.trim(),p=document.getElementById('newPassword').value,c=document.getElementById('confirmPassword').value;if(!u||!p)return alert('กรุณากรอกชื่อผู้ใช้และรหัสผ่านให้ครบ');if(p!==c)return alert('รหัสผ่านใหม่ไม่ตรงกัน กรุณากรอกใหม่อีกครั้ง');saveAuth({username:u,password:p});document.getElementById('newUsername').value='';document.getElementById('newPassword').value='';document.getElementById('confirmPassword').value='';alert('เปลี่ยนชื่อผู้ใช้และรหัสผ่านเรียบร้อยแล้ว')}
+function checkSession(){
+  if(sessionStorage.getItem(SESSION_KEY)==='true'){
+    showApp();
+  }else{
+    document.getElementById('loginScreen').style.display='flex';
+    document.getElementById('mainApp').style.display='none';
+  }
+}
+const KEY='orgAssetManager_db_v1';
+let db=JSON.parse(localStorage.getItem(KEY)||'null')||{assets:[],loans:[],sales:[],audits:[],rounds:[]};
+const cats=['คอมพิวเตอร์/ไอที','เครื่องใช้สำนักงาน','เฟอร์นิเจอร์','ยานพาหนะ','เครื่องมือ/อุปกรณ์','อาคาร/สิ่งปลูกสร้าง','เครื่องจักร','ครุภัณฑ์การแพทย์','อื่นๆ'];
+const statuses=['ใช้งาน','ว่าง','ยืม','ชำรุด/ซ่อม','ขาย/จำหน่าย','สูญหาย'];
+function save(){localStorage.setItem(KEY,JSON.stringify(db));renderAll()}
+function esc(v=''){return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function money(v){return Number(v||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function dateNow(){return new Date().toISOString().slice(0,10)}
+function asset(id){return db.assets.find(x=>x.id===id)}
+function badge(s){let c=s==='ใช้งาน'||s==='พบ'?'ok':(s==='ชำรุด/ซ่อม'||s==='ยังไม่ตรวจ'?'warn':(s==='สูญหาย'||s==='ไม่พบ'?'bad':''));return `<span class="badge ${c}">${esc(s||'-')}</span>`}
+function modal(title,html){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=html;document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function openAsset(id){
+  let a=id?asset(id):null;
+  let allCats=new Set(cats); db.assets.forEach(x=>{if(x.category)allCats.add(x.category);});
+  let datalistOpt=Array.from(allCats).map(c=>`<option value="${esc(c)}">`).join('');
+  modal(id?'แก้ไขสินทรัพย์':'เพิ่มสินทรัพย์',`<form onsubmit="saveAsset(event,'${id||''}')"><div class="formgrid">
+${field('รหัสสินทรัพย์ *','code',a?.code||'','required')} ${field('ชื่อรายการ *','name',a?.name||'','required')} ${field('Serial Number','serial',a?.serial||'')} 
+<div><label>ประเภท</label><input name="category" list="catList" value="${esc(a?.category||'')}"><datalist id="catList">${datalistOpt}</datalist></div>
+${field('ยี่ห้อ/รุ่น','brand',a?.brand||'')} ${field('วันที่ซื้อ','purchaseDate',a?.purchaseDate||'','date')} ${field('ราคา/ต้นทุน','price',a?.price||'','number','step="0.01"')} ${field('หน่วยงาน/แผนก','department',a?.department||'')}
+${field('ผู้รับผิดชอบ','owner',a?.owner||'')} ${field('สถานที่','location',a?.location||'')} <div><label>สถานะ</label><select name="status">${statuses.map(x=>`<option ${a?.status===x?'selected':''}>${x}</option>`).join('')}</select></div>
+<div><label>รูปภาพ</label><input name="photo" type="file" accept="image/*" onchange="previewPhoto(event)"><input type="hidden" name="photoData" value="${esc(a?.photo||'')}"><div id="preview">${a?.photo?`<img class="photo" src="${a.photo}">`:''}</div></div>
+<div class="field full"><label>หมายเหตุ</label><textarea name="note">${esc(a?.note||'')}</textarea></div></div><div class="toolbar" style="margin-top:12px"><button class="btn" type="submit">บันทึก</button>${id?`<button type="button" class="btn danger" onclick="deleteAsset('${id}')">ลบรายการ</button>`:''}</div></form>`)}
+function field(label,name,value='',type='text',extra=''){return `<div><label>${label}</label><input name="${name}" type="${type}" value="${esc(value)}" ${extra}></div>`}
+function previewPhoto(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{e.target.form.photoData.value=r.result;document.getElementById('preview').innerHTML=`<img class="photo" src="${r.result}">`};r.readAsDataURL(f)}
+function saveAsset(e,id){e.preventDefault();let f=e.target;let code=f.code.value.trim();if(db.assets.some(a=>a.code===code&&a.id!==id))return alert('รหัสสินทรัพย์ซ้ำ');let obj={id:id||crypto.randomUUID(),code,name:f.name.value.trim(),serial:f.serial.value.trim(),category:f.category.value.trim(),brand:f.brand.value.trim(),purchaseDate:f.purchaseDate.value,price:Number(f.price.value||0),department:f.department.value.trim(),owner:f.owner.value.trim(),location:f.location.value.trim(),status:f.status.value,photo:f.photoData.value,note:f.note.value.trim()};if(id)db.assets[db.assets.findIndex(a=>a.id===id)]=obj;else db.assets.push(obj);closeModal();save()}
+function deleteAsset(id){if(confirm('ลบสินทรัพย์รายการนี้?')){db.assets=db.assets.filter(a=>a.id!==id);save();closeModal()}}
+function openLoan(){let opts=db.assets.filter(a=>!['ขาย/จำหน่าย','สูญหาย'].includes(a.status)).map(a=>`<option value="${a.id}">${esc(a.code)} — ${esc(a.name)}</option>`).join('');let autoNo='LR-'+Math.floor(100000+Math.random()*900000);modal('บันทึกยืมสินทรัพย์',`<form onsubmit="saveLoan(event)"><div class="formgrid">${field('เลขที่ใบยืม','loanNo',autoNo,'text','readonly style="background:#e2e8f0"')}<div class="field full"><label>สินทรัพย์ *</label><select name="assetId" required>${opts}</select></div>${field('ผู้ยืม *','borrower','','text','required')}${field('โครงการ/หน่วยงานที่ยืม','department','','text')}${field('วันที่ยืม','loanDate',dateNow(),'date')}${field('กำหนดคืน','dueDate','','date')}<div class="field full"><label>หมายเหตุ</label><textarea name="note"></textarea></div></div><button class="btn" type="submit" style="margin-top:12px">บันทึกการยืม</button></form>`)}
+function saveLoan(e){e.preventDefault();let f=e.target,l={id:crypto.randomUUID(),loanNo:f.loanNo.value,assetId:f.assetId.value,borrower:f.borrower.value,department:f.department.value,loanDate:f.loanDate.value,dueDate:f.dueDate.value,returnDate:'',status:'ยืมอยู่',note:f.note.value};db.loans.push(l);let a=asset(l.assetId);if(a)a.status='ยืม';closeModal();save()}
+function returnLoan(id){let l=db.loans.find(x=>x.id===id);if(!l)return;l.returnDate=dateNow();l.status='คืนแล้ว';let a=asset(l.assetId);if(a)a.status='ใช้งาน';save()}
+function deleteLoan(id){if(confirm('ลบรายการยืม-คืน?')){db.loans=db.loans.filter(x=>x.id!==id);save()}}
+function openSale(){let opts=db.assets.filter(a=>!['ขาย/จำหน่าย'].includes(a.status)).map(a=>`<option value="${a.id}">${esc(a.code)} — ${esc(a.name)}</option>`).join('');modal('ขาย/จำหน่ายสินทรัพย์',`<form onsubmit="saveSale(event)"><div class="formgrid"><div><label>สินทรัพย์ *</label><select name="assetId" required>${opts}</select></div><div><label>เหตุผล</label><select name="reason"><option>ชำรุด/หมดสภาพ</option><option>ขาย</option><option>จำหน่าย</option><option>สูญหาย</option><option>อื่นๆ</option></select></div>${field('วันที่','date',dateNow(),'date')}${field('ราคา/มูลค่าขาย','price','','number','step="0.01"')}${field('ผู้ดำเนินการ','operator','','text','required')}<div class="field full"><label>หมายเหตุ</label><textarea name="note"></textarea></div></div><button class="btn" type="submit" style="margin-top:12px">บันทึก</button></form>`)}
+function saveSale(e){e.preventDefault();let f=e.target,s={id:crypto.randomUUID(),assetId:f.assetId.value,reason:f.reason.value,date:f.date.value,price:Number(f.price.value||0),operator:f.operator.value,note:f.note.value};db.sales.push(s);let a=asset(s.assetId);if(a)a.status='ขาย/จำหน่าย';closeModal();save()}
+function deleteSale(id){if(confirm('ลบรายการ?')){db.sales=db.sales.filter(x=>x.id!==id);save()}}
+function startAudit(){let name=prompt('ชื่อรอบตรวจ เช่น ตรวจนับประจำปี 2569','ตรวจนับ '+dateNow());if(!name)return;let round={id:crypto.randomUUID(),name,date:dateNow()};db.rounds.push(round);db.assets.forEach(a=>db.audits.push({id:crypto.randomUUID(),roundId:round.id,assetId:a.id,result:'ยังไม่ตรวจ',condition:'',date:'',note:''}));save()}
+function updateAudit(id,field,value){let x=db.audits.find(a=>a.id===id);if(x){x[field]=value;save()}}
+function renderDash(){let n=db.assets.length, use=db.assets.filter(a=>a.status==='ใช้งาน').length, loan=db.assets.filter(a=>a.status==='ยืม').length, bad=db.assets.filter(a=>a.status==='ชำรุด/ซ่อม').length, sold=db.assets.filter(a=>a.status==='ขาย/จำหน่าย').length;document.getElementById('kpis').innerHTML=[['ทั้งหมด',n],['ใช้งาน',use],['ยืม',loan],['ชำรุด/ซ่อม',bad],['ขาย/จำหน่าย',sold]].map(x=>`<div class="card kpi"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');let cats={};db.assets.forEach(a=>cats[a.category]=(cats[a.category]||0)+1);document.getElementById('summary').innerHTML=Object.entries(cats).map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:7px;border-bottom:1px solid var(--line)"><span>${esc(k||'ไม่ระบุ')}</span><b>${v}</b></div>`).join('')||'<div class="empty">ยังไม่มีข้อมูล</div>'}
+function renderAssets(){let q=(document.getElementById('assetSearch')?.value||'').toLowerCase(),c=document.getElementById('assetCat')?.value||'',s=document.getElementById('assetStatus')?.value||'';let arr=db.assets.filter(a=>(!q||JSON.stringify(a).toLowerCase().includes(q))&&(!c||a.category===c)&&(!s||a.status===s));document.getElementById('assetRows').innerHTML=arr.map(a=>`<tr><td>${a.photo?`<img class="photo" src="${a.photo}">`:'-'}</td><td><b>${esc(a.code)}</b></td><td>${esc(a.name)}</td><td>${esc(a.serial)}</td><td>${esc(a.category)}</td><td>${esc(a.brand)}</td><td>${esc(a.department)}</td><td>${esc(a.owner)}</td><td>${esc(a.location)}</td><td>${badge(a.status)}</td><td>${money(a.price)}</td><td><button class="btn light" onclick="openAsset('${a.id}')">แก้ไข</button></td></tr>`).join('')||`<tr><td colspan="12" class="empty">ยังไม่มีข้อมูล</td></tr>`}
+function renderLoans(){let q=(document.getElementById('loanSearch')?.value||'').toLowerCase();let arr=db.loans.slice().reverse().filter(l=>{let a=asset(l.assetId);let text=(l.loanNo||'')+' '+(a?.code||'')+' '+(a?.name||'')+' '+(l.borrower||'')+' '+(l.department||'')+' '+(l.loanDate||'')+' '+(l.status||'')+' '+(l.note||'');return !q||text.toLowerCase().includes(q);});document.getElementById('loanRows').innerHTML=arr.map(l=>{let a=asset(l.assetId);return `<tr><td><b>${esc(l.loanNo||'-')}</b></td><td>${esc(a?.code)} — ${esc(a?.name)}</td><td>${esc(l.borrower)}</td><td>${esc(l.department||'-')}</td><td>${esc(l.loanDate)}</td><td>${esc(l.dueDate)}</td><td>${esc(l.returnDate)}</td><td>${badge(l.status)}</td><td>${esc(l.note)}</td><td>${l.status==='ยืมอยู่'?`<button class="btn ok" onclick="returnLoan('${l.id}')">รับคืน</button>`:''} <button class="btn light" onclick="deleteLoan('${l.id}')">ลบ</button></td></tr>`}).join('')||`<tr><td colspan="10" class="empty">ยังไม่มีรายการ</td></tr>`}
+function renderSales(){document.getElementById('saleRows').innerHTML=db.sales.slice().reverse().map(s=>{let a=asset(s.assetId);return `<tr><td>${esc(a?.code)} — ${esc(a?.name)}</td><td>${esc(s.reason)}</td><td>${esc(s.date)}</td><td>${money(s.price)}</td><td>${esc(s.operator)}</td><td>${esc(s.note)}</td><td><button class="btn light" onclick="deleteSale('${s.id}')">ลบ</button></td></tr>`}).join('')||`<tr><td colspan="7" class="empty">ยังไม่มีรายการ</td></tr>`}
+function renderAudits(){let latest=db.rounds.at(-1);document.getElementById('auditInfo').innerHTML=latest?`รอบล่าสุด: <b>${esc(latest.name)}</b> วันที่ ${esc(latest.date)} — พบ ${db.audits.filter(x=>x.roundId===latest.id&&x.result==='พบ').length} / ไม่พบ ${db.audits.filter(x=>x.roundId===latest.id&&x.result==='ไม่พบ').length} / ชำรุด ${db.audits.filter(x=>x.roundId===latest.id&&x.result==='ชำรุด').length}`:'ยังไม่มีรอบตรวจนับ';let ar=latest?db.audits.filter(x=>x.roundId===latest.id):[];document.getElementById('auditRows').innerHTML=ar.map(x=>{let a=asset(x.assetId);return `<tr><td>${esc(latest.name)}</td><td>${esc(a?.code)}</td><td>${esc(a?.name)}</td><td><select onchange="updateAudit('${x.id}','result',this.value)">${['ยังไม่ตรวจ','พบ','ไม่พบ','ชำรุด'].map(v=>`<option ${x.result===v?'selected':''}>${v}</option>`).join('')}</select></td><td><input value="${esc(x.condition)}" onchange="updateAudit('${x.id}','condition',this.value)"></td><td><input type="date" value="${esc(x.date)}" onchange="updateAudit('${x.id}','date',this.value)"></td><td><input value="${esc(x.note)}" onchange="updateAudit('${x.id}','note',this.value)"></td><td></td></tr>`}).join('')||`<tr><td colspan="8" class="empty">เริ่มรอบตรวจนับเพื่อสร้างรายการ</td></tr>`}
+function fillFilters(){
+  let c=document.getElementById('assetCat'), s=document.getElementById('assetStatus');
+  let set=new Set(); db.assets.forEach(a=>{if(a.category)set.add(a.category);}); cats.forEach(x=>set.add(x));
+  if(c) c.innerHTML='<option value="">ทุกประเภท</option>'+Array.from(set).map(x=>`<option ${c.value===x?'selected':''}>${x}</option>`).join('');
+  if(s && s.options.length===1) s.innerHTML='<option value="">ทุกสถานะ</option>'+statuses.map(x=>`<option>${x}</option>`).join('');
+}
+function renderAll(){fillFilters();renderDash();renderAssets();renderLoans();renderSales();renderAudits()}
+function exportCSV(){let headers=['รหัส','ชื่อรายการ','Serial Number','ประเภท','ยี่ห้อ/รุ่น','วันที่ซื้อ','ราคา','หน่วยงาน','ผู้รับผิดชอบ','สถานที่','สถานะ','หมายเหตุ'];let rows=db.assets.map(a=>[a.code,a.name,a.serial,a.category,a.brand,a.purchaseDate,a.price,a.department,a.owner,a.location,a.status,a.note]);let csv='\ufeff'+[headers,...rows].map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');download('assets.csv',csv,'text/csv;charset=utf-8')}
+function download(name,data,type){let b=new Blob([data],{type}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
+function exportJSON(){download('asset_manager_backup_'+dateNow()+'.json',JSON.stringify(db,null,2),'application/json')}
+const DRIVE_SCRIPT_KEY='orgAssetManager_drive_script_url';
+function setDriveScriptUrl(){let cur=localStorage.getItem(DRIVE_SCRIPT_KEY)||'';let url=prompt('วาง URL ของ Google Apps Script Web App ที่นี่\n(รูปแบบ https://script.google.com/macros/s/xxxxx/exec)',cur);if(url===null)return;localStorage.setItem(DRIVE_SCRIPT_KEY,url.trim());document.getElementById('driveStatus').textContent=url.trim()?'บันทึกลิงก์เรียบร้อย พร้อมสำรองข้อมูลได้แล้ว':''}
+async function backupToGoogleDrive(){let url=localStorage.getItem(DRIVE_SCRIPT_KEY);let status=document.getElementById('driveStatus');if(!url){alert('กรุณากดปุ่ม "ตั้งค่าลิงก์ Google Drive" แล้ววาง URL ของ Apps Script ก่อนใช้งาน');return}status.textContent='กำลังส่งข้อมูล...';try{let res=await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(db)});status.textContent='ส่งข้อมูลสำรองล่าสุดเมื่อ '+new Date().toLocaleString('th-TH');alert('ส่งข้อมูลสำรองไป Google Drive แล้ว')}catch(err){status.textContent='เกิดข้อผิดพลาดในการส่งข้อมูล';alert('ไม่สามารถส่งข้อมูลได้: '+err.message)}}
+function importJSON(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!x.assets)throw 0;if(confirm('กู้คืนข้อมูลจะทับข้อมูลเดิมทั้งหมด ยืนยันหรือไม่?')){db=x;save();alert('กู้คืนสำเร็จ')}}catch{alert('ไฟล์ JSON ไม่ถูกต้อง')}};r.readAsText(f)}
+function parseCSV(t){let rows=[],row=[],cell='',q=false;for(let i=0;i<t.length;i++){let ch=t[i],nx=t[i+1];if(ch==='"'&&q&&nx==='"'){cell+='"';i++}else if(ch==='"'){q=!q}else if(ch===','&&!q){row.push(cell);cell=''}else if((ch==='\n'||ch==='\r')&&!q){if(ch==='\r'&&nx==='\n')i++;row.push(cell);if(row.some(x=>x!==''))rows.push(row);row=[];cell=''}else cell+=ch}if(cell||row.length){row.push(cell);rows.push(row)}return rows}
+function importCSV(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let rows=parseCSV(r.result.replace(/^\ufeff/,''));let h=rows.shift();let idx={};h.forEach((x,i)=>idx[x.trim()]=i);let added=0;rows.forEach(r=>{let code=r[idx['รหัส']??0]?.trim();if(!code||db.assets.some(a=>a.code===code))return;db.assets.push({id:crypto.randomUUID(),code,name:r[idx['ชื่อรายการ']??1]||'',serial:r[idx['Serial Number']??2]||'',category:r[idx['ประเภท']??3]||'อื่นๆ',brand:r[idx['ยี่ห้อ/รุ่น']??4]||'',purchaseDate:r[idx['วันที่ซื้อ']??5]||'',price:Number(r[idx['ราคา']??6]||0),department:r[idx['หน่วยงาน']??7]||'',owner:r[idx['ผู้รับผิดชอบ']??8]||'',location:r[idx['สถานที่']??9]||'',status:r[idx['สถานะ']??10]||'ใช้งาน',note:r[idx['หมายเหตุ']??11]||'',photo:''});added++});save();alert('นำเข้าเพิ่ม '+added+' รายการ')};r.readAsText(f)}
+function downloadTemplate(){let h='รหัส,ชื่อรายการ,Serial Number,ประเภท,ยี่ห้อ/รุ่น,วันที่ซื้อ,ราคา,หน่วยงาน,ผู้รับผิดชอบ,สถานที่,สถานะ,หมายเหตุ\nตัวอย่าง-001,คอมพิวเตอร์,,,,,0,,,,ใช้งาน,';download('asset_template.csv','\ufeff'+h,'text/csv;charset=utf-8')}
+function clearAll(){if(confirm('ยืนยันลบข้อมูลทั้งหมด? การกระทำนี้ย้อนกลับไม่ได้')){db={assets:[],loans:[],sales:[],audits:[],rounds:[]};save()}}
+
+function printTable(id, title, signatures = []) {
+  let orgName = document.getElementById('orgHeaderName')?.innerText || 'หน่วยงาน/องค์กร';
+  let html = document.getElementById(id).closest('.tablewrap').outerHTML;
+  let w = window.open('', '_blank');
+  
+  let sigHtml = '';
+  if (signatures && signatures.length > 0) {
+    sigHtml = `<div class="print-footer">`;
+    signatures.forEach(s => {
+      sigHtml += `<div><div class="line-sig"></div><div>(${s})</div></div>`;
+    });
+    sigHtml += `</div>`;
+  }
+
+  w.document.write(`<html><head><meta charset="utf-8"><title>${title}</title><style>
+    body{font-family:Tahoma,sans-serif;font-size:12px;color:#000;margin:20px}
+    h2{text-align:center;margin-bottom:5px;font-size:16px}
+    .org-title{text-align:center;font-size:14px;font-weight:bold;margin-bottom:15px}
+    table{border-collapse:collapse;width:100%;margin-top:10px}
+    th,td{border:1px solid #333;padding:6px;text-align:left;vertical-align:top}
+    th{background:#f0f0f0}
+    button,.btn{display:none!important}
+    /* ซ่อนคอลัมน์รูปภาพตอนพิมพ์ในหน้าต่างแยก */
+    table th:nth-child(1), table td:nth-child(1) {
+      display: none !important;
+    }
+    .print-footer{margin-top:50px;display:flex;justify-content:space-around;text-align:center;font-size:12px;page-break-inside:avoid}
+    .print-footer div{flex:1;padding:0 10px}
+    .print-footer .line-sig{margin-bottom:5px;border-bottom:1px dotted #000;padding-bottom:25px}
+  </style></head><body>
+    <div class="org-title">${orgName}</div>
+    <h2>${title}</h2>
+    <div style="text-align:right;margin-bottom:10px;font-size:11px">วันที่พิมพ์: ${new Date().toLocaleDateString('th-TH')}</div>
+    ${html}
+    ${sigHtml}
+  </body></html>`);
+  w.document.close();
+  setTimeout(() => { w.print(); }, 300);
+}
+
+function printAssets(){printTable('assetRows','ทะเบียนสินทรัพย์',['ผู้จัดทำทะเบียน','หัวหน้าแผนก/หน่วยงาน','ผู้อำนวยการ/ผู้บริหาร'])}
+
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.page).classList.add('active')});
+['assetSearch','assetCat','assetStatus','loanSearch'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>{renderAssets();renderLoans();}));checkSession();
+</script>
+</body></html>
