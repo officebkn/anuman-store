@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P012 ครัวบ้านสวน - 20 โต๊ะ</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Kanit',sans-serif;box-sizing:border-box;margin:0;padding:0}
+body{background:#f8fafc}
+.header{background:#16a34a;color:#fff;padding:12px 20px;display:flex;justify-content:space-between}
+.summary{display:flex;gap:12px;padding:12px 20px;flex-wrap:wrap}
+.sum{background:#fff;border-radius:12px;padding:12px 16px;min-width:140px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.sum.vacant{border-left:4px solid #22c55e}
+.sum.eating{border-left:4px solid #f59e0b}
+.sum.bill{border-left:4px solid #ef4444}
+.sum.sales{border-left:4px solid #3b82f6}
+.grid{display:grid;grid-template-columns:1fr 340px;min-height:calc(100vh - 120px)}
+.tables{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:20px}
+.tcard{background:#fff;border-radius:14px;padding:14px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.08);border:2px solid transparent;transition:.2s}
+.tcard:hover{transform:translateY(-2px)}
+.tcard.selected{border-color:#16a34a}
+.tcard .status{font-size:12px;padding:2px 8px;border-radius:10px;display:inline-block;margin-bottom:6px}
+.st-ว่าง{background:#dcfce7;color:#166534}
+.st-กำลังทาน{background:#fef3c7;color:#92400e}
+.st-จอง{background:#dbeafe;color:#1e40af}
+.st-เช็คบิล{background:#fee2e2;color:#991b1b}
+.detail{background:#fff;border-left:1px solid #e2e8f0;padding:16px}
+.order-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #e2e8f0;font-size:14px}
+</style></head><body>
+<div class="header"><div>🏡 Hello ครัวบ้านสวน 123 หมู่5</div><div id="clock"></div></div>
+<div class="summary">
+<div class="sum vacant"><div>ว่าง</div><b id="cVac">0</b></div>
+<div class="sum eating"><div>กำลังทาน</div><b id="cEat">0</b></div>
+<div class="sum bill"><div>รอเช็คบิล</div><b id="cBill">0</b></div>
+<div class="sum sales"><div>ยอดขายวันนี้</div><b id="cSale">฿0</b></div>
+</div>
+<div class="grid">
+<div class="tables" id="tables"></div>
+<div class="detail" id="detail"><div style="text-align:center;color:#999;margin-top:40px">เลือกโต๊ะเพื่อดูออเดอร์</div></div>
+</div>
+<script>
+let tables=JSON.parse(localStorage.getItem('p012_tables')||'null') || Array.from({length:16},(_,i)=>({
+ id:i+1,status: i===0?'กำลังทาน': i<3?'กำลังทาน':'ว่าง',people:2,items: i===0?[{name:'กระเพราหมูไข่ดาว',price:89,qty:2},{name:'ข้าวเหนียว',price:45,qty:2}]:[],sales: i===0?268:0
+}));
+function save(){localStorage.setItem('p012_tables',JSON.stringify(tables))}
+let selected=1;
+function render(){
+  document.getElementById('tables').innerHTML=tables.map(t=>`
+   <div class="tcard ${t.id===selected?'selected':''}" onclick="selectTable(${t.id})">
+     <div style="display:flex;justify-content:space-between"><b>โต๊ะ ${t.id}</b><span class="status st-${t.status}">${t.status}</span></div>
+     <div style="font-size:13px;color:#64748b;margin-top:6px">${t.people}คน ${t.items.length}รายการ ${t.sales}฿</div>
+     <div style="margin-top:8px;display:flex;gap:4px">
+       <button onclick="event.stopPropagation();setStatus(${t.id},'ว่าง')" style="font-size:11px;padding:2px 6px;border-radius:6px;border:1px solid #ddd">ว่าง</button>
+       <button onclick="event.stopPropagation();setStatus(${t.id},'กำลังทาน')" style="font-size:11px;padding:2px 6px;border-radius:6px;border:1px solid #ddd">ทาน</button>
+       <button onclick="event.stopPropagation();setStatus(${t.id},'เช็คบิล')" style="font-size:11px;padding:2px 6px;border-radius:6px;border:1px solid #ddd">บิล</button>
+     </div>
+   </div>`).join('');
+  const v=tables.filter(t=>t.status==='ว่าง').length;
+  const e=tables.filter(t=>t.status==='กำลังทาน').length;
+  const b=tables.filter(t=>t.status==='เช็คบิล').length;
+  const s=tables.reduce((sum,t)=>sum+t.sales,0)+1472.32;
+  document.getElementById('cVac').textContent=v;
+  document.getElementById('cEat').textContent=e;
+  document.getElementById('cBill').textContent=b;
+  document.getElementById('cSale').textContent='฿'+s.toFixed(2);
+  renderDetail();
+}
+function selectTable(id){selected=id;render();}
+function setStatus(id,st){const t=tables.find(x=>x.id===id);t.status=st;if(st==='ว่าง'){t.items=[];t.sales=0;} save();render();}
+function renderDetail(){
+  const t=tables.find(x=>x.id===selected);
+  if(!t) return;
+  const subtotal=t.items.reduce((s,i)=>s+i.price*i.qty,0);
+  const vat=subtotal*0.07;
+  const total=subtotal+vat;
+  document.getElementById('detail').innerHTML=`
+    <h3>โต๊ะ ${t.id} - ${t.status}</h3>
+    <div style="margin:12px 0;display:flex;gap:8px">
+      <button onclick="addItem()" style="flex:1;padding:8px;background:#16a34a;color:#fff;border:none;border-radius:8px;cursor:pointer">+ เพิ่มเมนู</button>
+      <button onclick="checkout()" style="flex:1;padding:8px;background:#ef4444;color:#fff;border:none;border-radius:8px;cursor:pointer">เช็คบิล</button>
+    </div>
+    <div style="margin-top:12px">
+      ${t.items.map(i=>'<div class=order-item><span>'+i.name+' '+i.price+'x'+i.qty+'</span><span>'+(i.price*i.qty)+'฿</span></div>').join('') || '<div style=color:#999>ไม่มีรายการ</div>'}
+    </div>
+    <div style="margin-top:16px;background:#f8fafc;padding:12px;border-radius:10px">
+      <div style="display:flex;justify-content:space-between"><span>รวม</span><span>${subtotal}฿</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:#666"><span>VAT 7%</span><span>${vat.toFixed(2)}฿</span></div>
+      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:18px;margin-top:6px;border-top:1px solid #ddd;padding-top:6px"><span>ยอดสุทธิ</span><span>${total.toFixed(2)}฿</span></div>
+    </div>
+    <div style="margin-top:12px">
+      <div style="font-size:13px">ตัวอย่างตามสเปค:</div>
+      <div style="background:#fffbeb;padding:8px;border-radius:8px;font-size:13px;margin-top:4px">
+        กระเพราหมูไข่ดาว 89x2=178<br>ข้าวเหนียว 45x2=90<br>รวม 268 + VAT 7% 18.76 = 286.76
+      </div>
+    </div>
+  `;
+}
+function addItem(){
+  const name=prompt('ชื่อเมนู','ผัดไทย'); if(!name) return;
+  const price=parseInt(prompt('ราคา','89')||'0');
+  const qty=parseInt(prompt('จำนวน','1')||'1');
+  const t=tables.find(x=>x.id===selected);
+  t.items.push({name,price,qty}); t.sales=t.items.reduce((s,i)=>s+i.price*i.qty,0); t.status='กำลังทาน'; save();render();
+}
+function checkout(){const t=tables.find(x=>x.id===selected); if(t.items.length===0) return alert('ไม่มีรายการ'); const total=t.items.reduce((s,i)=>s+i.price*i.qty,0)*1.07; alert('เช็คบิล โต๊ะ '+t.id+' ยอด '+total.toFixed(2)+'฿'); t.status='เช็คบิล'; save();render(); setTimeout(()=>{setStatus(t.id,'ว่าง')},1500);}
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleString('th-TH')},1000);
+render();
+</script></body></html>

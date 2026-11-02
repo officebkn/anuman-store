@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P019 ระบบบริหารเงินกู้</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Kanit',sans-serif;box-sizing:border-box;margin:0;padding:0}
+body{background:#f8fafc}
+.header{background:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:16px 20px}
+.stat{background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.06);text-align:center}
+.stat b{font-size:18px}
+.main{display:grid;grid-template-columns:360px 1fr;gap:16px;padding:0 20px 20px}
+.form{background:#fff;border-radius:14px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.input{margin-bottom:10px}
+.input label{font-size:12px;color:#64748b;display:block;margin-bottom:4px}
+.input input,.input select{width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px}
+.btn{width:100%;padding:12px;background:#3b82f6;color:#fff;border:none;border-radius:10px;cursor:pointer;font-weight:600;margin-top:8px}
+.table-wrap{background:#fff;border-radius:14px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.row{display:grid;grid-template-columns:80px 1fr 60px 90px 80px 80px 120px;gap:8px;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:13px;align-items:center}
+.status{background:#dcfce7;color:#166534;padding:2px 8px;border-radius:12px;font-size:11px}
+</style></head><body>
+<div class="header"><div><b>💰 ระบบบริหารเงินกู้</b> <span style="color:#64748b">รายงานลูกหนี้ทั้งหมด พิมพ์สัญญาและใบเสร็จ</span></div><div style="display:flex;gap:8px"><button style="padding:6px 12px;border-radius:8px;border:1px solid #ddd;background:#fff">ส่งออก Excel</button><button style="padding:6px 12px;border-radius:8px;background:#0f172a;color:#fff">+ สร้างสัญญา</button></div></div>
+<div class="stats">
+<div class="stat"><div style="color:#64748b;font-size:12px">สัญญาทั้งหมด</div><b>1 รายการ</b></div>
+<div class="stat"><div style="color:#64748b;font-size:12px">เงินต้นปล่อยรวม</div><b>10,000 ฿</b></div>
+<div class="stat"><div style="color:#64748b;font-size:12px">ดอกเบี้ยคาดการณ์</div><b style="color:#f59e0b">1,500.00 ฿</b></div>
+<div class="stat"><div style="color:#64748b;font-size:12px">รับชำระแล้วรวม</div><b style="color:#22c55e">958.33 ฿</b></div>
+<div class="stat"><div style="color:#64748b;font-size:12px">ยอดค้างทั้งหมด</div><b>0.00 ฿</b></div>
+</div>
+<div class="main">
+<div class="form">
+<h3>สร้างสัญญาเงินกู้ใหม่</h3>
+<div style="background:#f0f9ff;padding:8px;border-radius:8px;font-size:13px;margin:12px 0">ชื่อผู้กู้ บริษัท สมายโลน จำกัด</div>
+<div class="input"><label>ชื่อ-นามสกุลผู้กู้</label><input id="name" value="นาย ก"></div>
+<div class="input"><label>เลขบัตรประชาชน</label><input id="idcard" value="1234567890123"></div>
+<div class="input"><label>เบอร์โทร</label><input id="phone" value="0812345678"></div>
+<div class="input"><label>ที่อยู่</label><input id="addr" value="123 หมู่ 5 ต.ในเมือง"></div>
+<div class="input"><label>วันที่ทำสัญญา</label><input id="date" type="date" value="2026-10-28"></div>
+<div class="input"><label>วิธีคิดดอกเบี้ย</label><select id="method"><option selected>ลดต้นลดดอก</option><option>คงที่</option></select></div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+<div class="input"><label>เงินต้น</label><input id="principal" type="number" value="10000"></div>
+<div class="input"><label>ดอกเบี้ย %/ปี</label><input id="rate" type="number" value="15"></div>
+<div class="input"><label>จำนวนงวด</label><input id="install" type="number" value="12"></div>
+</div>
+<button class="btn" onclick="createLoan()">💾 บันทึกสัญญา</button>
+<div style="margin-top:12px;background:#f8fafc;padding:10px;border-radius:8px;font-size:12px">ระบบจะคำนวณค่างวดอัตโนมัติ: เงินต้น 10,000 ดอก 15% 12 งวด = 958.33/งวด</div>
+</div>
+<div class="table-wrap">
+<div style="display:flex;justify-content:space-between;align-items:center"><h3>รายการสัญญาเงินกู้</h3><input id="search" placeholder="ค้นหา..." style="padding:6px 12px;border-radius:20px;border:1px solid #cbd5e1;font-size:13px"></div>
+<div style="margin-top:12px" id="loanTable"></div>
+</div>
+</div>
+<script>
+let loans=JSON.parse(localStorage.getItem('p019_loans')||'null')||[
+{id:'LN-988873',name:'นาย ก',rate:15,principal:10000,install:958.33,paid:1,total:12,status:'กำลังผ่อน'}
+];
+function save(){localStorage.setItem('p019_loans',JSON.stringify(loans))}
+function render(filter=''){
+  const list=loans.filter(l=>l.name.includes(filter)||l.id.includes(filter));
+  let html='<div class=row style="font-weight:600;color:#64748b"><span>เลขที่</span><span>ชื่อ</span><span>ดอก%</span><span>เงินต้น</span><span>ค่างวด</span><span>ชำระ</span><span>จัดการ</span></div>';
+  html+=list.map(l=>'<div class=row><span>'+l.id+'</span><span>'+l.name+'</span><span>'+l.rate+'%</span><span>'+l.principal.toLocaleString()+'</span><span>'+l.install+'</span><span>'+l.paid+'/'+l.total+'</span><span><span class=status>'+l.status+'</span><div style="margin-top:4px;display:flex;gap:4px"><button onclick="printDoc(\''+l.id+'\',\'สัญญา\')" style="padding:2px 6px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:11px;cursor:pointer">พิมพ์สัญญา</button><button onclick="printDoc(\''+l.id+'\',\'ใบเสร็จ\')" style="padding:2px 6px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:11px;cursor:pointer">ใบเสร็จ</button></div></span></div>').join('');
+  document.getElementById('loanTable').innerHTML=html;
+}
+function createLoan(){
+  const name=document.getElementById('name').value||'นาย ก';
+  const principal=parseFloat(document.getElementById('principal').value)||10000;
+  const rate=parseFloat(document.getElementById('rate').value)||15;
+  const total=parseInt(document.getElementById('install').value)||12;
+  const monthly= (principal*(rate/100)/12* Math.pow(1+rate/100/12,total))/(Math.pow(1+rate/100/12,total)-1);
+  const id='LN-'+Math.floor(Math.random()*900000+100000);
+  loans.unshift({id,name,rate,principal,install:monthly.toFixed(2),paid:1,total,status:'กำลังผ่อน'}); save();render();
+  alert('สร้างสัญญา '+id+' ค่างวด '+monthly.toFixed(2)+' สำเร็จ');
+}
+function printDoc(id,type){const l=loans.find(x=>x.id===id); if(!l) return; const w=window.open('','_blank'); w.document.write('<html><head><meta charset=UTF-8><title>'+type+' '+id+'</title><style>body{font-family:sans-serif;padding:40px} h1{text-align:center} .box{border:1px solid #000;padding:20px;margin-top:20px}</style></head><body><h1>'+type+'เงินกู้</h1><div class=box><p>เลขที่สัญญา: '+l.id+'</p><p>ชื่อผู้กู้: '+l.name+'</p><p>เงินต้น: '+l.principal+' บาท ดอกเบี้ย '+l.rate+'% ต่อปี</p><p>ค่างวด: '+l.install+' บาท จำนวน '+l.total+' งวด</p><p>สถานะ: '+l.status+'</p><p>วันที่พิมพ์: '+new Date().toLocaleString('th-TH')+'</p><br><p>ลงชื่อ........................ผู้กู้</p><p>ลงชื่อ........................ผู้ให้กู้</p></div><script>window.print()<\/script></body></html>');}
+document.getElementById('search').addEventListener('input',e=>render(e.target.value));
+render();
+</script></body></html>

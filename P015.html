@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P015 คำนวณผ่อนชำระ</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Kanit',sans-serif;box-sizing:border-box;margin:0;padding:0}
+body{background:#f0f7ff;color:#1e293b}
+.header{background:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.tabs{display:flex;gap:8px;padding:12px 20px}
+.tab{padding:8px 18px;border-radius:20px;cursor:pointer;background:#e0eaff;color:#3b82f6;font-size:14px}
+.tab.active{background:#3b82f6;color:#fff}
+.main{display:grid;grid-template-columns:380px 1fr;gap:20px;padding:20px;max-width:1200px;margin:0 auto}
+.card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.05)}
+.input-group{margin-bottom:14px}
+.input-group label{font-size:13px;color:#64748b;display:block;margin-bottom:6px}
+.input-group input{width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px}
+.btn-calc{width:100%;padding:14px;background:#3b82f6;color:#fff;border:none;border-radius:12px;font-weight:600;font-size:16px;cursor:pointer;margin-top:10px}
+.result{background:linear-gradient(135deg,#8b5cf6,#3b82f6);color:#fff;border-radius:16px;padding:20px;text-align:center}
+.result .monthly{font-size:36px;font-weight:800;margin:8px 0}
+.banner{background:linear-gradient(90deg,#22c55e,#16a34a);color:#fff;border-radius:12px;padding:14px;display:flex;justify-content:space-between;align-items:center;margin-top:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.stat{background:#f8fafc;border-radius:12px;padding:12px}
+</style></head><body>
+<div class="header"><div><b>🚗 เครื่องคำนวณการผ่อนชำระ</b> <span style="color:#64748b">รถ บ้าน เครื่องใช้ไฟฟ้า สำเร็จรูป</span></div><div style="display:flex;gap:8px"><button style="padding:6px 12px;border-radius:8px;border:1px solid #ddd;background:#fff">เทียบ</button><button style="padding:6px 12px;border-radius:8px;border:1px solid #ddd;background:#fff">พิมพ์</button><button style="padding:6px 12px;border-radius:8px;border:1px solid #ddd;background:#fff">ปิดบัญชี</button></div></div>
+<div class="tabs"><span class="tab active">🚗 รถ</span><span class="tab">🏠 บ้าน</span><span class="tab">⚡ ไฟฟ้า</span><span class="tab">📊 เทียบ</span><span class="tab">🖨 พิมพ์</span><span class="tab">💰 ปิดบัญชี</span></div>
+<div class="main">
+<div class="card">
+<h3>กรอกข้อมูลคำนวณ</h3>
+<div class="input-group" style="margin-top:16px"><label>ราคารวม (บาท)</label><input id="price" type="number" value="800000"></div>
+<div class="input-group"><label>เงินดาวน์ (บาท)</label><input id="down" type="number" value="160000"></div>
+<div class="input-group"><label>ดอกเบี้ยต่อปี (%)</label><input id="rate" type="number" step="0.01" value="3.25"></div>
+<div class="input-group"><label>ระยะเวลาผ่อน (เดือน)</label><input id="months" type="number" value="48"></div>
+<button class="btn-calc" onclick="calculate()">คำนวณ</button>
+<div style="margin-top:16px;background:#f0f9ff;padding:12px;border-radius:10px;font-size:13px">
+💡 เคล็ดลับ: ดาวน์เยอะ ผ่อนน้อย ดอกเบี้ยต่ำ ประหยัดกว่า
+</div>
+</div>
+<div>
+<div class="result" id="resultBox">
+<div>ค่างวดต่อเดือน</div>
+<div class="monthly" id="monthly">15,067 ฿</div>
+<div><span id="term">48</span> งวด</div>
+</div>
+<div class="grid2">
+<div class="stat"><div style="color:#64748b;font-size:13px">ยอดจัดไฟแนนซ์</div><b id="finance">640,000 ฿</b></div>
+<div class="stat"><div style="color:#64748b;font-size:13px">เงินดาวน์</div><b id="downShow">20% (160,000 ฿)</b></div>
+<div class="stat"><div style="color:#64748b;font-size:13px">ดอกเบี้ยรวม</div><b id="interestTotal">83,216 ฿</b></div>
+<div class="stat"><div style="color:#64748b;font-size:13px">ยอดรวมผ่อน</div><b id="totalPay">723,216 ฿</b></div>
+</div>
+<div class="banner"><div><div style="font-weight:700">ผ่อนเพียง <span id="bannerMonth">15,067</span> ฿/เดือน</div><div style="font-size:12px;opacity:.9">คำนวณง่าย ผลลัพธ์เรียลไทม์ รวดเร็วภายในไม่กี่วินาที</div></div><div style="font-size:28px">⚡</div></div>
+<div class="card" style="margin-top:16px"><h4>ตารางผ่อนชำระ</h4><div id="schedule" style="margin-top:12px;max-height:260px;overflow:auto"></div></div>
+</div>
+</div>
+<script>
+function format(n){return n.toLocaleString('th-TH')}
+function calculate(){
+  const price=parseFloat(document.getElementById('price').value)||0;
+  const down=parseFloat(document.getElementById('down').value)||0;
+  const rate=parseFloat(document.getElementById('rate').value)||0;
+  const months=parseInt(document.getElementById('months').value)||1;
+  const finance=price-down;
+  const monthlyRate=rate/100/12;
+  let monthly;
+  if(monthlyRate===0) monthly=finance/months;
+  else monthly=finance*monthlyRate*Math.pow(1+monthlyRate,months)/(Math.pow(1+monthlyRate,months)-1);
+  const total=monthly*months;
+  const interest=total-finance;
+  document.getElementById('monthly').textContent=format(Math.round(monthly))+' ฿';
+  document.getElementById('term').textContent=months;
+  document.getElementById('finance').textContent=format(finance)+' ฿';
+  document.getElementById('downShow').textContent=(price?((down/price*100).toFixed(0)):'0')+'% ('+format(down)+' ฿)';
+  document.getElementById('interestTotal').textContent=format(Math.round(interest))+' ฿';
+  document.getElementById('totalPay').textContent=format(Math.round(total))+' ฿';
+  document.getElementById('bannerMonth').textContent=format(Math.round(monthly));
+  // schedule
+  let bal=finance; let html='<div style="display:grid;grid-template-columns:40px 1fr 1fr 1fr;font-weight:600;padding:6px 0;border-bottom:1px solid #e2e8f0;font-size:12px"><span>งวด</span><span>ค่างวด</span><span>ดอกเบี้ย</span><span>คงเหลือ</span></div>';
+  for(let i=1;i<=months;i++){
+    const intPay=bal*monthlyRate; const princ=monthly-intPay; bal-=princ; if(bal<0) bal=0;
+    if(i<=12 || i===months){ html+='<div style="display:grid;grid-template-columns:40px 1fr 1fr 1fr;padding:6px 0;border-bottom:1px dashed #e2e8f0;font-size:13px"><span>'+i+'</span><span>'+format(Math.round(monthly))+'</span><span>'+format(Math.round(intPay))+'</span><span>'+format(Math.round(bal))+'</span></div>'; }
+    else if(i===13){ html+='<div style="text-align:center;padding:6px;color:#94a3b8;font-size:12px">... '+ (months-13) +' งวด ...</div>'; }
+  }
+  document.getElementById('schedule').innerHTML=html;
+  localStorage.setItem('p015_last',{price,down,rate,months});
+}
+calculate();
+['price','down','rate','months'].forEach(id=>{document.getElementById(id).addEventListener('input',calculate)});
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',e=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));e.target.classList.add('active');}));
+</script></body></html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P020 Dashboard Security</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Kanit',sans-serif;box-sizing:border-box;margin:0;padding:0}
+body{background:#fff;color:#0f172a}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;border-bottom:1px solid #e2e8f0}
+.nav-links{display:flex;gap:20px;font-size:14px;color:#475569}
+.btn{padding:8px 16px;border-radius:20px;border:none;cursor:pointer;font-weight:600;font-size:14px}
+.btn-outline{border:1px solid #e2e8f0;background:#fff}
+.btn-black{background:#0f172a;color:#fff}
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:40px 24px;max-width:1200px;margin:0 auto;align-items:center}
+.hero h1{font-size:42px;line-height:1.1;font-weight:700}
+.hero h1 span{background:linear-gradient(90deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.dashboard-mock{background:#0f172a;border-radius:16px;padding:16px;color:#fff;box-shadow:0 20px 40px rgba(0,0,0,.2)}
+.dash-top{display:flex;justify-content:space-between;margin-bottom:16px;font-size:13px}
+.dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.dash-card{background:#1e293b;border-radius:10px;padding:12px}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:20px 24px;max-width:1200px;margin:0 auto}
+.fcard{border:1px solid #e2e8f0;border-radius:12px;padding:16px}
+.logos{display:flex;gap:24px;justify-content:center;align-items:center;padding:20px;color:#94a3b8;font-size:13px;border-top:1px solid #f1f5f9;margin-top:20px;flex-wrap:wrap}
+</style></head><body>
+<div class="nav"><div style="font-weight:700">⬡ SecureDash</div><div class="nav-links"><span>Features</span><span>Solutions</span><span>Resources</span><span>Pricing</span></div><div style="display:flex;gap:8px"><button class="btn btn-outline">Sign In</button><button class="btn btn-black">Start Free</button></div></div>
+<div class="hero">
+<div>
+<h1>Turn Data Into <br><span>Actionable Insights</span></h1>
+<p style="margin-top:16px;color:#475569">Dashboards Reports Analytics for Your Business in One Place. ระบบความปลอดภัยครบวงจร พร้อมใช้งาน.</p>
+<div style="margin-top:20px;display:flex;gap:10px"><button class="btn btn-black" onclick="alert('เริ่มใช้งานฟรี!')">Start Free Trial</button><button class="btn btn-outline" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">Watch Demo</button></div>
+<div style="margin-top:20px;display:flex;gap:12px;font-size:13px"><span>✔ Real-time monitoring</span><span>✔ SOC2 certified</span></div>
+</div>
+<div class="dashboard-mock" id="demo">
+<div class="dash-top"><span>📊 CP-1065 Dashboard</span><span>● Live</span></div>
+<div class="dash-grid">
+<div class="dash-card"><div style="font-size:11px;color:#94a3b8">Threats Blocked</div><b style="font-size:18px">1,248</b><div style="font-size:11px;color:#22c55e">↑ 12%</div></div>
+<div class="dash-card"><div style="font-size:11px;color:#94a3b8">Active Users</div><b style="font-size:18px">2,400</b><div style="font-size:11px;color:#3b82f6">● Online</div></div>
+<div class="dash-card"><div style="font-size:11px;color:#94a3b8">Uptime</div><b style="font-size:18px">99.9%</b></div>
+</div>
+<div style="margin-top:16px;background:#1e293b;border-radius:8px;padding:12px">
+<div style="display:flex;justify-content:space-between;font-size:12px"><span>Security Events</span><span>Last 24h</span></div>
+<div style="margin-top:8px;display:flex;gap:4px;align-items:end;height:40px"><div style="width:12%;background:#3b82f6;height:60%;border-radius:4px"></div><div style="width:12%;background:#3b82f6;height:80%;border-radius:4px"></div><div style="width:12%;background:#8b5cf6;height:40%;border-radius:4px"></div><div style="width:12%;background:#3b82f6;height:90%;border-radius:4px"></div><div style="width:12%;background:#22c55e;height:30%;border-radius:4px"></div><div style="width:12%;background:#3b82f6;height:70%;border-radius:4px"></div></div>
+</div>
+</div>
+</div>
+<div class="features">
+<div class="fcard"><div style="font-size:20px">⚡</div><b>Real-Time Analytics</b><p style="font-size:13px;color:#64748b;margin-top:6px">ติดตามข้อมูลแบบเรียลไทม์ วิเคราะห์ภัยคุกคามทันที</p></div>
+<div class="fcard"><div style="font-size:20px">📑</div><b>Custom Reports</b><p style="font-size:13px;color:#64748b;margin-top:6px">สร้างรายงานตามต้องการ ส่งออก PDF/Excel อัตโนมัติ</p></div>
+<div class="fcard"><div style="font-size:20px">👥</div><b>Team Collaboration</b><p style="font-size:13px;color:#64748b;margin-top:6px">ทำงานร่วมกัน แชร์แดชบอร์ด กำหนดสิทธิ์ผู้ใช้งาน</p></div>
+</div>
+<div class="logos"><span>Trusted by Over 2,000 Teams</span><span style="font-weight:700">Acme</span><span style="font-weight:700">Globex</span><span style="font-weight:700">Umbrella</span><span style="font-weight:700">Stark</span><span style="font-weight:700">Wayne</span></div>
+<div style="text-align:center;padding:20px"><button class="btn btn-black" onclick="alert('Demo: ระบบรักษาความปลอดภัยทำงานปกติ - ไม่มีภัยคุกคาม')">🔒 ทดสอบความปลอดภัย</button></div>
+<script>console.log('P020 Dashboard Security loaded');</script></body></html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P014 โปรแกรมสุ่มแจกของขวัญ</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Kanit',sans-serif;box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a12;color:#fff;overflow-x:hidden}
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.confetti span{position:absolute;width:8px;height:14px;background:gold;animation:fall linear infinite}
+@keyframes fall{0%{transform:translateY(-100vh) rotate(0)}100%{transform:translateY(100vh) rotate(720deg)}}
+.header{background:linear-gradient(90deg,#1a1a2e,#16213e);padding:14px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ffd70044}
+.layout{display:grid;grid-template-columns:280px 1fr 280px;gap:14px;padding:14px}
+.panel{background:rgba(255,255,255,.06);backdrop-filter:blur(10px);border:1px solid rgba(255,215,0,.2);border-radius:16px;padding:16px}
+.main-center{background:radial-gradient(ellipse at center,#1a1a2e 0%,#0a0a12 70%);border:2px solid #ffd70066;border-radius:20px;padding:24px;text-align:center;min-height:520px;display:flex;flex-direction:column;justify-content:center}
+.target{width:120px;height:120px;margin:0 auto;background:radial-gradient(circle,#ffd700,#ff8c00);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:52px;box-shadow:0 0 40px #ffd70088;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.btn{padding:14px 24px;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:16px;margin:6px;transition:.2s}
+.btn:hover{transform:translateY(-2px)}
+.btn-yellow{background:linear-gradient(90deg,#ffd700,#ffb700);color:#000}
+.btn-purple{background:linear-gradient(90deg,#8b5cf6,#ec4899);color:#fff}
+.list-item{background:rgba(255,255,255,.08);padding:8px 12px;border-radius:8px;margin-bottom:6px;display:flex;justify-content:space-between;font-size:14px}
+.winner-card{background:linear-gradient(135deg,#ffd70022,#ff8c0022);border:2px solid #ffd700;padding:20px;border-radius:16px;margin:16px 0}
+.music{background:#111;border-radius:12px;padding:12px;margin-top:16px}
+</style></head><body>
+<div class="confetti" id="confetti"></div>
+<div class="header"><div>🎁 โปรแกรมสุ่มแจกของขวัญ มหาสนุก สำเร็จรูป</div><div style="display:flex;gap:8px"><span style="background:#ffd700;color:#000;padding:4px 10px;border-radius:20px;font-size:12px">LIVE</span><span id="clock"></span></div></div>
+<div class="layout">
+<div>
+<div class="panel"><h4>ตั้งค่าข้อมูลเริ่มต้น</h4>
+<div style="margin-top:12px"><b>รายชื่อผู้ร่วมสุ่ม (<span id="pCount">5</span> คน)</b>
+<div id="pList" style="margin-top:8px"></div>
+<div style="display:flex;gap:6px;margin-top:8px"><input id="newPerson" placeholder="เพิ่มชื่อ" style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid #333;background:#0a0a12;color:#fff"><button onclick="addPerson()" style="padding:6px 10px;border-radius:6px;background:#ffd700;border:none;cursor:pointer">+</button></div>
+</div>
+<div style="margin-top:16px"><b>ของรางวัลในกล่อง (<span id="gCount">5</span>)</b>
+<div id="gList" style="margin-top:8px"></div>
+<div style="display:flex;gap:6px;margin-top:8px"><input id="newGift" placeholder="เพิ่มรางวัล" style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid #333;background:#0a0a12;color:#fff"><button onclick="addGift()" style="padding:6px 10px;border-radius:6px;background:#8b5cf6;color:#fff;border:none;cursor:pointer">+</button></div>
+</div>
+</div>
+<div class="music"><div style="font-size:13px;margin-bottom:6px">🎵 เครื่องเล่นเพลงบรรยากาศเสียง</div>
+<div style="display:flex;gap:6px"><select id="musicSel" style="flex:1;padding:6px;border-radius:6px;background:#0a0a12;color:#fff;border:1px solid #333"><option>สุขสันต์วันปีใหม่</option><option>เพลงตื่นเต้น</option><option>เพลงลุ้นระทึก</option></select></div>
+<div style="display:flex;gap:6px;margin-top:8px"><button class="btn" style="flex:1;padding:8px;background:#22c55e;color:#fff;border:none;border-radius:8px;cursor:pointer" onclick="playMusic()">▶ เล่นเพลง</button><button class="btn" style="flex:1;padding:8px;background:#475569;color:#fff;border:none;border-radius:8px;cursor:pointer" onclick="stopMusic()">⏹ หยุดเพลง</button></div>
+<div id="musicStatus" style="font-size:12px;color:#94a3b8;margin-top:6px">หยุดเล่น</div></div>
+</div>
+<div class="main-center">
+<div class="target">🎯</div>
+<div id="mainText" style="margin-top:20px"><h2>ผู้โชคดีรอบนี้คือ...</h2><p style="color:#94a3b8;margin-top:8px">กดปุ่มสุ่มด้านล่างเลย!</p></div>
+<div id="winnerArea"></div>
+<div style="margin-top:24px"><button class="btn btn-yellow" onclick="drawWinner()">🎲 สุ่มผู้โชคดี!</button><button class="btn btn-purple" onclick="drawGift()">🎁 เปิดกล่องสุ่มรางวัล</button></div>
+<div style="margin-top:16px;display:flex;justify-content:center;gap:12px;font-size:13px"><span style="background:rgba(255,255,255,.1);padding:6px 12px;border-radius:20px">ผู้ที่ได้รางวัล <b id="wCount">0</b></span><span style="background:rgba(255,255,255,.1);padding:6px 12px;border-radius:20px">แจกแล้ว <b id="gDone">0</b></span></div>
+</div>
+<div>
+<div class="panel"><h4>ผู้ที่ได้รางวัล <span id="wCount2">0</span></h4><div id="winnerList" style="margin-top:12px;max-height:300px;overflow:auto"><div style="color:#64748b;text-align:center;padding:20px">ยังไม่มีผู้โชคดี</div></div></div>
+<div class="panel" style="margin-top:12px"><h4>ของรางวัลที่แจกแล้ว <span id="gDone2">0</span></h4><div id="giftDone" style="margin-top:12px"><div style="color:#64748b;text-align:center;padding:20px">ยังไม่มี</div></div></div>
+<div style="margin-top:12px;display:flex;gap:8px"><button onclick="clearAll()" style="flex:1;padding:10px;background:#1e293b;color:#fff;border:1px solid #334155;border-radius:8px;cursor:pointer">ล้างข้อมูล</button><button onclick="confettiBurst()" style="flex:1;padding:10px;background:#ffd700;color:#000;border:none;border-radius:8px;cursor:pointer">🎉 ฉลอง</button></div>
+</div>
+</div>
+<script>
+let people=JSON.parse(localStorage.getItem('p014_people')||'null')||['สมชาย ใจดี','สมหญิง รักสวย','หัวหน้าเข้มขัด','น้องใบบัวไบเร','พี่ใหญ่นัก Stong'];
+let gifts=JSON.parse(localStorage.getItem('p014_gifts')||'null')||['ทองคำแท่ง','Smart TV 32 นิ้ว','เงินสด 1000 บาท','บัตรของขวัญ 500 บาท','ตุ๊กตาหมี'];
+let winners=JSON.parse(localStorage.getItem('p014_winners')||'[]');
+let giftHistory=JSON.parse(localStorage.getItem('p014_giftHist')||'[]');
+let lastWinner=null,lastGift=null;
+function save(){localStorage.setItem('p014_people',JSON.stringify(people));localStorage.setItem('p014_gifts',JSON.stringify(gifts));localStorage.setItem('p014_winners',JSON.stringify(winners));localStorage.setItem('p014_giftHist',JSON.stringify(giftHistory));}
+function render(){
+  document.getElementById('pCount').textContent=people.length; document.getElementById('gCount').textContent=gifts.length;
+  document.getElementById('pList').innerHTML=people.map((p,i)=>'<div class=list-item><span>'+p+'</span><span style=cursor:pointer onclick="removePerson('+i+')">✕</span></div>').join('');
+  document.getElementById('gList').innerHTML=gifts.map((g,i)=>'<div class=list-item><span>🎁 '+g+'</span><span style=cursor:pointer onclick="removeGift('+i+')">✕</span></div>').join('');
+  document.getElementById('wCount').textContent=winners.length; document.getElementById('wCount2').textContent=winners.length; document.getElementById('gDone').textContent=giftHistory.length; document.getElementById('gDone2').textContent=giftHistory.length;
+  document.getElementById('winnerList').innerHTML=winners.length? winners.map(w=>'<div class=list-item><span>🏆 '+w.person+'</span><span style=color:#ffd700>'+w.gift+'</span></div>').join('') : '<div style="color:#64748b;text-align:center;padding:20px">ยังไม่มีผู้โชคดี</div>';
+  document.getElementById('giftDone').innerHTML=giftHistory.length? giftHistory.map(g=>'<div class=list-item><span>'+g+'</span><span>✅</span></div>').join('') : '<div style="color:#64748b;text-align:center;padding:20px">ยังไม่มี</div>';
+}
+function addPerson(){const v=document.getElementById('newPerson').value.trim(); if(!v) return; people.push(v); document.getElementById('newPerson').value=''; save();render();}
+function removePerson(i){people.splice(i,1);save();render();}
+function addGift(){const v=document.getElementById('newGift').value.trim(); if(!v) return; gifts.push(v); document.getElementById('newGift').value=''; save();render();}
+function removeGift(i){gifts.splice(i,1);save();render();}
+function drawWinner(){
+  if(people.length===0) return alert('ไม่มีรายชื่อ'); 
+  const main=document.getElementById('mainText'); main.innerHTML='<h2>กำลังสุ่ม...</h2>'; 
+  let c=0; const iv=setInterval(()=>{main.innerHTML='<h2 style=color:#ffd700>'+people[Math.floor(Math.random()*people.length)]+'</h2>'; c++; if(c>15){clearInterval(iv); lastWinner=people[Math.floor(Math.random()*people.length)]; main.innerHTML='<h2>ผู้โชคดีรอบนี้คือ...</h2>'; document.getElementById('winnerArea').innerHTML='<div class=winner-card><div style=font-size:14px;color:#ffd700>🎉 ขอแสดงความยินดี 🎉</div><div style=font-size:32px;font-weight:800;margin:8px 0>'+lastWinner+'</div><div style=color:#94a3b8>รอลุ้นของรางวัล...</div></div>'; confettiBurst();}},100);
+}
+function drawGift(){
+  if(!lastWinner) return alert('กรุณาสุ่มผู้โชคดีก่อน'); if(gifts.length===0) return alert('ไม่มีของรางวัลเหลือ');
+  lastGift=gifts[Math.floor(Math.random()*gifts.length)]; winners.push({person:lastWinner,gift:lastGift,time:new Date().toLocaleString('th-TH')}); giftHistory.push(lastGift); gifts=gifts.filter(g=>g!==lastGift); document.getElementById('winnerArea').innerHTML+='<div class=winner-card style=margin-top:12px><div>ได้รับ</div><div style=font-size:24px;font-weight:700;color:#ffd700>🎁 '+lastGift+'</div></div>'; save();render(); confettiBurst(); lastWinner=null;
+}
+function clearAll(){if(confirm('ล้างทั้งหมด?')){winners=[];giftHistory=[];lastWinner=null;lastGift=null;document.getElementById('winnerArea').innerHTML='';document.getElementById('mainText').innerHTML='<h2>ผู้โชคดีรอบนี้คือ...</h2><p style=color:#94a3b8;margin-top:8px>กดปุ่มสุ่มด้านล่างเลย!</p>';save();render();}}
+function confettiBurst(){const c=document.getElementById('confetti'); for(let i=0;i<50;i++){const s=document.createElement('span'); s.style.left=Math.random()*100+'vw'; s.style.animationDelay=Math.random()*0.5+'s'; s.style.animationDuration=(Math.random()*2+1)+'s'; s.style.background=['#ffd700','#ff6b6b','#4ecdc4','#45b7d1','#96ceb4'][Math.floor(Math.random()*5)]; c.appendChild(s); setTimeout(()=>s.remove(),3000);}}
+let musicInt=null;
+function playMusic(){document.getElementById('musicStatus').textContent='♫ กำลังเล่น: '+document.getElementById('musicSel').value; if(musicInt) clearInterval(musicInt); let n=0; musicInt=setInterval(()=>{document.getElementById('musicStatus').textContent='♫ เล่น... '+['♪','♫','♬'][n%3]+' '+document.getElementById('musicSel').value; n++;},500);}
+function stopMusic(){if(musicInt) clearInterval(musicInt); document.getElementById('musicStatus').textContent='หยุดเล่น';}
+setInterval(()=>{const el=document.getElementById('clock'); if(el) el.textContent=new Date().toLocaleTimeString('th-TH')},1000);
+// confetti init
+const cf=document.getElementById('confetti'); for(let i=0;i<20;i++){const s=document.createElement('span'); s.style.left=Math.random()*100+'vw'; s.style.animationDelay=Math.random()*3+'s'; s.style.animationDuration=(Math.random()*3+2)+'s'; cf.appendChild(s);}
+render();
+</script></body></html>

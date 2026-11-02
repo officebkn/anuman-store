@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P017 ร้านมือถือแกดเจ็ต</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Kanit',sans-serif;box-sizing:border-box;margin:0;padding:0}
+body{background:#f1f5f9}
+.header{background:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.tabs{display:flex;gap:8px;padding:12px 20px;background:#fff}
+.tab{padding:8px 16px;border-radius:8px;background:#f1f5f9;cursor:pointer;font-size:14px}
+.tab.active{background:#3b82f6;color:#fff}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:20px}
+.card{background:#fff;border-radius:14px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.card .num{font-size:20px;font-weight:700;margin-top:6px}
+.warning{background:#fef3c7;border:1px solid #fde68a;border-radius:12px;padding:12px;margin:0 20px;display:flex;justify-content:space-between;align-items:center}
+.tips{background:#e0f2fe;border:1px solid #bae6fd;border-radius:12px;padding:12px;margin:12px 20px}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:12px;padding:0 20px 20px}
+.stock-table{background:#fff;border-radius:12px;padding:16px}
+.row{display:grid;grid-template-columns:1fr 80px 80px 80px;gap:8px;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:13px}
+</style></head><body>
+<div class="header"><div><b>📱 ร้านมือถือแกดเจ็ต</b> สาขาเซ็นทรัล - ระบบจัดการร้านมือถือ POS</div><div style="font-size:13px;color:#64748b">ซิงค์บนคลาวด์ ☁️ วันอาทิตย์ 18 ส.ค. 2567</div></div>
+<div class="tabs"><span class="tab active">แดชบอร์ด</span><span class="tab">คลังสินค้า</span><span class="tab">ขายหน้าร้าน</span><span class="tab">ประวัติขาย</span><span class="tab">ตั้งค่าการ</span></div>
+<div class="cards">
+<div class="card"><div style="color:#64748b;font-size:13px">สินค้าทั้งหมดในสต็อก</div><div class="num">14 ชิ้น</div><div style="font-size:12px;margin-top:6px;color:#64748b">มือถือมือ1:1 มือ2:1 แท็บเล็ต:1 อุปกรณ์เสริม:3 Gadget:8</div></div>
+<div class="card"><div style="color:#64748b;font-size:13px">มูลค่ารวม (ต้นทุน)</div><div class="num">฿137,670</div><div style="font-size:12px;color:#64748b">ต้นทุนสินค้าในสต็อก</div></div>
+<div class="card"><div style="color:#64748b;font-size:13px">มูลค่าขายรวม</div><div class="num">฿173,470</div><div style="font-size:12px;color:#16a34a">กำไรคาดการณ์ ฿35,800</div></div>
+<div class="card"><div style="color:#64748b;font-size:13px">ขายวันนี้ / กำไรวันนี้</div><div class="num">1 ชิ้น / ฿4,400</div><button onclick="sell()" style="margin-top:8px;padding:6px 12px;background:#3b82f6;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px">+ ขาย</button></div>
+</div>
+<div class="warning"><div><b>⚠ สินค้าใกล้หมด</b> อุปกรณ์เสริม &lt;5 1 รายการ<br><span style="font-size:13px">เคส iPhone 15 Pro Max แท้ TH88234567125 คงเหลือ 3 ชิ้น</span></div><button style="padding:6px 12px;background:#f59e0b;color:#fff;border:none;border-radius:8px;cursor:pointer">สั่งซื้อ</button></div>
+<div class="tips">💡 เคล็ดลับการใช้งาน: สแกนบาร์โค้ด USB Enter ได้ทันทีที่หน้า POS - ระบบจะค้นหาและเพิ่มลงตะกร้าอัตโนมัติ</div>
+<div class="grid2">
+<div class="stock-table">
+<h4>คลังสินค้าล่าสุด</h4>
+<div style="margin-top:12px">
+<div class="row" style="font-weight:600;color:#64748b"><span>สินค้า</span><span>คงเหลือ</span><span>ต้นทุน</span><span>ราคาขาย</span></div>
+<div id="stockRows"></div>
+</div>
+</div>
+<div class="stock-table">
+<h4>สรุปยอดขาย 7 วัน</h4>
+<canvas id="chart" width="300" height="160" style="margin-top:12px"></canvas>
+<div style="margin-top:12px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>วันนี้</span><span>1 ชิ้น ฿4,400</span></div>
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>เมื่อวาน</span><span>3 ชิ้น ฿12,200</span></div></div>
+</div>
+</div>
+<script>
+let stock=JSON.parse(localStorage.getItem('p017_stock')||'null')||[
+{name:'iPhone 14 128GB มือ1',qty:1,cost:22000,sale:26500},
+{name:'iPhone 13 64GB มือ2',qty:1,cost:15000,sale:18500},
+{name:'iPad Gen10',qty:1,cost:14500,sale:16900},
+{name:'เคส iPhone 15 Pro Max แท้',qty:3,cost:890,sale:1490},
+{name:'AirPods Pro 2',qty:2,cost:7500,sale:8900},
+{name:'สายชาร์จ Type-C',qty:6,cost:150,sale:290}
+];
+function render(){
+  document.getElementById('stockRows').innerHTML=stock.map(s=>'<div class=row><span>'+s.name+'</span><span>'+s.qty+'</span><span>฿'+s.cost+'</span><span>฿'+s.sale+'</span></div>').join('');
+  // simple chart
+  const c=document.getElementById('chart'); const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height);
+  const data=[1,3,2,5,2,4,1]; const max=Math.max(...data); const w=c.width/data.length; 
+  ctx.strokeStyle='#3b82f6'; ctx.lineWidth=2; ctx.beginPath();
+  data.forEach((v,i)=>{const x=i*w+w/2; const y=c.height- (v/max)*120 -10; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);});
+  ctx.stroke();
+  ctx.fillStyle='#3b82f622'; data.forEach((v,i)=>{const x=i*w+w/2; const y=c.height- (v/max)*120 -10; ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill();});
+}
+function sell(){const idx=prompt('เลือกสินค้า 0-'+(stock.length-1)+' (ชื่อ):\n'+stock.map((s,i)=>i+':'+s.name).join('\n'),'0'); if(idx===null) return; const i=parseInt(idx); if(stock[i] && stock[i].qty>0){stock[i].qty--; localStorage.setItem('p017_stock',JSON.stringify(stock)); render(); alert('ขาย '+stock[i].name+' สำเร็จ กำไร '+(stock[i].sale-stock[i].cost)+'฿');} else alert('สินค้าหมด');}
+render();
+</script></body></html>

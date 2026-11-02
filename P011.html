@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P011 Cafe แทนคุณภานิน - POS</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Kanit',sans-serif;box-sizing:border-box;margin:0;padding:0}
+body{background:#f5f1e8;color:#3a2a1a}
+.top{background:#2d1b0e;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center}
+.tabs{display:flex;gap:8px;padding:12px 20px;background:#fff;border-bottom:1px solid #e8dcc8}
+.tab{padding:8px 18px;border-radius:20px;cursor:pointer;background:#f5f1e8;font-size:14px}
+.tab.active{background:#2d1b0e;color:#fff}
+.cats{display:flex;gap:8px;padding:12px 20px;flex-wrap:wrap}
+.cat{padding:6px 14px;border-radius:16px;border:1px solid #d9c7a5;cursor:pointer;font-size:13px;background:#fff}
+.cat.active{background:#8b5a2b;color:#fff;border-color:#8b5a2b}
+.main{display:grid;grid-template-columns:1fr 340px;gap:0;min-height:calc(100vh - 110px)}
+.products{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:20px}
+.pcard{background:#fff;border-radius:12px;padding:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;transition:.2s}
+.pcard:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.1)}
+.pcard .price{color:#8b5a2b;font-weight:600;margin-top:6px}
+.cart{background:#fff;border-left:1px solid #e8dcc8;padding:16px;display:flex;flex-direction:column}
+.cart h3{margin-bottom:12px}
+.cart-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #eee;font-size:14px}
+.total-box{background:#fdf6e3;border-radius:12px;padding:14px;margin:14px 0}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{padding:12px;border:none;border-radius:10px;cursor:pointer;font-weight:600;font-size:15px}
+.btn-cash{background:#22c55e;color:#fff}
+.btn-qr{background:#3b82f6;color:#fff}
+.qty{display:flex;align-items:center;gap:6px}
+.qty button{width:24px;height:24px;border-radius:50%;border:1px solid #ccc;background:#fff;cursor:pointer}
+</style></head><body>
+<div class="top"><div>☕ Cafe แทนคุณภานิน - ระบบขายหน้าร้าน</div><div id="time"></div></div>
+<div class="tabs">
+<span class="tab active" data-tab="sale">ขายสินค้า</span>
+<span class="tab" data-tab="menu">จัดการเมนู</span>
+<span class="tab" data-tab="history">ประวัติ</span>
+<span class="tab" data-tab="report">รายงาน</span>
+</div>
+<div class="cats" id="cats"></div>
+<div class="main">
+<div class="products" id="products"></div>
+<div class="cart">
+<h3>ตะกร้าสินค้า</h3>
+<div id="cartList"><div style="color:#999;text-align:center;padding:20px">ยังไม่มีสินค้า</div></div>
+<div class="total-box">
+<div style="display:flex;justify-content:space-between"><span>ยอดรวม</span><span id="totalCount">0.00</span></div>
+<div style="display:flex;justify-content:space-between;font-size:22px;font-weight:700;margin-top:4px"><span>รวมทั้งสิ้น</span><span id="grand">฿0.00</span></div>
+</div>
+<div class="btns">
+<button class="btn btn-cash" onclick="checkout('เงินสด')">💵 เงินสด</button>
+<button class="btn btn-qr" onclick="checkout('PromptPay')">📱 PromptPay</button>
+</div>
+<div style="margin-top:12px"><button onclick="clearCart()" style="width:100%;padding:8px;border:1px solid #ddd;background:#fff;border-radius:8px;cursor:pointer">ล้างตะกร้า</button></div>
+</div>
+</div>
+<script>
+const products=[
+{id:1,name:'เอสเปรสโซ่',price:40,cat:'กาแฟ',emoji:'☕'},
+{id:2,name:'อเมริกาโน่',price:40,cat:'กาแฟ',emoji:'☕'},
+{id:3,name:'ลาเต้',price:45,cat:'กาแฟ',emoji:'🥛'},
+{id:4,name:'คาปูชิโน่',price:45,cat:'กาแฟ',emoji:'☕'},
+{id:5,name:'มอคค่า',price:50,cat:'กาแฟ',emoji:'🍫'},
+{id:6,name:'ชาไทย',price:40,cat:'ชา',emoji:'🧋'},
+{id:7,name:'ชาเขียว',price:40,cat:'ชา',emoji:'🍵'},
+{id:8,name:'ชามะนาว',price:40,cat:'ชา',emoji:'🍋'},
+{id:9,name:'นมสด',price:35,cat:'นมสด',emoji:'🥛'},
+{id:10,name:'นมสดคาราเมล',price:40,cat:'นมสด',emoji:'🍯'},
+{id:11,name:'แดงโซดา',price:35,cat:'น้ำแดงโซดา',emoji:'🥤'},
+{id:12,name:'ขนมปังปิ้ง',price:25,cat:'ขนม',emoji:'🍞'}
+];
+const cats=['ทั้งหมด','กาแฟ','ชา','นมสด','น้ำแดงโซดา','ขนม'];
+let activeCat='ทั้งหมด'; let cart=JSON.parse(localStorage.getItem('p011_cart')||'[]');
+function renderCats(){
+  document.getElementById('cats').innerHTML=cats.map(c=>'<span class="cat '+(c===activeCat?'active':'')+'" onclick="setCat(\''+c+'\')">'+c+'</span>').join('');
+}
+function setCat(c){activeCat=c;renderCats();renderProducts();}
+function renderProducts(){
+  const list=activeCat==='ทั้งหมด'?products:products.filter(p=>p.cat===activeCat);
+  document.getElementById('products').innerHTML=list.map(p=>`
+    <div class="pcard" onclick="addToCart(${p.id})">
+      <div style="font-size:36px">${p.emoji}</div>
+      <div style="font-weight:500;margin-top:6px">${p.name}</div>
+      <div class="price">${p.price}฿</div>
+      <div style="font-size:11px;color:#999">${p.cat}</div>
+    </div>`).join('');
+}
+function addToCart(id){
+  const prod=products.find(p=>p.id===id);
+  const found=cart.find(c=>c.id===id);
+  if(found) found.qty++; else cart.push({...prod,qty:1});
+  save();
+}
+function save(){localStorage.setItem('p011_cart',JSON.stringify(cart));renderCart();}
+function renderCart(){
+  if(cart.length===0){document.getElementById('cartList').innerHTML='<div style="color:#999;text-align:center;padding:20px">ยังไม่มีสินค้า</div>';}
+  else{
+    document.getElementById('cartList').innerHTML=cart.map((c,i)=>`
+      <div class="cart-item">
+        <span>${c.name} x${c.qty}</span>
+        <span class="qty">
+          <button onclick="changeQty(${i},-1)">-</button>${c.price*c.qty}฿<button onclick="changeQty(${i},1)">+</button>
+        </span>
+      </div>`).join('');
+  }
+  const total=cart.reduce((s,c)=>s+c.price*c.qty,0);
+  const count=cart.reduce((s,c)=>s+c.qty,0);
+  document.getElementById('totalCount').textContent=count.toFixed(2);
+  document.getElementById('grand').textContent='฿'+total.toFixed(2);
+}
+function changeQty(i,d){cart[i].qty+=d; if(cart[i].qty<=0) cart.splice(i,1); save();}
+function clearCart(){cart=[];save();}
+function checkout(method){
+  if(cart.length===0) return alert('กรุณาเลือกสินค้า');
+  const total=cart.reduce((s,c)=>s+c.price*c.qty,0);
+  const history=JSON.parse(localStorage.getItem('p011_history')||'[]');
+  history.unshift({date:new Date().toLocaleString('th-TH'),items:[...cart],total,method});
+  localStorage.setItem('p011_history',JSON.stringify(history));
+  alert('ชำระด้วย '+method+' สำเร็จ ยอด '+total+'฿'); clearCart();
+}
+setInterval(()=>{document.getElementById('time').textContent=new Date().toLocaleString('th-TH')},1000);
+renderCats();renderProducts();renderCart();
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',e=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); e.target.classList.add('active');
+  if(e.target.dataset.tab!=='sale') alert('แท็บ '+e.target.textContent+' - ใช้งานได้ในตัวเต็ม (ประวัติ/รายงาน ดึงจาก localStorage)');
+}));
+</script></body></html>

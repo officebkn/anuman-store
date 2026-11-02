@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P013 ระบบบัตรคิว</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Kanit',sans-serif;box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#fff}
+.top{display:flex;justify-content:space-between;padding:12px 20px;background:#1e293b}
+.layout{display:grid;grid-template-columns:320px 1fr 320px;gap:12px;padding:12px;min-height:calc(100vh - 200px)}
+.panel{background:#1e293b;border-radius:16px;padding:16px}
+.panel h3{margin-bottom:12px}
+.queue-box{background:#0f172a;border-radius:12px;padding:16px;text-align:center;margin-bottom:12px}
+.big{font-size:42px;font-weight:700}
+.green{color:#22c55e}.yellow{color:#eab308}
+.btn{width:100%;padding:12px;border:none;border-radius:10px;cursor:pointer;font-weight:600;margin-top:8px;font-size:15px}
+.btn-green{background:#22c55e;color:#fff}
+.btn-yellow{background:#eab308;color:#000}
+.btn-red{background:#ef4444;color:#fff}
+.btn-blue{background:#3b82f6;color:#fff;font-size:18px;padding:18px}
+.bottom{display:grid;grid-template-columns:2fr 1fr;gap:12px;padding:12px}
+.display{background:#1e293b;border-radius:16px;padding:20px;text-align:center}
+.display .num{font-size:64px;font-weight:800;color:#22c55e}
+.counter{display:flex;justify-content:space-between;background:#0f172a;padding:8px 12px;border-radius:8px;margin-top:8px;font-size:14px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.dot.on{background:#22c55e}.dot.off{background:#475569}
+</style></head><body>
+<div class="top"><div>🎫 ระบบจัดการคิว - Queue System</div><div id="time"></div></div>
+<div class="layout">
+<div class="panel">
+<h3>แผงควบคุมเจ้าหน้าที่</h3>
+<label>เลือกช่องบริการ</label>
+<select id="channelSel" style="width:100%;padding:10px;border-radius:8px;background:#0f172a;color:#fff;border:1px solid #334155;margin:8px 0">
+<option value="1">ช่องบริการที่ 1</option><option value="2" selected>ช่องบริการที่ 2</option><option value="3">ช่องบริการที่ 3</option>
+</select>
+<div class="queue-box"><div>คิวกำลังให้บริการ</div><div class="big green" id="serving">A002</div><div style="font-size:13px;color:#94a3b8">ช่องบริการที่ <span id="servChan">2</span></div></div>
+<button class="btn btn-green" onclick="callNext()">เรียกคิวถัดไป ▶</button>
+<button class="btn btn-yellow" onclick="recall()">🔁 เรียกซ้ำ</button>
+<button class="btn btn-red" onclick="resetQueue()">🗑 รีเซ็ตคิวประจำวัน</button>
+<div style="margin-top:16px"><div style="display:flex;justify-content:space-between"><span>คิวรอ</span><b id="waitCount">0 คิว</b></div>
+<div id="waitList" style="margin-top:8px;max-height:120px;overflow:auto"></div></div>
+</div>
+<div class="panel" style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center">
+<h2 style="font-size:28px">ยินดีต้อนรับ</h2><p style="color:#94a3b8;margin:8px 0 20px">กดรับบัตรคิว</p>
+<div style="width:120px;height:120px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:48px;margin:20px">🎟️</div>
+<button class="btn btn-blue" onclick="getQueue()">กดรับบัตรคิว</button>
+<div style="margin-top:20px;color:#94a3b8;font-size:13px">คิวปัจจุบันของคุณจะแสดงที่นี่<br><b id="myQueue" style="color:#fff;font-size:18px">-</b></div>
+</div>
+<div class="panel">
+<h3>สถานะช่องบริการ</h3>
+<div id="chStatus"></div>
+<div style="margin-top:16px">
+<div style="font-size:14px;margin-bottom:8px">คิวล่าสุดที่ออก</div>
+<div id="recent" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+</div>
+</div>
+</div>
+<div class="bottom">
+<div class="display">
+<div style="color:#94a3b8;letter-spacing:2px">หมายเลขคิวกำลังให้บริการ</div>
+<div>กำลังเรียกคิว <span id="callNum" class="big green">A002</span></div>
+<div style="font-size:24px;margin-top:8px">ช่องบริการ <span id="callChan" style="color:#3b82f6">2</span></div>
+<audio id="ding" src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA=="></audio>
+</div>
+<div class="panel">
+<h4>ภาพรวมระบบ</h4>
+<div class="counter"><span>กำลังให้บริการ</span><span>1 คิว <b id="ovServ">A002 ช่อง 2</b></span></div>
+<div class="counter"><span>กำลังรอคิว</span><span><b id="ovWait">0 คิว</b></span></div>
+<div class="counter"><span>ช่องบริการเปิดใช้งาน</span><span><b>2/3</b></span></div>
+</div>
+</div>
+<script>
+let state=JSON.parse(localStorage.getItem('p013_state')||'null')||{counter:2,queue:[],serving:'A002',channel:2,channels:{1:'ว่าง',2:'ใช้งาน',3:'ว่าง'},myLast:null};
+function save(){localStorage.setItem('p013_state',JSON.stringify(state))}
+function render(){
+  document.getElementById('serving').textContent=state.serving;
+  document.getElementById('servChan').textContent=state.channel;
+  document.getElementById('callNum').textContent=state.serving;
+  document.getElementById('callChan').textContent=state.channel;
+  document.getElementById('waitCount').textContent=state.queue.length+' คิว';
+  document.getElementById('ovWait').textContent=state.queue.length+' คิว';
+  document.getElementById('ovServ').textContent=state.serving+' ช่อง '+state.channel;
+  document.getElementById('waitList').innerHTML=state.queue.map(q=>'<div style="background:#0f172a;padding:6px 10px;border-radius:6px;margin-bottom:4px;display:flex;justify-content:space-between"><span>'+q+'</span><span style="color:#22c55e">รอ</span></div>').join('') || '<div style="color:#64748b;text-align:center">ไม่มีคิวรอ</div>';
+  document.getElementById('recent').innerHTML=Array.from({length:Math.min(8,state.counter)},(_,i)=>'<span style="background:#0f172a;padding:4px 8px;border-radius:6px;font-size:12px">A'+String(state.counter-i).padStart(3,'0')+'</span>').join('');
+  document.getElementById('chStatus').innerHTML=Object.entries(state.channels).map(([k,v])=>'<div class=counter><span><span class="dot '+(v==='ใช้งาน'?'on':'off')+'"></span> ช่อง '+k+'</span><span style="color:'+(v==='ใช้งาน'?'#22c55e':'#94a3b8')+'">'+v+'</span></div>').join('');
+  document.getElementById('myQueue').textContent=state.myLast||'-';
+  document.getElementById('channelSel').value=state.channel;
+}
+function getQueue(){
+  state.counter++; const q='A'+String(state.counter).padStart(3,'0'); state.queue.push(q); state.myLast=q; save();render(); alert('คุณได้รับคิว '+q);
+}
+function callNext(){
+  const ch=document.getElementById('channelSel').value; state.channel=ch;
+  if(state.queue.length===0){ alert('ไม่มีคิวรอ'); return; }
+  state.serving=state.queue.shift(); Object.keys(state.channels).forEach(k=>state.channels[k]='ว่าง'); state.channels[ch]='ใช้งาน'; save();render();
+  try{document.getElementById('ding').play()}catch(e){} 
+  if('speechSynthesis' in window){const u=new SpeechSynthesisUtterance('เชิญคิว '+state.serving+' ที่ช่องบริการที่ '+ch);u.lang='th-TH';speechSynthesis.speak(u);}
+}
+function recall(){
+  if('speechSynthesis' in window){const u=new SpeechSynthesisUtterance('เรียกซ้ำ คิว '+state.serving+' ช่อง '+state.channel);u.lang='th-TH';speechSynthesis.speak(u);}
+  alert('เรียกซ้ำคิว '+state.serving);
+}
+function resetQueue(){if(confirm('รีเซ็ตคิวประจำวัน?')){state={counter:0,queue:[],serving:'-',channel:2,channels:{1:'ว่าง',2:'ใช้งาน',3:'ว่าง'},myLast:null}; save();render();}}
+document.getElementById('channelSel').addEventListener('change',e=>{state.channel=e.target.value;save();render();});
+setInterval(()=>{document.getElementById('time').textContent=new Date().toLocaleString('th-TH')},1000);
+render();
+</script></body></html>
