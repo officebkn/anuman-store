@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ระบบบริหารร้านขายอะไหล่รถ</title>
+<style>
+*{box-sizing:border-box;font-family:"Segoe UI",Tahoma,sans-serif}
+body{margin:0;background:#f0f2f5;color:#1f2733}
+header{background:#0f172a;color:#fff;padding:12px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:18px;margin:0}
+header .sp{flex:1}
+nav{background:#1e293b;display:flex;flex-wrap:wrap}
+nav button{background:none;border:0;color:#94a3b8;padding:12px 18px;cursor:pointer;font-size:14px}
+nav button:hover{background:#334155;color:#fff}
+nav button.on{background:#f0f2f5;color:#0f172a;font-weight:700}
+main{padding:18px;max-width:1300px;margin:auto}
+.card{background:#fff;border-radius:10px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px #0001}
+.card h2{margin:0 0 12px;font-size:16px;color:#0f172a;border-left:4px solid #f59e0b;padding-left:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left}
+th{background:#f8fafc;font-size:12px;color:#64748b}
+tr:hover td{background:#f8fafc}
+input,select,textarea{padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;width:100%;background:#fff}
+label{font-size:12px;color:#64748b;display:block;margin-bottom:3px}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.col{flex:1;min-width:150px}
+button.b{background:#2563eb;color:#fff;border:0;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px}
+button.b:hover{opacity:.9}
+button.g{background:#16a34a}button.r{background:#dc2626}button.o{background:#d97706}button.s{background:#64748b}
+.pill{padding:2px 8px;border-radius:20px;font-size:11px;color:#fff;white-space:nowrap;display:inline-block}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.kpi{display:flex;gap:14px;flex-wrap:wrap}
+.kpi div{flex:1;min-width:150px;background:#fff;border-radius:10px;padding:14px;box-shadow:0 1px 3px #0001;border-top:4px solid #2563eb}
+.kpi b{display:block;font-size:24px;margin-top:4px;color:#0f172a}
+.warn{border-top-color:#dc2626!important}
+.ok{border-top-color:#16a34a!important}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:20px;z-index:50}
+.modal.on{display:flex}
+.box{background:#fff;border-radius:10px;padding:18px;width:100%;max-width:950px}
+.box h3{margin:0 0 14px;color:#0f172a}
+.alert{background:#fef3c7;border-left:4px solid #d97706;padding:10px;border-radius:6px;font-size:13px;margin-bottom:10px}
+.danger{background:#fee2e2;border-left-color:#dc2626}
+.pos-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+@media(max-width:900px){.pos-grid{grid-template-columns:1fr}}
+.pos-item{border:1px solid #e2e8f0;border-radius:8px;padding:10px;cursor:pointer;background:#fff;transition:.1s}
+.pos-item:hover{border-color:#2563eb;background:#f8fafc}
+#doc{display:none}
+#doc .paper{background:#fff;padding:30px;max-width:800px;margin:auto;font-size:13px;color:#000}
+#doc table{font-size:12px}
+#doc th,#doc td{border:1px solid #999;color:#000}
+.dhead{display:flex;justify-content:space-between;border-bottom:2px solid #0f172a;padding-bottom:10px;margin-bottom:14px}
+.dtitle{font-size:20px;font-weight:700;text-align:right}
+.sum td{border:0!important;padding:3px 6px}
+@media print{
+ body{background:#fff}
+ header,nav,main,.modal{display:none!important}
+ #doc{display:block!important}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚙️ <span id="hShop">ร้านอะไหล่ยนต์</span> — ระบบบริหารจัดการร้าน</h1>
+  <div class="sp"></div>
+  <span id="today" style="font-size:13px"></span>
+</header>
+
+<nav>
+  <button class="on" data-t="pos">🛒 ขายหน้าร้าน (POS)</button>
+  <button data-t="inv">📦 สต็อกอะไหล่</button>
+  <button data-t="bill">📜 ประวัติการขาย</button>
+  <button data-t="cus">🤝 ลูกค้า / อู่เครดิต</button>
+  <button data-t="rep">📊 รายงานยอดขาย</button>
+  <button data-t="set">⚙️ ตั้งค่าร้าน</button>
+</nav>
+
+<main>
+
+<!-- ============ POS ขายหน้าร้าน ============ -->
+<section id="t-pos">
+  <div class="pos-grid">
+    <div class="card">
+      <h2>ค้นหาและเลือกสินค้า</h2>
+      <div class="tools">
+        <input id="qPos" placeholder="พิมพ์ค้นหา: รหัส / ชื่ออะไหล่ / รุ่นรถ / ยี่ห้อ..." oninput="renderPosCatalog()">
+      </div>
+      <div id="posCatalog" style="max-height:500px;overflow:auto;display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column">
+      <h2>รายการขายในบิล</h2>
+      <div class="row">
+        <div class="col"><label>ลูกค้า / อู่</label><select id="posCus"></select></div>
+        <div class="col"><label>ประเภทราคา</label><select id="posPriceType" onchange="renderPosCart()"><option value="retail">ราคาปลีก</option><option value="wholesale">ราคาส่ง (อู่)</option></select></div>
+      </div>
+      <div style="flex:1;max-height:260px;overflow:auto;margin-bottom:10px">
+        <table style="font-size:12px">
+          <thead><tr><th>สินค้า</th><th width="60">จำนวน</th><th width="80">ราคา</th><th width="80">รวม</th><th width="30"></th></tr></thead>
+          <tbody id="posCartList"><tr><td colspan="5" style="text-align:center;color:#64748b">ยังไม่มีสินค้าในตะกร้า</td></tr></tbody>
+        </table>
+      </div>
+      <div style="background:#f8fafc;padding:10px;border-radius:8px;margin-bottom:10px">
+        <div class="row" style="margin:0 0 6px"><div class="col">รวมเป็นเงิน</div><div class="col" style="text-align:right" id="posSub">0.00</div></div>
+        <div class="row" style="margin:0 0 6px"><div class="col">ส่วนลด</div><div class="col"><input type="number" id="posDisc" value="0" oninput="renderPosCart()" style="padding:2px 6px;text-align:right"></div></div>
+        <div class="row" style="margin:0 0 6px"><div class="col"><label style="margin:0"><input type="checkbox" id="posVatChk" style="width:auto" onchange="renderPosCart()"> คิด VAT 7%</label></div><div class="col" style="text-align:right" id="posVat">0.00</div></div>
+        <div class="row" style="margin:0;font-size:16px;font-weight:700;color:#0f172a"><div class="col">ยอดสุทธิ</div><div class="col" style="text-align:right;color:#2563eb" id="posTotal">0.00</div></div>
+      </div>
+      <div class="row">
+        <div class="col"><label>การชำระเงิน</label><select id="posPay"><option value="cash">เงินสด</option><option value="transfer">โอนเงิน</option><option value="credit">เงินเชื่อ / ลงบัญชีอู่</option></select></div>
+      </div>
+      <button class="b g" style="padding:12px;font-size:15px;margin-top:6px" onclick="posCheckout()">💾 ยืนยันการขาย / พิมพ์บิล</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ สต็อกอะไหล่ ============ -->
+<section id="t-inv" style="display:none">
+  <div class="kpi" id="invKpi" style="margin-bottom:16px"></div>
+  <div class="card">
+    <h2>คลังสินค้า & อะไหล่</h2>
+    <div class="tools">
+      <button class="b g" onclick="partEdit()">+ เพิ่มอะไหล่ใหม่</button>
+      <button class="b o" onclick="stockInModal()">↓ รับของเข้าสต็อก</button>
+      <input id="qInv" placeholder="ค้นหา: รหัส, ชื่อ, รุ่นรถ, ยี่ห้อ..." style="max-width:300px" oninput="renderInv()">
+      <label style="margin:0"><input type="checkbox" id="onlyLow" style="width:auto" onchange="renderInv()"> เฉพาะใกล้หมด</label>
+    </div>
+    <div id="invList"></div>
+  </div>
+</section>
+
+<!-- ============ ประวัติการขาย ============ -->
+<section id="t-bill" style="display:none">
+  <div class="card">
+    <h2>ประวัติการขาย / บิลย้อนหลัง</h2>
+    <div class="tools">
+      <input id="qBill" placeholder="ค้นหาเลขที่บิล / ลูกค้า" style="max-width:280px" oninput="renderBills()">
+    </div>
+    <div id="billList"></div>
+  </div>
+</section>
+
+<!-- ============ ลูกค้า / อู่ ============ -->
+<section id="t-cus" style="display:none">
+  <div class="card">
+    <h2>ลูกค้าร้านค้า / อู่ซ่อมรถเครดิต</h2>
+    <div class="tools">
+      <button class="b g" onclick="cusEdit()">+ เพิ่มลูกค้า/อู่</button>
+      <input id="qCus" placeholder="ค้นหาชื่อ / เบอร์โทร" style="max-width:280px" oninput="renderCus()">
+    </div>
+    <div id="cusList"></div>
+  </div>
+</section>
+
+<!-- ============ รายงาน ============ -->
+<section id="t-rep" style="display:none">
+  <div class="card">
+    <h2>รายงานยอดขาย</h2>
+    <div class="row">
+      <div class="col"><label>ตั้งแต่วันที่</label><input type="date" id="r1"></div>
+      <div class="col"><label>ถึงวันที่</label><input type="date" id="r2"></div>
+      <div class="col" style="display:flex;align-items:flex-end"><button class="b" onclick="renderRep()">ดูรายงาน</button></div>
+    </div>
+    <div id="repOut"></div>
+  </div>
+</section>
+
+<!-- ============ ตั้งค่า ============ -->
+<section id="t-set" style="display:none">
+  <div class="card">
+    <h2>ข้อมูลร้าน (พิมพ์หัวบิล A4)</h2>
+    <div class="row">
+      <div class="col"><label>ชื่อร้าน</label><input id="sName"></div>
+      <div class="col"><label>เลขประจำตัวผู้เสียภาษี</label><input id="sTax"></div>
+    </div>
+    <div class="row">
+      <div class="col"><label>ที่อยู่</label><input id="sAddr"></div>
+      <div class="col"><label>โทรศัพท์</label><input id="sPhone"></div>
+    </div>
+    <div class="row">
+      <div class="col"><label>อัตรา VAT (%)</label><input type="number" id="sVat" value="7"></div>
+    </div>
+    <button class="b g" onclick="saveSet()">บันทึกการตั้งค่า</button>
+  </div>
+  <div class="card">
+    <h2>สำรอง / กู้คืนข้อมูล</h2>
+    <button class="b" onclick="backup()">⬇ สำรองข้อมูล (.json)</button>
+    <button class="b o" onclick="document.getElementById('fRes').click()">⬆ กู้คืนข้อมูล</button>
+    <input type="file" id="fRes" accept=".json" style="display:none" onchange="restore(this)">
+    <button class="b r" onclick="wipe()">ล้างข้อมูลทั้งหมด</button>
+  </div>
+</section>
+
+</main>
+
+<!-- MODALS -->
+<div class="modal" id="mdl"><div class="box" id="mdlBox"></div></div>
+<div id="doc"></div>
+
+<script>
+const KEY='spare_shop_db_v1';
+let DB=JSON.parse(localStorage.getItem(KEY)||'null')||{
+  settings:{name:'รุ่งเรืองอะไหล่ยนต์',tax:'0105558000123',addr:'88/1 ถ.มิตรภาพ อ.เมือง จ.ขอนแก่น 40000',phone:'***-***-***',vat:7},
+  customers:[{id:'walkin',name:'ลูกค้าทั่วไป (เงินสด)',phone:'-',type:'retail',credit:0}],
+  parts:[],
+  bills:[],
+  counter:1
+};
+const save=()=>localStorage.setItem(KEY,JSON.stringify(DB));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const n2=v=>(+v||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const today=()=>new Date().toISOString().slice(0,10);
+const thDate=d=>{if(!d)return'-';const[y,m,dd]=d.split('-');return dd+'/'+m+'/'+(+y+543);};
+const el=i=>document.getElementById(i);
+const openM=h=>{el('mdlBox').innerHTML=h;el('mdl').classList.add('on');};
+const closeM=()=>el('mdl').classList.remove('on');
+
+/* ระบบสลับหน้าจอ Tab */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  const t=b.dataset.t;
+  ['pos','inv','bill','cus','rep','set'].forEach(tab=>{
+    el('t-'+tab).style.display = (tab===t) ? 'block' : 'none';
+  });
+  renderAll();
+});
+
+/* ============ POS ขายหน้าร้าน ============ */
+let cart=[];
+function renderPosCatalog(){
+  const q=(el('qPos').value||'').toLowerCase();
+  let list=DB.parts;
+  if(q) list=list.filter(p=>(p.code+p.name+p.carModel+p.brand+p.shelf).toLowerCase().includes(q));
+  el('posCatalog').innerHTML=list.length?list.map(p=>{
+    const low=+p.qty<=+p.minQty;
+    return `<div class="pos-item" onclick="posAddToCart('${p.id}')">
+      <div style="display:flex;justify-content:space-between"><b>${esc(p.code)} — ${esc(p.name)}</b> <span class="pill" style="background:${low?'#dc2626':'#16a34a'}">เหลือ: ${p.qty} ${esc(p.unit)}</span></div>
+      <div style="font-size:12px;color:#64748b;margin-top:3px">รุ่นรถ: <b>${esc(p.carModel||'-')}</b> | ยี่ห้อ: ${esc(p.brand||'-')} | ชั้นวาง: ${esc(p.shelf||'-')}</div>
+      <div style="margin-top:4px;font-weight:700;color:#2563eb">ปลีก: ${n2(p.retailPrice)} ฿ | ส่ง(อู่): ${n2(p.wholesalePrice)} ฿</div>
+    </div>`;
+  }).join(''):'<p style="color:#64748b;font-size:13px;text-align:center">ไม่พบสินค้า</p>';
+}
+
+function posAddToCart(id){
+  const p=DB.parts.find(x=>x.id===id); if(!p||p.qty<=0) return alert('สินค้าหมดสต็อก!');
+  const exist=cart.find(x=>x.id===id);
+  if(exist){
+    if(exist.qty>=p.qty) return alert('สินค้าในสต็อกไม่พอ');
+    exist.qty++;
+  }else{
+    cart.push({id:p.id,code:p.code,name:p.name,qty:1,max:p.qty,retail:p.retailPrice,wholesale:p.wholesalePrice});
+  }
+  renderPosCart();
+}
+
+function renderPosCart(){
+  const pType=el('posPriceType').value;
+  el('posCartList').innerHTML=cart.length?cart.map((item,i)=>{
+    const price=pType==='retail'?item.retail:item.wholesale;
+    return `<tr>
+      <td>${esc(item.code)}<br><small>${esc(item.name)}</small></td>
+      <td><input type="number" min="1" max="${item.max}" value="${item.qty}" style="width:50px;padding:2px" onchange="cart[${i}].qty=+this.value;renderPosCart()"></td>
+      <td>${n2(price)}</td>
+      <td style="text-align:right">${n2(item.qty*price)}</td>
+      <td><button class="b r" style="padding:2px 6px" onclick="cart.splice(${i},1);renderPosCart()">×</button></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="5" style="text-align:center;color:#64748b">ยังไม่มีสินค้าในตะกร้า</td></tr>';
+
+  const sub=cart.reduce((s,item)=>s+item.qty*(pType==='retail'?item.retail:item.wholesale),0);
+  const disc=+el('posDisc').value||0;
+  const base=sub-disc;
+  const useVat=el('posVatChk').checked;
+  const vat=useVat?base*(DB.settings.vat/100):0;
+  const total=base+vat;
+
+  el('posSub').textContent=n2(sub);
+  el('posVat').textContent=n2(vat);
+  el('posTotal').textContent=n2(total);
+}
+
+function posCheckout(){
+  if(!cart.length) return alert('กรุณาเลือกสินค้าใส่ตะกร้าก่อน');
+  const pType=el('posPriceType').value;
+  const cusId=el('posCus').value;
+  const pay=el('posPay').value;
+  const sub=cart.reduce((s,item)=>s+item.qty*(pType==='retail'?item.retail:item.wholesale),0);
+  const disc=+el('posDisc').value||0;
+  const base=sub-disc;
+  const useVat=el('posVatChk').checked;
+  const vat=useVat?base*(DB.settings.vat/100):0;
+  const total=base+vat;
+
+  cart.forEach(item=>{
+    const p=DB.parts.find(x=>x.id===item.id);
+    if(p) p.qty -= item.qty;
+  });
+
+  if(pay==='credit' && cusId!=='walkin'){
+    const c=DB.customers.find(x=>x.id===cusId);
+    if(c) c.credit = (+c.credit||0) + total;
+  }
+
+  const billNo='IV'+String(DB.counter++).padStart(5,'0');
+  const newBill={
+    id:uid(),no:billNo,date:today(),time:new Date().toLocaleTimeString(),
+    cusId,items:JSON.parse(JSON.stringify(cart)),sub,disc,base,vat,total,useVat,pay,pType
+  };
+  DB.bills.push(newBill);
+  save();
+
+  alert('บันทึกการขายสำเร็จ ✅');
+  printBill(newBill.id);
+  cart=[]; renderPosCart(); renderPosCatalog(); renderInv();
+}
+
+/* ============ สต็อกอะไหล่ ============ */
+function renderInv(){
+  const q=(el('qInv').value||'').toLowerCase();
+  const onlyLow=el('onlyLow').checked;
+  let list=DB.parts;
+  if(q) list=list.filter(p=>(p.code+p.name+p.carModel+p.brand+p.shelf).toLowerCase().includes(q));
+  if(onlyLow) list=list.filter(p=>+p.qty<=+p.minQty);
+
+  el('invList').innerHTML=`<table><tr><th>รหัส</th><th>ชื่ออะไหล่</th><th>รุ่นรถ / ยี่ห้อ</th><th>ชั้นวาง</th><th style="text-align:right">ทุน</th><th style="text-align:right">ปลีก</th><th style="text-align:right">ส่ง (อู่)</th><th style="text-align:right">คงเหลือ</th><th>สถานะ</th><th></th></tr>`+
+  (list.length?list.map(p=>{
+    const low=+p.qty<=+p.minQty;
+    return `<tr>
+      <td><b>${esc(p.code)}</b></td>
+      <td>${esc(p.name)}</td>
+      <td>${esc(p.carModel||'-')} <small style="color:#64748b">(${esc(p.brand||'-')})</small></td>
+      <td>${esc(p.shelf||'-')}</td>
+      <td style="text-align:right">${n2(p.cost)}</td>
+      <td style="text-align:right">${n2(p.retailPrice)}</td>
+      <td style="text-align:right">${n2(p.wholesalePrice)}</td>
+      <td style="text-align:right;${low?'color:#dc2626;font-weight:700':''}">${p.qty} ${esc(p.unit)}</td>
+      <td><span class="pill" style="background:${low?'#dc2626':'#16a34a'}">${low?'ใกล้หมด':'ปกติ'}</span></td>
+      <td style="white-space:nowrap">
+        <button class="b" onclick="partEdit('${p.id}')">แก้ไข</button>
+        <button class="b r" onclick="partDel('${p.id}')">ลบ</button>
+      </td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="10" style="color:#64748b">ไม่พบรายการอะไหล่</td></tr>')+'</table>';
+
+  const totalParts=DB.parts.length;
+  const lowParts=DB.parts.filter(p=>+p.qty<=+p.minQty).length;
+  el('invKpi').innerHTML=`
+    <div><label>รายการอะไหล่ทั้งหมด</label><b>${totalParts}</b></div>
+    <div class="${lowParts?'warn':'ok'}"><label>อะไหล่ใกล้หมดสต็อก</label><b>${lowParts}</b></div>
+  `;
+}
+
+function partEdit(id){
+  const p=id?DB.parts.find(x=>x.id===id):{id:'',code:'',name:'',carModel:'',brand:'',shelf:'',unit:'ชิ้น',cost:0,retailPrice:0,wholesalePrice:0,qty:0,minQty:3};
+  openM(`<h3>${id?'แก้ไขอะไหล่':'เพิ่มอะไหล่ใหม่'}</h3>
+  <div class="row">
+    <div class="col"><label>รหัสอะไหล่ *</label><input id="pC" value="${esc(p.code)}"></div>
+    <div class="col" style="min-width:260px"><label>ชื่ออะไหล่ *</label><input id="pN" value="${esc(p.name)}"></div>
+    <div class="col"><label>หน่วย</label><input id="pU" value="${esc(p.unit)}"></div>
+  </div>
+  <div class="row">
+    <div class="col"><label>รุ่นรถ (เช่น Vios, D-Max, Civic)</label><input id="pCar" value="${esc(p.carModel||'')}"></div>
+    <div class="col"><label>ยี่ห้อสินค้า (เช่น Toyota, Honda, Denso)</label><input id="pB" value="${esc(p.brand||'')}"></div>
+    <div class="col"><label>ตำแหน่งชั้นวาง (เช่น โซน A ชั้น 2)</label><input id="pS" value="${esc(p.shelf||'')}"></div>
+  </div>
+  <div class="row">
+    <div class="col"><label>ราคาทุน</label><input type="number" step="0.01" id="pCost" value="${p.cost}"></div>
+    <div class="col"><label>ราคาขายปลีก</label><input type="number" step="0.01" id="pRet" value="${p.retailPrice}"></div>
+    <div class="col"><label>ราคาส่ง (อู่)</label><input type="number" step="0.01" id="pWho" value="${p.wholesalePrice}"></div>
+  </div>
+  <div class="row">
+    <div class="col"><label>จำนวนคงเหลือ</label><input type="number" step="0.01" id="pQty" value="${p.qty}"></div>
+    <div class="col"><label>แจ้งเตือนเมื่อเหลือต่ำกว่า</label><input type="number" id="pMin" value="${p.minQty}"></div>
+  </div>
+  <div style="text-align:right"><button class="b s" onclick="closeM()">ยกเลิก</button> <button class="b g" onclick="partSave('${id||''}')">บันทึก</button></div>`);
+}
+
+function partSave(id){
+  const o={
+    code:el('pC').value.trim(),name:el('pN').value.trim(),carModel:el('pCar').value.trim(),
+    brand:el('pB').value.trim(),shelf:el('pS').value.trim(),unit:el('pU').value.trim()||'ชิ้น',
+    cost:+el('pCost').value,retailPrice:+el('pRet').value,wholesalePrice:+el('pWho').value,
+    qty:+el('pQty').value,minQty:+el('pMin').value
+  };
+  if(!o.name || !o.code) return alert('กรุณากรอกรหัสและชื่ออะไหล่');
+  if(id){
+    const p=DB.parts.find(x=>x.id===id); Object.assign(p,o);
+  }else{
+    DB.parts.push({id:uid(),...o});
+  }
+  save(); closeM(); renderAll();
+}
+
+function partDel(id){
+  if(confirm('ยืนยันลบอะไหล่นี้?')){ DB.parts=DB.parts.filter(x=>x.id!==id); save(); renderAll(); }
+}
+
+function stockInModal(){
+  if(!DB.parts.length) return alert('ยังไม่มีอะไหล่ในระบบ');
+  openM(`<h3>รับของเข้าสต็อก</h3>
+  <div class="row">
+    <div class="col" style="min-width:300px"><label>เลือกอะไหล่</label><select id="siId">${DB.parts.map(p=>`<option value="${p.id}">${esc(p.code)} | ${esc(p.name)} (คงเหลือ ${p.qty})</option>`).join('')}</select></div>
+    <div class="col"><label>จำนวนรับเข้าเพิ่ม</label><input type="number" step="0.01" id="siQty" value="1"></div>
+  </div>
+  <div style="text-align:right"><button class="b s" onclick="closeM()">ยกเลิก</button> <button class="b g" onclick="stockInSave()">บันทึกรับเข้า</button></div>`);
+}
+function stockInSave(){
+  const p=DB.parts.find(x=>x.id===el('siId').value);
+  if(p){ p.qty += (+el('siQty').value||0); save(); closeM(); renderAll(); alert('รับของเข้าเรียบร้อย ✅'); }
+}
+
+/* ============ ประวัติการขาย ============ */
+function renderBills(){
+  const q=(el('qBill').value||'').toLowerCase();
+  let list=DB.bills.slice().reverse();
+  if(q) list=list.filter(b=>(b.no+getCusName(b.cusId)).toLowerCase().includes(q));
+
+  el('billList').innerHTML=`<table><tr><th>เลขที่บิล</th><th>วันที่-เวลา</th><th>ลูกค้า / อู่</th><th>ประเภทราคา</th><th>ชำระโดย</th><th style="text-align:right">ยอดสุทธิ</th><th>จัดการ</th></tr>`+
+  (list.length?list.map(b=>`<tr>
+    <td><b>${esc(b.no)}</b></td>
+    <td>${thDate(b.date)} ${esc(b.time)}</td>
+    <td>${esc(getCusName(b.cusId))}</td>
+    <td>${b.pType==='retail'?'ราคาปลีก':'ราคาส่ง (อู่)'}</td>
+    <td>${b.pay==='cash'?'เงินสด':(b.pay==='transfer'?'โอนเงิน':'เงินเชื่อ')}</td>
+    <td style="text-align:right">${n2(b.total)}</td>
+    <td>
+      <button class="b" onclick="printBill('${b.id}')">🖨 พิมพ์บิล</button>
+      <button class="b r" onclick="billDel('${b.id}')">ลบ</button>
+    </td>
+  </tr>`).join(''):'<tr><td colspan="7" style="color:#64748b">ยังไม่มีประวัติการขาย</td></tr>')+'</table>';
+}
+
+function getCusName(id){ const c=DB.customers.find(x=>x.id===id); return c?c.name:'ลูกค้าทั่วไป'; }
+
+function billDel(id){
+  if(confirm('ยืนยันลบบิลนี้? (ยอดสต็อกจะไม่ถูกคืนอัตโนมัติ)')){ DB.bills=DB.bills.filter(x=>x.id!==id); save(); renderAll(); }
+}
+
+/* ============ ลูกค้า / อู่เครดิต ============ */
+function renderCus(){
+  const q=(el('qCus').value||'').toLowerCase();
+  let list=DB.customers;
+  if(q) list=list.filter(c=>(c.name+c.phone).toLowerCase().includes(q));
+
+  el('cusList').innerHTML=`<table><tr><th>ชื่อลูกค้า / อู่ซ่อมรถ</th><th>เบอร์โทร</th><th>ประเภท</th><th style="text-align:right">ยอดหนี้ค้างชำระ</th><th></th></tr>`+
+  (list.length?list.map(c=>`<tr>
+    <td><b>${esc(c.name)}</b></td>
+    <td>${esc(c.phone)}</td>
+    <td>${c.type==='retail'?'ลูกค้ารายย่อย':'อู่ซ่อมรถ / ลูกค้าส่ง'}</td>
+    <td style="text-align:right;color:${c.credit>0?'#dc2626':'inherit'};font-weight:${c.credit>0?'700':'normal'}">${n2(c.credit)} ฿</td>
+    <td style="text-align:right">
+      ${c.credit>0?`<button class="b g" onclick="payCredit('${c.id}')">รับชำระหนี้</button>`:''}
+      <button class="b" onclick="cusEdit('${c.id}')">แก้ไข</button>
+      ${c.id!=='walkin'?`<button class="b r" onclick="cusDel('${c.id}')">ลบ</button>`:''}
+    </td>
+  </tr>`).join(''):'<tr><td colspan="5" style="color:#64748b">ไม่มีข้อมูลลูกค้า</td></tr>')+'</table>';
+}
+
+function cusEdit(id){
+  const c=id?DB.customers.find(x=>x.id===id):{id:'',name:'',phone:'',type:'wholesale'};
+  openM(`<h3>${id?'แก้ไขข้อมูลลูกค้า':'เพิ่มอู่/ลูกค้าใหม่'}</h3>
+  <div class="row">
+    <div class="col"><label>ชื่อลูกค้า / ชื่ออู่ซ่อมรถ *</label><input id="cuN" value="${esc(c.name)}"></div>
+    <div class="col"><label>เบอร์โทรศัพท์</label><input id="cuP" value="${esc(c.phone)}"></div>
+  </div>
+  <div class="row">
+    <div class="col"><label>ประเภทลูกค้า</label><select id="cuT"><option value="wholesale" ${c.type==='wholesale'?'selected':''}>อู่ซ่อมรถ / ลูกค้าส่ง</option><option value="retail" ${c.type==='retail'?'selected':''}>ลูกค้ารายย่อยทั่วไป</option></select></div>
+  </div>
+  <div style="text-align:right"><button class="b s" onclick="closeM()">ยกเลิก</button> <button class="b g" onclick="cusSave('${id||''}')">บันทึก</button></div>`);
+}
+
+function cusSave(id){
+  const o={name:el('cuN').value.trim(),phone:el('cuP').value.trim(),type:el('cuT').value};
+  if(!o.name) return alert('กรุณากรอกชื่อลูกค้า');
+  if(id){ const c=DB.customers.find(x=>x.id===id); Object.assign(c,o); }
+  else{ DB.customers.push({id:uid(),credit:0,...o}); }
+  save(); closeM(); renderAll();
+}
+
+function cusDel(id){
+  if(confirm('ยืนยันลบลูกค้านี้?')){ DB.customers=DB.customers.filter(x=>x.id!==id); save(); renderAll(); }
+}
+
+function payCredit(id){
+  const c=DB.customers.find(x=>x.id===id);
+  const amt=prompt(`ลูกหนี้: ${c.name}\nยอดค้างชำระปัจจุบัน: ${n2(c.credit)} ฿\nกรอกจำนวนเงินที่มาชำระ:`, c.credit);
+  if(amt!==null){
+    const pay=+amt||0;
+    if(pay>0){
+      c.credit = Math.max(0, c.credit - pay);
+      save(); renderAll(); alert('บันทึกรับชำระหนี้เรียบร้อย ✅');
+    }
+  }
+}
+
+/* ============ พิมพ์บิล A4 ============ */
+function printBill(id){
+  const b=DB.bills.find(x=>x.id===id); if(!b) return;
+  const s=DB.settings; const c=DB.customers.find(x=>x.id===b.cusId)||{name:'ลูกค้าทั่วไป',phone:'-'};
+  
+  el('doc').innerHTML=`<div class="paper">
+    <div class="dhead">
+      <div>
+        <div style="font-size:20px;font-weight:700">${esc(s.name)}</div>
+        <div style="font-size:12px;line-height:1.6">${esc(s.addr)}<br>โทร. ${esc(s.phone)} | เลขประจำตัวผู้เสียภาษี ${esc(s.tax)}</div>
+      </div>
+      <div>
+        <div class="dtitle">ใบกำกับภาษี / ใบเสร็จรับเงิน</div>
+        <div style="text-align:right;font-size:12px;margin-top:6px">เลขที่: <b>${b.no}</b><br>วันที่: ${thDate(b.date)} ${esc(b.time)}</div>
+      </div>
+    </div>
+    <table style="margin-bottom:14px"><tr>
+      <td width="60%"><b>ลูกค้า:</b> ${esc(c.name)}<br>โทรศัพท์: ${esc(c.phone||'-')}</td>
+      <td><b>รูปแบบการขาย:</b> ${b.pType==='retail'?'ขายปลีก':'ขายส่ง (อู่)'}<br><b>การชำระ:</b> ${b.pay==='cash'?'เงินสด':(b.pay==='transfer'?'โอนเงิน':'เงินเชื่อ')}</td>
+    </tr></table>
+    <table>
+      <thead><tr><th width="40">ลำดับ</th><th>รายการอะไหล่</th><th width="60" style="text-align:center">จำนวน</th><th width="90" style="text-align:right">ราคา/หน่วย</th><th width="100" style="text-align:right">จำนวนเงิน</th></tr></thead>
+      <tbody>
+        ${b.items.map((it,i)=>{
+          const pr=b.pType==='retail'?it.retail:it.wholesale;
+          return `<tr>
+            <td style="text-align:center">${i+1}</td>
+            <td><b>${esc(it.code)}</b> — ${esc(it.name)}</td>
+            <td style="text-align:center">${it.qty}</td>
+            <td style="text-align:right">${n2(pr)}</td>
+            <td style="text-align:right">${n2(it.qty*pr)}</td>
+          </tr>`;
+        }).join('')}
+        ${Array(Math.max(0,6-b.items.length)).fill('<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>').join('')}
+      </tbody>
+    </table>
+    <table class="sum" style="margin-left:auto;width:300px;margin-top:10px">
+      <tr><td>รวมเป็นเงิน</td><td style="text-align:right">${n2(b.sub)}</td></tr>
+      <tr><td>ส่วนลด</td><td style="text-align:right">-${n2(b.disc)}</td></tr>
+      ${b.useVat?`<tr><td>มูลค่าก่อนภาษี</td><td style="text-align:right">${n2(b.base)}</td></tr>
+      <tr><td>ภาษีมูลค่าเพิ่ม ${s.vat}%</td><td style="text-align:right">${n2(b.vat)}</td></tr>`:''}
+      <tr><td style="border-top:1px solid #000;font-size:15px"><b>ยอดสุทธิ</b></td><td style="text-align:right;border-top:1px solid #000;font-size:15px"><b>${n2(b.total)}</b></td></tr>
+    </table>
+    <div style="display:flex;justify-content:space-between;margin-top:60px;font-size:12px;text-align:center">
+      <div style="width:40%">..............................................................<br>ผู้รับเงิน / ผู้ออกบิล</div>
+      <div style="width:40%">..............................................................<br>ผู้ซื้อสินค้า / ลูกค้า</div>
+    </div>
+  </div>`;
+  el('doc').style.display='block'; window.print(); el('doc').style.display='none';
+}
+
+/* ============ รายงาน ============ */
+function renderRep(){
+  const a=el('r1').value||'0000-01-01', b=el('r2').value||'9999-12-31';
+  const list=DB.bills.filter(x=>x.date>=a&&x.date<=b);
+  const totalSales=list.reduce((s,x)=>s+x.total,0);
+  const totalVat=list.reduce((s,x)=>s+x.vat,0);
+
+  el('repOut').innerHTML=`
+    <div class="kpi" style="margin-top:14px;margin-bottom:14px">
+      <div><label>จำนวนบิลขาย</label><b>${list.length} บิล</b></div>
+      <div class="ok"><label>ยอดขายสุทธิรวม</label><b>${n2(totalSales)} ฿</b></div>
+      <div><label>ภาษีขาย (VAT) รวม</label><b>${n2(totalVat)} ฿</b></div>
+    </div>
+  `;
+}
+
+/* ============ ตั้งค่า ============ */
+function saveSet(){
+  DB.settings={name:el('sName').value,tax:el('sTax').value,addr:el('sAddr').value,phone:el('sPhone').value,vat:+el('sVat').value};
+  save(); alert('บันทึกการตั้งค่าเรียบร้อย ✅');
+}
+
+function backup(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(DB)],{type:'application/json'}));
+  a.download='spare_shop_backup_'+today()+'.json'; a.click();
+}
+function restore(f){
+  const r=new FileReader();
+  r.onload=e=>{try{DB=JSON.parse(e.target.result);save();location.reload();}catch{alert('ไฟล์ไม่ถูกต้อง');}};
+  r.readAsText(f.files[0]);
+}
+function wipe(){if(confirm('ลบข้อมูลทั้งหมดจริงหรือไม่?')) {localStorage.removeItem(KEY); location.reload();}}
+
+/* เริ่มต้นโหลดทุกหน้า */
+function renderAll(){
+  el('today').textContent='วันที่ '+thDate(today());
+  el('sName').value=DB.settings.name; el('sTax').value=DB.settings.tax;
+  el('sAddr').value=DB.settings.addr; el('sPhone').value=DB.settings.phone; el('sVat').value=DB.settings.vat;
+  
+  el('posCus').innerHTML=DB.customers.map(c=>`<option value="${c.id}">${esc(c.name)} ${c.credit>0?'(ค้างหนี้: '+n2(c.credit)+')':''}</option>`).join('');
+
+  renderPosCatalog(); 
+  renderInv(); 
+  renderBills(); 
+  renderCus();
+}
+
+el('mdl').onclick=e=>{if(e.target.id==='mdl')closeM();};
+
+if(!DB.parts.length){
+  DB.parts=[
+    {id:uid(),code:'OEL-01',name:'น้ำมันเครื่องกึ่งสังเคราะห์ 10W-40 (4L)',carModel:'ทั่วไป / ทุกรุ่น',brand:'PTT / Shell',shelf:'โซน A1',unit:'แกลลอน',cost:650,retailPrice:950,wholesalePrice:800,qty:15,minQty:3},
+    {id:uid(),code:'FLT-02',name:'กรองน้ำมันเครื่อง Vios / Yaris',carModel:'Vios, Yaris, Altis',brand:'Toyota แท้',shelf:'โซน B2',unit:'ลูก',cost:120,retailPrice:220,wholesalePrice:170,qty:2,minQty:4},
+    {id:uid(),code:'BRK-03',name:'ผ้าเบรกหน้า Honda Civic FB',carModel:'Civic FB',brand:'Bendix',shelf:'โซน C1',unit:'ชุด',cost:900,retailPrice:1500,wholesalePrice:1200,qty:4,minQty:2},
+    {id:uid(),code:'SPK-04',name:'หัวเทียน Iriduim (1 กล่องมี 4 หัว)',carModel:'ทุกรุ่น',brand:'NGK',shelf:'โซน A3',unit:'กล่อง',cost:450,retailPrice:750,wholesalePrice:600,qty:8,minQty:3}
+  ];
+  save();
+}
+renderAll();
+</script>
+<!-- ===================== โมดูลนำเข้าอะไหล่สำหรับร้านอะไหล่ ===================== -->
+<script>
+function shopImpOpen(){
+  openM(`<h3>📥 นำเข้าข้อมูลอะไหล่ / สินค้า</h3>
+  <div class="alert" style="background:#fef3c7;border-left:4px solid #d97706">
+   <b>วิธีใช้งาน:</b><br>
+   1. กดดาวน์โหลด "ไฟล์แม่แบบ" แล้วเปิดด้วย Excel<br>
+   2. ใส่ข้อมูลอะไหล่ของร้านลงไป (รหัส, ชื่อ, รุ่นรถ, ยี่ห้อ, ชั้นวาง, หน่วย, ทุน, ราคาปลีก, ราคาส่ง, จำนวน, ขั้นต่ำ)<br>
+   3. ลากคลุมข้อมูลใน Excel ทั้งหมด (รวมแถวหัวคอลัมน์ด้วย) แล้วกด <b>Ctrl+C</b><br>
+   4. คลิกที่ช่องด้านล่าง แล้วกด <b>Ctrl+V</b> เพื่อวางข้อมูล<br>
+   5. ตรวจสอบตัวอย่างข้อมูล แล้วกด "ยืนยันนำเข้า"
+  </div>
+  <div class="tools">
+   <button class="b s" onclick="shopImpTpl()">⬇ ดาวน์โหลดไฟล์แม่แบบ CSV</button>
+  </div>
+  <textarea id="shopImpTA" rows="8" placeholder="คลิกที่นี่แล้วกด Ctrl+V เพื่อวางข้อมูลจาก Excel..." oninput="shopImpPrev()"></textarea>
+  <div class="row" style="margin-top:10px">
+    <div class="col"><label>หากพบรหัสสินค้าซ้ำในระบบ</label>
+      <select id="shopImpMode">
+        <option value="upd">อัปเดตข้อมูลและราคา (เขียนทับของเดิม)</option>
+        <option value="add">บวกเพิ่มจำนวนสต็อก (รับของเข้าเพิ่มจากของเดิม)</option>
+        <option value="skip">ข้ามรายการที่ซ้ำ</option>
+      </select>
+    </div>
+  </div>
+  <div id="shopImpOut"></div>
+  <div style="text-align:right;margin-top:12px">
+    <button class="b s" onclick="closeM()">ยกเลิก</button>
+    <button class="b g" id="shopImpGo" onclick="shopImpRun()" disabled>✓ ยืนยันนำเข้าข้อมูล</button>
+  </div>`);
+}
+
+let shopImpRows=[];
+function shopImpParse(t){
+  t=t.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
+  const d=t.includes('\t')?'\t':',';
+  const rows=[];let row=[],f='',q=false;
+  for(let i=0;i<t.length;i++){const c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++;}else q=false;}else f+=c;}
+    else if(c==="'"&&f==='')q=true;
+    else if(c==="'"&&f==='')q=true;
+    else if(c===d){row.push(f.trim());f='';}
+    else if(c==='\n'){row.push(f.trim());rows.push(row);row=[];f='';}
+    else f+=c;}
+  if(f!==''||row.length){row.push(f.trim());rows.push(row);}
+  return rows.filter(r=>r.some(x=>x!==''));
+}
+
+function shopImpPrev(){
+  const t=el('shopImpTA').value;
+  if(!t.trim()){el('shopImpOut').innerHTML='';el('shopImpGo').disabled=true;return;}
+  const raw=shopImpParse(t);
+  if(raw.length<2){el('shopImpOut').innerHTML='<p style="color:red">ข้อมูลน้อยเกินไป (ต้องมีแถวหัวคอลัมน์และข้อมูล)</p>';return;}
+  
+  const hdr=raw[0].map(h=>h.toLowerCase());
+  const data=raw.slice(1);
+  
+  shopImpRows=data.map(r=>({
+    code:r[0]||'', name:r[1]||'', carModel:r[2]||'', brand:r[3]||'',
+    shelf:r[4]||'', unit:r[5]||'ชิ้น', cost:+r[6]||0,
+    retailPrice:+r[7]||0, wholesalePrice:+r[8]||0,
+    qty:+r[9]||0, minQty:r[10]!==''?+r[10]:3
+  })).filter(x=>x.name&&x.code);
+
+  el('shopImpOut').innerHTML=`<div class="alert" style="background:#f0fdf4;border-left:4px solid #16a34a">
+    ตรวจสอบพบข้อมูลพร้อมนำเข้าทั้งหมด <b>${shopImpRows.length}</b> รายการ (แถวที่ข้อมูลไม่ครบ รหัสหรือชื่อว่าง จะถูกข้ามอัตโนมัติ)
+  </div>`;
+  el('shopImpGo').disabled=!shopImpRows.length;
+}
+
+function shopImpRun(){
+  const mode=el('shopImpMode').value;
+  let added=0, updated=0, skipped=0;
+
+  shopImpRows.forEach(item=>{
+    const exist=DB.parts.find(p=>p.code.toLowerCase()===item.code.toLowerCase());
+    if(exist){
+      if(mode==='skip'){ skipped++; return; }
+      if(mode==='add'){ exist.qty += item.qty; updated++; }
+      else{
+        exist.name=item.name; exist.carModel=item.carModel; exist.brand=item.brand;
+        exist.shelf=item.shelf; exist.unit=item.unit; exist.cost=item.cost;
+        exist.retailPrice=item.retailPrice; exist.wholesalePrice=item.wholesalePrice;
+        exist.qty=item.qty; exist.minQty=item.minQty;
+        updated++;
+      }
+    }else{
+      DB.parts.push({id:uid(),...item});
+      added++;
+    }
+  });
+
+  save(); closeM(); renderAll();
+  alert(`นำเข้าข้อมูลสำเร็จ ✅\n- เพิ่มใหม่: ${added} รายการ\n- อัปเดต/บวกสต็อก: ${updated} รายการ\n- ข้าม: ${skipped} รายการ`);
+}
+
+function shopImpTpl(){
+  const headers=['รหัสอะไหล่','ชื่ออะไหล่','รุ่นรถ','ยี่ห้อสินค้า','ชั้นวาง','หน่วย','ราคาทุน','ราคาปลีก','ราคาส่ง(อู่)','จำนวนคงเหลือ','จุดแจ้งเตือน'];
+  const sample=['OEL-02','น้ำมันเครื่องสังเคราะห์ 100% (4L)',' Vigo, Revo','Mobil 1','โซน A2','แกลลอน','1100','1500','1350','10','3'];
+  const csv='\uFEFF'+[headers,sample].map(e=>e.join(',')).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='template_spare_parts.csv'; a.click();
+}
+
+setTimeout(()=>{
+  const tools=document.querySelector('#t-inv .tools');
+  if(tools && !tools.querySelector('#btnImp')){
+    tools.insertAdjacentHTML('afterbegin', '<button id="btnImp" class="b o" onclick="shopImpOpen()">📥 นำเข้าจาก Excel</button>');
+  }
+},200);
+</script>
+</body>
+</html>
