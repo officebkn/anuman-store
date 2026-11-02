@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>บัญชีครอบครัว - รายรับรายจ่าย</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Noto Sans Thai",sans-serif;background:#f4f7fb;color:#172033}
+header{background:#2563eb;color:white;padding:18px 16px;position:sticky;top:0;z-index:5}header h1{margin:0;font-size:23px}header small{opacity:.9}
+nav{display:flex;gap:8px;padding:10px;background:white;position:sticky;top:75px;z-index:4;overflow:auto}
+nav button{border:0;border-radius:10px;padding:10px 14px;background:#e8eefc;color:#1746a2;white-space:nowrap;font-weight:700}
+nav button.active{background:#2563eb;color:white}
+main{max-width:1000px;margin:auto;padding:15px}.page{display:none}.page.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.card{background:white;border-radius:15px;padding:15px;box-shadow:0 2px 8px #0001}.card b{display:block;font-size:22px;margin-top:6px}.balance{font-size:30px!important;color:#2563eb}
+.green{color:#15803d}.red{color:#dc2626}.muted{color:#667085}
+form,.panel{background:white;border-radius:15px;padding:15px;margin-bottom:15px;box-shadow:0 2px 8px #0001}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}label{font-weight:700;font-size:14px}input,select,textarea{width:100%;padding:11px;margin-top:5px;border:1px solid #ccd4e0;border-radius:9px;font-size:16px}textarea{min-height:70px}
+button.primary{background:#2563eb;color:white;border:0;border-radius:9px;padding:11px 16px;font-weight:700;margin-top:10px}button.danger{background:#dc2626;color:white;border:0;border-radius:8px;padding:7px 10px}button.edit{background:#f59e0b;color:white;border:0;border-radius:8px;padding:7px 10px}
+table{width:100%;border-collapse:collapse;background:white}th,td{padding:9px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:14px}th{background:#eef4ff}
+.actions{display:flex;gap:5px}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters>*{flex:1;min-width:140px}
+.bar{height:22px;background:#e5e7eb;border-radius:20px;overflow:hidden;margin:5px 0 12px}.bar i{display:block;height:100%;background:#2563eb}
+.note{padding:10px;background:#fff7ed;border-radius:10px;margin-bottom:12px}
+.lockscreen{position:fixed;inset:0;background:#2563eb;display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
+.lockbox{background:white;border-radius:18px;padding:28px 24px;max-width:340px;width:100%;box-shadow:0 10px 30px #0003;text-align:center}
+.lockbox h1{margin:0 0 6px;font-size:22px}.lockbox p{color:#667085;font-size:14px;margin:0 0 14px}
+.lockbox input{text-align:center;font-size:20px;letter-spacing:4px}
+@media(max-width:650px){.cards{grid-template-columns:1fr}.grid{grid-template-columns:1fr}th:nth-child(3),td:nth-child(3){display:none}}
+</style>
+</head>
+<body>
+<div id="loginScreen" class="lockscreen">
+<div class="lockbox">
+<h1>💰 บัญชีครอบครัว</h1>
+<p id="lockMsg">กรอกรหัส PIN เพื่อเข้าใช้งาน</p>
+<input id="pinInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="รหัส PIN" onkeypress="if(event.key==='Enter')submitPin()">
+<input id="pinConfirm" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="ยืนยันรหัส PIN" style="display:none" onkeypress="if(event.key==='Enter')submitPin()">
+<button class="primary" type="button" onclick="submitPin()" style="width:100%">ยืนยัน</button>
+<p id="lockError" class="red" style="display:none;font-size:13px;margin-top:10px"></p>
+<p class="muted" style="font-size:12px;margin-top:16px">*รหัส PIN นี้เก็บไว้ในเครื่องนี้เท่านั้น ไม่มีระบบกู้รหัสผ่าน หากลืมต้องล้างข้อมูลแอปเพื่อรีเซ็ต (ข้อมูลจะหายหากไม่มีไฟล์สำรอง)</p>
+</div>
+</div>
+<header><h1>💰 บัญชีครอบครัว</h1><small>บันทึกรายรับ-รายจ่าย เก็บข้อมูลไว้ในเครื่อง</small></header>
+<nav>
+<button class="active" onclick="show('home',this)">หน้าหลัก</button>
+<button onclick="show('add',this)">➕ บันทึกรายการ</button>
+<button onclick="show('list',this)">📋 รายการทั้งหมด</button>
+<button onclick="show('report',this)">📊 รายงาน</button>
+<button onclick="show('budget',this)">🎯 งบประมาณ</button>
+<button onclick="show('backup',this)">💾 สำรองข้อมูล</button>
+</nav>
+<main>
+<section id="home" class="page active">
+<div class="cards">
+<div class="card">เงินคงเหลือ<b id="balance" class="balance">0.00 บาท</b></div>
+<div class="card">รายรับรวม<b id="income" class="green">0.00 บาท</b></div>
+<div class="card">รายจ่ายรวม<b id="expense" class="red">0.00 บาท</b></div>
+</div>
+<div class="panel">
+<h3>สรุปเดือนนี้</h3><div id="monthSummary"></div>
+</div>
+<div class="panel"><h3>รายการล่าสุด</h3><div id="recent"></div></div>
+</section>
+
+<section id="add" class="page">
+<form onsubmit="saveItem(event)">
+<h2 id="formTitle">บันทึกรายการ</h2>
+<input type="hidden" id="editId">
+<div class="grid">
+<label>ประเภท
+<select id="type"><option value="expense">รายจ่าย</option><option value="income">รายรับ</option></select></label>
+<label>จำนวนเงิน (บาท)<input id="amount" type="number" min="0" step="0.01" required></label>
+<label>วันที่<input id="date" type="date" required></label>
+<label>เวลา<input id="time" type="time" required></label>
+<label>หมวดหมู่<select id="category"></select></label>
+<label>รายละเอียด<input id="detail" placeholder="เช่น ค่าอาหารเย็น"></label>
+</div>
+<button class="primary" type="submit">💾 บันทึก</button>
+<button type="button" onclick="resetForm()" style="margin-left:6px">ยกเลิก/ล้างฟอร์ม</button>
+</form>
+</section>
+
+<section id="list" class="page">
+<div class="panel">
+<h2>รายการทั้งหมด</h2>
+<div class="filters">
+<input id="search" placeholder="ค้นหารายละเอียด..." oninput="renderList()">
+<select id="filterType" onchange="renderList()"><option value="">ทุกประเภท</option><option value="income">รายรับ</option><option value="expense">รายจ่าย</option></select>
+<select id="filterMonth" onchange="renderList()"><option value="">ทุกเดือน</option></select>
+<button type="button" class="primary" style="margin-top:0" onclick="printList()">🖨️ ปริ้นรายการนี้</button>
+<button type="button" class="primary" style="margin-top:0;background:#15803d" onclick="exportCSV()">📊 ส่งออก Excel/CSV</button>
+</div>
+<div style="overflow:auto;margin-top:12px"><table><thead><tr><th>วันเวลา</th><th>ประเภท/หมวด</th><th>รายละเอียด</th><th>จำนวน</th><th>จัดการ</th></tr></thead><tbody id="tbody"></tbody></table></div>
+</div>
+</section>
+
+<section id="report" class="page">
+<div class="panel"><h2>📊 รายงานสรุป</h2>
+<label>เลือกเดือน <input id="reportMonth" type="month" onchange="renderReport()"></label>
+<div id="reportBox" style="margin-top:15px"></div>
+</div>
+</section>
+
+<section id="budget" class="page">
+<div class="panel"><h2>🎯 ตั้งงบประมาณรายเดือน (รายจ่าย)</h2>
+<p class="muted">กำหนดวงเงินที่ตั้งใจใช้จ่ายต่อเดือนในแต่ละหมวด ระบบจะเทียบกับยอดใช้จริงให้ในหน้า "รายงาน" — เว้นว่างไว้หากไม่ต้องการตั้งงบหมวดนั้น</p>
+<div id="budgetForm" class="grid" style="margin-top:10px"></div>
+<button class="primary" type="button" onclick="saveBudgets()">💾 บันทึกงบประมาณ</button>
+</div>
+</section>
+
+<section id="backup" class="page">
+<div class="panel"><h2>💾 สำรอง / นำข้อมูลกลับ</h2>
+<p>ข้อมูลปกติจะเก็บในเครื่องนี้ด้วย LocalStorage ไม่ต้องใช้อินเทอร์เน็ต</p>
+<button class="primary" onclick="exportData()">📤 ส่งออกข้อมูลเป็นไฟล์ JSON</button>
+<hr style="margin:18px 0">
+<label>เลือกไฟล์ JSON ที่เคยสำรองไว้<input id="importFile" type="file" accept=".json" onchange="importData(event)"></label>
+<hr style="margin:18px 0">
+<button class="danger" onclick="clearAll()">ลบข้อมูลทั้งหมด</button>
+<div class="note" style="margin-top:15px">แนะนำให้สำรองข้อมูลเป็นระยะ ๆ โดยเฉพาะก่อนล้างข้อมูลเบราว์เซอร์หรือเปลี่ยนอุปกรณ์</div>
+<hr style="margin:18px 0">
+<h2 style="font-size:17px">☁️ สำรองข้อมูลขึ้น Google Drive</h2>
+<p class="muted">ส่งข้อมูลรายรับ-รายจ่ายและงบประมาณทั้งหมด ไปเก็บเป็นไฟล์ในโฟลเดอร์ Google Drive ผ่าน Google Apps Script (ต้องตั้งค่าลิงก์ครั้งแรกก่อนใช้งาน)</p>
+<button class="primary" type="button" onclick="setDriveScriptUrl()">🔗 ตั้งค่าลิงก์ Google Drive</button>
+<button class="primary" type="button" onclick="backupToGoogleDrive()">☁️ สำรองข้อมูลไป Google Drive ตอนนี้</button>
+<p id="driveStatus" class="muted" style="margin-top:8px"></p>
+<hr style="margin:18px 0">
+<h2 style="font-size:17px">🔒 ความปลอดภัย</h2>
+<button class="primary" type="button" onclick="changePin()">🔑 เปลี่ยนรหัส PIN</button>
+<button class="danger" type="button" onclick="logout()">🚪 ออกจากระบบ (ล็อกหน้าจอ)</button>
+</div>
+</section>
+</main>
+<script>
+const incomeCats=["เงินเดือน/ค่าแรง","เงินบำนาญ","สลากธนาคาร","เงินจากการเสี่ยงโชค","รับอื่นๆ"];
+const expenseCats=["ค่าน้ำ-ค่าไฟ","ค่าอาหาร","ค่าซื้อของใช้ในครัวเรือน","ค่าใช้จ่ายเด็ก","ค่าเทอม","ค่าเน็ต","ค่างานช่วยต่างๆ","ค่าผ่อนรถ","ค่าผ่อนบ้าน","ค่าอื่นๆ"];
+let items=JSON.parse(localStorage.getItem("familyMoney")||"[]");
+let budgets=JSON.parse(localStorage.getItem("familyBudgets")||"{}");
+
+function money(n){return Number(n).toLocaleString("th-TH",{minimumFractionDigits:2,maximumFractionDigits:2})+" บาท"}
+function pad2(n){return String(n).padStart(2,"0")}
+function localYMD(d){return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())}
+function localYM(d){return d.getFullYear()+"-"+pad2(d.getMonth()+1)}
+function save(){localStorage.setItem("familyMoney",JSON.stringify(items))}
+function cats(){let t=document.getElementById("type").value;document.getElementById("category").innerHTML=(t==="income"?incomeCats:expenseCats).map(x=>`<option>${x}</option>`).join("")}
+function resetForm(){document.querySelector("form").reset();document.getElementById("editId").value="";document.getElementById("formTitle").textContent="บันทึกรายการ";setNow();cats()}
+function setNow(){let d=new Date();document.getElementById("date").value=localYMD(d);document.getElementById("time").value=d.toTimeString().slice(0,5)}
+document.getElementById("type").addEventListener("change",cats);
+function saveItem(e){e.preventDefault();let id=document.getElementById("editId").value;
+let obj={id:id||Date.now().toString(),type:type.value,amount:+amount.value,date:date.value,time:time.value,category:category.value,detail:detail.value.trim()};
+if(id){items=items.map(x=>x.id===id?obj:x)}else items.push(obj);save();resetForm();renderAll();show("list",document.querySelectorAll("nav button")[2])}
+function editItem(id){let x=items.find(a=>a.id===id);if(!x)return;show("add",document.querySelectorAll("nav button")[1]);document.getElementById("editId").value=x.id;type.value=x.type;cats();amount.value=x.amount;date.value=x.date;time.value=x.time;category.value=x.category;detail.value=x.detail;document.getElementById("formTitle").textContent="แก้ไขรายการ"}
+function delItem(id){if(confirm("ต้องการลบรายการนี้หรือไม่?")){items=items.filter(x=>x.id!==id);save();renderAll()}}
+function show(id,btn){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));if(btn)btn.classList.add("active");renderAll()}
+function renderHome(){let inc=items.filter(x=>x.type==="income").reduce((a,x)=>a+x.amount,0),exp=items.filter(x=>x.type==="expense").reduce((a,x)=>a+x.amount,0);balance.textContent=money(inc-exp);income.textContent=money(inc);expense.textContent=money(exp);
+let ym=localYM(new Date()),mi=items.filter(x=>x.date.startsWith(ym));let a=mi.filter(x=>x.type==="income").reduce((s,x)=>s+x.amount,0),b=mi.filter(x=>x.type==="expense").reduce((s,x)=>s+x.amount,0);monthSummary.innerHTML=`รายรับเดือนนี้ <b class="green">${money(a)}</b> &nbsp; รายจ่าย <b class="red">${money(b)}</b> &nbsp; คงเหลือ <b>${money(a-b)}</b>`;
+recent.innerHTML=items.slice().sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).slice(0,5).map(row).join("")||"<p class='muted'>ยังไม่มีรายการ</p>"}
+function row(x){return `<div style="padding:8px;border-bottom:1px solid #eee"><b>${x.type==="income"?"🟢":"🔴"} ${x.category}</b> — ${money(x.amount)}<br><small>${x.date} ${x.time} ${x.detail?"· "+x.detail:""}</small></div>`}
+function renderList(){let q=(search.value||"").toLowerCase(),ft=filterType.value,fm=filterMonth.value;let arr=items.filter(x=>(!q||x.detail.toLowerCase().includes(q)||x.category.toLowerCase().includes(q))&&(!ft||x.type===ft)&&(!fm||x.date.startsWith(fm))).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));tbody.innerHTML=arr.map(x=>`<tr><td>${x.date}<br>${x.time}</td><td>${x.type==="income"?"🟢 รายรับ":"🔴 รายจ่าย"}<br>${x.category}</td><td>${x.detail||"-"}</td><td>${money(x.amount)}</td><td><div class="actions"><button class="edit" onclick="editItem('${x.id}')">แก้ไข</button><button class="danger" onclick="delItem('${x.id}')">ลบ</button></div></td></tr>`).join("")||"<tr><td colspan='5'>ไม่พบรายการ</td></tr>"}
+function renderReport(){let m=reportMonth.value;if(!m){m=localYM(new Date());reportMonth.value=m}let arr=items.filter(x=>x.date.startsWith(m));let inc=arr.filter(x=>x.type==="income").reduce((s,x)=>s+x.amount,0),exp=arr.filter(x=>x.type==="expense").reduce((s,x)=>s+x.amount,0);let groups={};arr.filter(x=>x.type==="expense").forEach(x=>groups[x.category]=(groups[x.category]||0)+x.amount);let max=Math.max(...Object.values(groups),1);
+let catRows=Object.entries(groups).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{let b=budgets[k]||0;let over=b>0&&v>b;let pct=b>0?Math.min(v/b*100,100):v/max*100;let barColor=over?"#dc2626":"#2563eb";let budgetTxt=b>0?` <span class="${over?"red":"muted"}">(งบ ${money(b)} • ${over?"เกินงบ "+money(v-b):"เหลือ "+money(b-v)})</span>`:"";return `<div><b>${k}</b> ${money(v)}${budgetTxt}<div class="bar"><i style="width:${pct}%;background:${barColor}"></i></div></div>`}).join("");
+reportBox.innerHTML=`<div class="cards"><div class="card">รายรับ<b class="green">${money(inc)}</b></div><div class="card">รายจ่าย<b class="red">${money(exp)}</b></div><div class="card">สุทธิ<b>${money(inc-exp)}</b></div></div>
+<h3>แนวโน้ม 6 เดือนล่าสุด</h3>${trendSVG()}
+<h3>รายจ่ายแยกตามหมวด</h3>${catRows||"<p>เดือนนี้ยังไม่มีรายจ่าย</p>"}`}
+function trendSVG(){let now=new Date(),months=[];for(let i=5;i>=0;i--){let d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push(localYM(d))}
+let data=months.map(m=>{let a=items.filter(x=>x.date.startsWith(m));return{m,inc:a.filter(x=>x.type==="income").reduce((s,x)=>s+x.amount,0),exp:a.filter(x=>x.type==="expense").reduce((s,x)=>s+x.amount,0)}});
+let max=Math.max(...data.flatMap(d=>[d.inc,d.exp]),1);let w=560,h=200,padL=10,padB=26,top=10,groupW=(w-padL*2)/data.length,gap=14,barW=(groupW-gap)/2,base=h-padB;
+let bars=data.map((d,i)=>{let x=padL+i*groupW+gap/2;let incH=d.inc/max*(base-top),expH=d.exp/max*(base-top);
+return `<rect x="${x}" y="${base-incH}" width="${barW}" height="${incH}" fill="#15803d" rx="3"/><rect x="${x+barW+2}" y="${base-expH}" width="${barW}" height="${expH}" fill="#dc2626" rx="3"/><text x="${x+barW}" y="${h-8}" font-size="10" text-anchor="middle" fill="#667085">${d.m.slice(5)}/${d.m.slice(2,4)}</text>`}).join("");
+return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;max-width:560px;display:block">${bars}<line x1="${padL}" y1="${base}" x2="${w-padL}" y2="${base}" stroke="#ddd"/></svg>
+<div style="display:flex;gap:16px;font-size:13px;margin:6px 0 4px"><span><i style="display:inline-block;width:10px;height:10px;background:#15803d;border-radius:2px;margin-right:4px"></i>รายรับ</span><span><i style="display:inline-block;width:10px;height:10px;background:#dc2626;border-radius:2px;margin-right:4px"></i>รายจ่าย</span></div>`}
+function renderBudgetForm(){budgetForm.innerHTML=expenseCats.map(c=>`<label>${c}<input type="number" min="0" step="0.01" class="budgetInput" data-cat="${c}" value="${budgets[c]||""}" placeholder="0.00"></label>`).join("")}
+function saveBudgets(){document.querySelectorAll(".budgetInput").forEach(inp=>{let c=inp.dataset.cat,v=parseFloat(inp.value);if(v>0)budgets[c]=v;else delete budgets[c]});localStorage.setItem("familyBudgets",JSON.stringify(budgets));alert("บันทึกงบประมาณเรียบร้อย");renderAll()}
+function toCSV(arr){let header=["วันที่","เวลา","ประเภท","หมวดหมู่","รายละเอียด","จำนวน"];let esc=v=>{v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};let rows=arr.map(x=>[x.date,x.time,x.type==="income"?"รายรับ":"รายจ่าย",x.category,x.detail||"",x.amount]);return "\uFEFF"+[header,...rows].map(r=>r.map(esc).join(",")).join("\r\n")}
+function exportCSV(){let q=(search.value||"").toLowerCase(),ft=filterType.value,fm=filterMonth.value;let arr=items.filter(x=>(!q||x.detail.toLowerCase().includes(q)||x.category.toLowerCase().includes(q))&&(!ft||x.type===ft)&&(!fm||x.date.startsWith(fm))).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));let blob=new Blob([toCSV(arr)],{type:"text/csv;charset=utf-8"});let a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="รายการ_"+localYMD(new Date())+".csv";a.click();URL.revokeObjectURL(a.href)}
+function exportData(){let blob=new Blob([JSON.stringify(items,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="บัญชีครอบครัว_"+localYMD(new Date())+".json";a.click();URL.revokeObjectURL(a.href)}
+function importData(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);let newItems,newBudgets;
+if(Array.isArray(x)){newItems=x;newBudgets=null}
+else if(x&&Array.isArray(x.items)){newItems=x.items;newBudgets=x.budgets||null}
+else throw 0;
+let msg="นำเข้าข้อมูล "+newItems.length+" รายการ"+(newBudgets?" พร้อมงบประมาณ":"")+"? ข้อมูลเดิมจะถูกแทนที่";
+if(confirm(msg)){items=newItems;if(newBudgets){budgets=newBudgets;localStorage.setItem("familyBudgets",JSON.stringify(budgets))}save();renderAll();alert("นำเข้าข้อมูลเรียบร้อย")}}catch{alert("ไฟล์ไม่ถูกต้อง")}};r.readAsText(f)}
+function clearAll(){if(confirm("ยืนยันลบข้อมูลทั้งหมด? ไม่สามารถกู้คืนได้หากไม่มีไฟล์สำรอง")){items=[];save();renderAll()}}
+const DRIVE_SCRIPT_KEY="familyBudget_drive_script_url";
+function setDriveScriptUrl(){let cur=localStorage.getItem(DRIVE_SCRIPT_KEY)||"";let url=prompt('วาง URL ของ Google Apps Script Web App ที่นี่\n(รูปแบบ https://script.google.com/macros/s/xxxxx/exec)',cur);if(url===null)return;localStorage.setItem(DRIVE_SCRIPT_KEY,url.trim());document.getElementById("driveStatus").textContent=url.trim()?"บันทึกลิงก์เรียบร้อย พร้อมสำรองข้อมูลได้แล้ว":""}
+async function backupToGoogleDrive(){let url=localStorage.getItem(DRIVE_SCRIPT_KEY);let status=document.getElementById("driveStatus");if(!url){alert('กรุณากดปุ่ม "ตั้งค่าลิงก์ Google Drive" แล้ววาง URL ของ Apps Script ก่อนใช้งาน');return}status.textContent="กำลังส่งข้อมูล...";let backupPayload={items:items,budgets:budgets,exportedAt:new Date().toISOString()};try{await fetch(url,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(backupPayload)});status.textContent="ส่งข้อมูลสำรองล่าสุดเมื่อ "+new Date().toLocaleString("th-TH")+" (ตรวจสอบไฟล์ใน Google Drive เพื่อยืนยัน)";alert("ส่งข้อมูลสำรองไป Google Drive แล้ว")}catch(err){status.textContent="เกิดข้อผิดพลาดในการส่งข้อมูล";alert("ไม่สามารถส่งข้อมูลได้: "+err.message)}}
+function printList(){let q=(search.value||"").toLowerCase(),ft=filterType.value,fm=filterMonth.value;let arr=items.filter(x=>(!q||x.detail.toLowerCase().includes(q)||x.category.toLowerCase().includes(q))&&(!ft||x.type===ft)&&(!fm||x.date.startsWith(fm))).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+let inc=arr.filter(x=>x.type==="income").reduce((s,x)=>s+x.amount,0),exp=arr.filter(x=>x.type==="expense").reduce((s,x)=>s+x.amount,0);
+let filterLabel=[ft?(ft==="income"?"รายรับ":"รายจ่าย"):"ทุกประเภท",fm||"ทุกเดือน",q?`ค้นหา: "${search.value}"`:""].filter(Boolean).join(" | ");
+let rows=arr.map(x=>`<tr><td>${x.date}<br>${x.time}</td><td>${x.type==="income"?"รายรับ":"รายจ่าย"}<br>${x.category}</td><td>${x.detail||"-"}</td><td style="text-align:right">${money(x.amount)}</td></tr>`).join("")||`<tr><td colspan="4" style="text-align:center">ไม่พบรายการ</td></tr>`;
+let now=new Date();
+let html=`<!doctype html><html lang="th"><head><meta charset="utf-8"><title>รายการทั้งหมด - บัญชีครอบครัว</title>
+<style>
+*{box-sizing:border-box}body{font-family:system-ui,-apple-system,"Noto Sans Thai",sans-serif;padding:24px;color:#172033}
+h1{font-size:20px;margin:0 0 4px}.sub{color:#667085;font-size:13px;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left;font-size:13px}th{background:#eef4ff}
+.summary{display:flex;gap:24px;margin-top:16px;font-size:14px}.summary b{display:block;font-size:17px}
+.green{color:#15803d}.red{color:#dc2626}
+@media print{button{display:none}}
+</style></head><body>
+<h1>💰 บัญชีครอบครัว - รายการทั้งหมด</h1>
+<div class="sub">ตัวกรอง: ${filterLabel} &nbsp;|&nbsp; พิมพ์เมื่อ ${now.toLocaleString("th-TH")}</div>
+<table><thead><tr><th>วันเวลา</th><th>ประเภท/หมวด</th><th>รายละเอียด</th><th style="text-align:right">จำนวน</th></tr></thead><tbody>${rows}</tbody></table>
+<div class="summary"><div>รายรับรวม<b class="green">${money(inc)}</b></div><div>รายจ่ายรวม<b class="red">${money(exp)}</b></div><div>คงเหลือ<b>${money(inc-exp)}</b></div></div>
+<button onclick="window.print()" style="margin-top:20px;padding:10px 16px;background:#2563eb;color:#fff;border:0;border-radius:8px;font-weight:700">🖨️ พิมพ์เอกสาร</button>
+</body></html>`;
+let w=window.open("","_blank");w.document.write(html);w.document.close();w.onload=()=>{w.focus()}}
+function renderAll(){renderHome();renderList();renderReport();renderBudgetForm();let months=[...new Set(items.map(x=>x.date.slice(0,7)))].sort().reverse();filterMonth.innerHTML='<option value="">ทุกเดือน</option>'+months.map(m=>`<option>${m}</option>`).join("")}
+setNow();cats();renderAll();
+let pin=localStorage.getItem("familyPin")||"";
+function initLock(){if(sessionStorage.getItem("unlocked")==="1"){hideLock();return}
+document.getElementById("loginScreen").style.display="flex";
+document.querySelector("header").style.display="none";document.querySelector("nav").style.display="none";document.querySelector("main").style.display="none";
+if(pin){lockMsg.textContent="กรอกรหัส PIN เพื่อเข้าใช้งาน";pinConfirm.style.display="none"}
+else{lockMsg.textContent="ตั้งรหัส PIN สำหรับเข้าใช้งานครั้งแรก (4-8 หลัก ตัวเลข)";pinConfirm.style.display="block"}
+pinInput.value="";pinConfirm.value="";pinInput.focus()}
+function hideLock(){document.getElementById("loginScreen").style.display="none";document.querySelector("header").style.display="";document.querySelector("nav").style.display="";document.querySelector("main").style.display=""}
+function submitPin(){lockError.style.display="none";let v=pinInput.value.trim();
+if(!/^[0-9]{4,8}$/.test(v)){lockError.textContent="กรุณากรอกรหัส PIN เป็นตัวเลข 4-8 หลัก";lockError.style.display="block";return}
+if(!pin){let c=pinConfirm.value.trim();if(v!==c){lockError.textContent="รหัส PIN ที่ยืนยันไม่ตรงกัน กรุณากรอกใหม่";lockError.style.display="block";pinInput.value="";pinConfirm.value="";pinInput.focus();return}
+localStorage.setItem("familyPin",v);pin=v}
+else{if(v!==pin){lockError.textContent="รหัส PIN ไม่ถูกต้อง";lockError.style.display="block";pinInput.value="";pinInput.focus();return}}
+sessionStorage.setItem("unlocked","1");hideLock()}
+function logout(){sessionStorage.removeItem("unlocked");initLock()}
+function changePin(){let cur=prompt("กรอกรหัส PIN ปัจจุบัน");if(cur===null)return;
+if(cur!==pin){alert("รหัส PIN ปัจจุบันไม่ถูกต้อง");return}
+let nw=prompt("กรอกรหัส PIN ใหม่ (ตัวเลข 4-8 หลัก)");if(nw===null)return;
+if(!/^[0-9]{4,8}$/.test(nw)){alert("รหัสไม่ถูกต้อง ต้องเป็นตัวเลข 4-8 หลัก");return}
+let cf=prompt("ยืนยันรหัส PIN ใหม่อีกครั้ง");if(cf!==nw){alert("รหัสยืนยันไม่ตรงกัน ไม่ได้เปลี่ยนรหัส");return}
+localStorage.setItem("familyPin",nw);pin=nw;alert("เปลี่ยนรหัส PIN เรียบร้อยแล้ว")}
+initLock();
+</script>
+</body></html>
