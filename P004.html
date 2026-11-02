@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ระบบจัดการอู่ซ่อมรถ</title>
+<style>
+*{box-sizing:border-box;font-family:"Segoe UI",Tahoma,sans-serif}
+body{margin:0;background:#eef1f5;color:#1f2733}
+header{background:#10243e;color:#fff;padding:12px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:18px;margin:0}
+header .sp{flex:1}
+nav{background:#1b3a63;display:flex;flex-wrap:wrap}
+nav button{background:none;border:0;color:#cfe0f5;padding:12px 18px;cursor:pointer;font-size:14px}
+nav button:hover{background:#27507f}
+nav button.on{background:#eef1f5;color:#10243e;font-weight:700}
+main{padding:18px;max-width:1250px;margin:auto}
+.card{background:#fff;border-radius:10px;padding:16px;margin-bottom:16px;box-shadow:0 1px 4px #0001}
+.card h2{margin:0 0 12px;font-size:16px;color:#10243e;border-left:4px solid #e8911a;padding-left:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 8px;border-bottom:1px solid #e3e8ef;text-align:left}
+th{background:#f5f7fa;font-size:12px;color:#5a6b80}
+tr:hover td{background:#fafcff}
+input,select,textarea{padding:7px 9px;border:1px solid #c9d3e0;border-radius:6px;font-size:13px;width:100%;background:#fff}
+label{font-size:12px;color:#5a6b80;display:block;margin-bottom:3px}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.col{flex:1;min-width:150px}
+button.b{background:#1b6ec2;color:#fff;border:0;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px}
+button.b:hover{opacity:.9}
+button.g{background:#1e9e5a}button.r{background:#c0392b}button.o{background:#e8911a}button.s{background:#6b7b90}
+.pill{padding:2px 9px;border-radius:20px;font-size:11px;color:#fff;white-space:nowrap;display:inline-block}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.kpi{display:flex;gap:14px;flex-wrap:wrap}
+.kpi div{flex:1;min-width:150px;background:#fff;border-radius:10px;padding:14px;box-shadow:0 1px 4px #0001;border-top:4px solid #1b6ec2}
+.kpi b{display:block;font-size:24px;margin-top:4px;color:#10243e}
+.warn{border-top-color:#c0392b!important}
+.ok{border-top-color:#1e9e5a!important}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:20px;z-index:50}
+.modal.on{display:flex}
+.box{background:#fff;border-radius:10px;padding:18px;width:100%;max-width:920px}
+.box h3{margin:0 0 14px;color:#10243e}
+.alert{background:#fff3cd;border-left:4px solid #e8911a;padding:10px;border-radius:6px;font-size:13px;margin-bottom:10px}
+.danger{background:#fdecea;border-left-color:#c0392b}
+.info{background:#e8f1fb;border-left-color:#1b6ec2}
+/* รูปถ่าย */
+.gal{display:flex;flex-wrap:wrap;gap:10px}
+.ph{width:150px;border:1px solid #d8e0ea;border-radius:8px;overflow:hidden;background:#fff}
+.ph img{width:100%;height:105px;object-fit:cover;display:block;cursor:pointer}
+.ph .m{padding:5px}
+.ph select,.ph input{font-size:11px;padding:3px 5px;margin-bottom:3px}
+.drop{border:2px dashed #9fb4cc;border-radius:10px;padding:18px;text-align:center;color:#5a6b80;font-size:13px;background:#f8fbff;cursor:pointer}
+.drop.hot{background:#e3f0ff;border-color:#1b6ec2}
+/* ปฏิทินนัด */
+.wk{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.wk div{flex:1;min-width:92px;background:#fff;border:1px solid #dde4ed;border-radius:8px;padding:8px;text-align:center;cursor:pointer;font-size:12px}
+.wk div.sel{background:#10243e;color:#fff;border-color:#10243e}
+.wk div b{display:block;font-size:18px;margin-top:3px}
+.wk div.hol{background:#fff6f6}
+.slot{border-left:4px solid #1b6ec2;background:#f8fbff;padding:10px;border-radius:6px;margin-bottom:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.slot .t{font-size:19px;font-weight:700;color:#10243e;min-width:70px}
+.slot .sp{flex:1}
+/* เอกสารพิมพ์ */
+#doc{display:none}
+#doc .paper{background:#fff;padding:30px;max-width:800px;margin:auto;font-size:13px}
+#doc table{font-size:12px}
+#doc th,#doc td{border:1px solid #999}
+.dhead{display:flex;justify-content:space-between;border-bottom:2px solid #10243e;padding-bottom:10px;margin-bottom:14px}
+.dtitle{font-size:20px;font-weight:700;text-align:right}
+.sum td{border:0!important;padding:3px 6px}
+.pgal{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.pgal figure{margin:0;width:31%}
+.pgal img{width:100%;border:1px solid #999}
+.pgal figcaption{font-size:10px;text-align:center}
+@media print{
+ body{background:#fff}
+ header,nav,main,.modal{display:none!important}
+ #doc{display:block!important}
+ #doc .noprint{display:none}
+ .pgal{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔧 <span id="hShop">อู่ซ่อมรถ</span> — ระบบจัดการร้าน</h1>
+  <div class="sp"></div>
+  <span id="today" style="font-size:13px"></span>
+</header>
+
+<nav>
+  <button class="on" data-t="dash">หน้าหลัก</button>
+  <button data-t="appt">📅 นัดหมาย</button>
+  <button data-t="job">ใบงานซ่อม</button>
+  <button data-t="cus">ลูกค้า &amp; รถ</button>
+  <button data-t="part">สต็อกอะไหล่</button>
+  <button data-t="rep">รายงาน</button>
+  <button data-t="set">ตั้งค่า</button>
+</nav>
+
+<main>
+
+<!-- ============ หน้าหลัก ============ -->
+<section id="t-dash">
+  <div class="kpi" id="kpi"></div>
+  <div class="card"><h2>แจ้งเตือน</h2><div id="alerts"></div></div>
+  <div class="card"><h2>งานที่ยังไม่ปิด</h2><div id="openJobs"></div></div>
+</section>
+
+<!-- ============ นัดหมาย ============ -->
+<section id="t-appt" style="display:none">
+  <div class="card">
+    <h2>ตารางนัดหมาย / คิวซ่อม</h2>
+    <div class="tools">
+      <button class="b g" onclick="apEdit()">+ จองคิวใหม่</button>
+      <button class="b s" onclick="goDate(today())">วันนี้</button>
+      <input type="date" id="aDate" style="max-width:170px" onchange="renderAppt()">
+      <select id="aFil" style="max-width:180px" onchange="renderAppt()">
+        <option value="day">แสดงเฉพาะวันที่เลือก</option>
+        <option value="up">นัดล่วงหน้าทั้งหมด</option>
+        <option value="all">ทั้งหมด (รวมย้อนหลัง)</option>
+      </select>
+    </div>
+    <div id="wkStrip" class="wk"></div>
+    <div id="apCap"></div>
+    <div id="apList"></div>
+  </div>
+</section>
+
+<!-- ============ ใบงาน ============ -->
+<section id="t-job" style="display:none">
+  <div class="card">
+    <h2>ใบงานซ่อม</h2>
+    <div class="tools">
+      <button class="b g" onclick="jobNew()">+ เปิดใบงานใหม่</button>
+      <input id="qJob" placeholder="ค้นหา: เลขที่ / ทะเบียน / ชื่อลูกค้า" style="max-width:300px" oninput="renderJobs()">
+      <select id="fStatus" style="max-width:170px" onchange="renderJobs()"><option value="">— ทุกสถานะ —</option></select>
+    </div>
+    <div id="jobList"></div>
+  </div>
+</section>
+
+<!-- ============ ลูกค้า ============ -->
+<section id="t-cus" style="display:none">
+  <div class="card">
+    <h2>ลูกค้า</h2>
+    <div class="tools">
+      <button class="b g" onclick="cusEdit()">+ เพิ่มลูกค้า</button>
+      <input id="qCus" placeholder="ค้นหาชื่อ / เบอร์โทร" style="max-width:280px" oninput="renderCus()">
+    </div>
+    <div id="cusList"></div>
+  </div>
+  <div class="card">
+    <h2>รถของลูกค้า</h2>
+    <div class="tools">
+      <button class="b g" onclick="vehEdit()">+ เพิ่มรถ</button>
+      <input id="qVeh" placeholder="ค้นหาทะเบียน / ยี่ห้อ" style="max-width:280px" oninput="renderVeh()">
+    </div>
+    <div id="vehList"></div>
+  </div>
+</section>
+
+<!-- ============ อะไหล่ ============ -->
+<section id="t-part" style="display:none">
+  <div class="card">
+    <h2>สต็อกอะไหล่ &amp; สินค้า</h2>
+    <div class="tools">
+      <button class="b g" onclick="partEdit()">+ เพิ่มรายการ</button>
+      <button class="b o" onclick="stockIn()">↓ รับของเข้า</button>
+      <input id="qPart" placeholder="ค้นหารหัส / ชื่อ" style="max-width:280px" oninput="renderParts()">
+      <label style="margin:0"><input type="checkbox" id="onlyLow" style="width:auto" onchange="renderParts()"> เฉพาะของใกล้หมด</label>
+    </div>
+    <div id="partList"></div>
+  </div>
+</section>
+
+<!-- ============ รายงาน ============ -->
+<section id="t-rep" style="display:none">
+  <div class="card">
+    <h2>สรุปยอดขาย</h2>
+    <div class="row">
+      <div class="col"><label>ตั้งแต่วันที่</label><input type="date" id="r1"></div>
+      <div class="col"><label>ถึงวันที่</label><input type="date" id="r2"></div>
+      <div class="col" style="display:flex;align-items:flex-end"><button class="b" onclick="renderRep()">ดูรายงาน</button></div>
+    </div>
+    <div id="repOut"></div>
+  </div>
+</section>
+
+<!-- ============ ตั้งค่า ============ -->
+<section id="t-set" style="display:none">
+  <div class="card">
+    <h2>ข้อมูลร้าน (ใช้พิมพ์บนเอกสาร)</h2>
+    <div class="row">
+      <div class="col"><label>ชื่อร้าน</label><input id="sName"></div>
+      <div class="col"><label>เลขประจำตัวผู้เสียภาษี</label><input id="sTax"></div>
+    </div>
+    <div class="row">
+      <div class="col"><label>ที่อยู่</label><input id="sAddr"></div>
+      <div class="col"><label>โทรศัพท์</label><input id="sPhone"></div>
+    </div>
+    <div class="row">
+      <div class="col"><label>อัตรา VAT (%)</label><input type="number" id="sVat" value="7"></div>
+      <div class="col"><label>รูปแบบภาษี (ค่าเริ่มต้น)</label>
+        <select id="sVatMode"><option value="ex">แยกนอก (ราคายังไม่รวม VAT)</option><option value="in">รวมใน (ราคารวม VAT แล้ว)</option><option value="no">ไม่คิด VAT</option></select></div>
+      <div class="col"><label>แจ้งเตือนนัดเช็กระยะล่วงหน้า (วัน)</label><input type="number" id="sDue" value="30"></div>
+    </div>
+    <div class="row">
+      <div class="col"><label>เวลาเปิดรับคิว</label><input type="time" id="sOpen" value="08:00"></div>
+      <div class="col"><label>เวลาปิดรับคิว</label><input type="time" id="sClose" value="17:30"></div>
+      <div class="col"><label>รับได้สูงสุด (คัน/วัน)</label><input type="number" id="sCap" value="8"></div>
+      <div class="col"><label>คุณภาพรูปถ่าย</label>
+        <select id="sImg"><option value="800">ประหยัดพื้นที่ (800px)</option><option value="1000">ปกติ (1000px)</option><option value="1400">ชัดสูง (1400px)</option></select></div>
+    </div>
+    <button class="b g" onclick="saveSet()">บันทึกการตั้งค่า</button>
+  </div>
+  <div class="card">
+    <h2>สำรอง / กู้คืนข้อมูล</h2>
+    <div id="stInfo"></div>
+    <button class="b" onclick="backup()">⬇ สำรองข้อมูล (.json)</button>
+    <button class="b o" onclick="document.getElementById('fRes').click()">⬆ กู้คืนข้อมูล (.json)</button>
+    <input type="file" id="fRes" accept=".json" style="display:none" onchange="restore(this)">
+    
+    <button class="b g" onclick="exportExcelCSV()">📊 ส่งออกข้อมูล Excel (CSV)</button>
+    <button class="b o" onclick="document.getElementById('fResExcel').click()">📥 นำเข้าข้อมูลจาก Excel (CSV)</button>
+    <input type="file" id="fResExcel" accept=".csv" style="display:none" onchange="restoreExcelCSV(this)">
+
+    <button class="b r" onclick="wipe()">ล้างข้อมูลทั้งหมด</button>
+  </div>
+  <div class="card">
+    <h2>ช่างในร้าน</h2>
+    <div class="tools"><input id="newTech" placeholder="ชื่อช่าง" style="max-width:220px"><button class="b g" onclick="addTech()">+ เพิ่ม</button></div>
+    <div id="techList"></div>
+  </div>
+</section>
+
+</main>
+
+<div class="modal" id="mdl"><div class="box" id="mdlBox"></div></div>
+<div class="modal" id="imgM" onclick="this.classList.remove('on')"><div style="margin:auto"><img id="imgBig" style="max-width:92vw;max-height:88vh;border-radius:8px"><div id="imgCap" style="color:#fff;text-align:center;margin-top:8px;font-size:14px"></div></div></div>
+<div id="doc"></div>
+
+<script>
+/* ============ ฐานข้อมูล ============ */
+const KEY='garage_db_v1';
+let DB=JSON.parse(localStorage.getItem(KEY)||'null')||{
+  settings:{},techs:['ช่างสมชาย','ช่างต้น','ช่างเอ'],
+  customers:[],vehicles:[],parts:[],jobs:[],appts:[],counters:{job:1,ap:1}
+};
+/* --- migrate ให้ข้อมูลเก่าใช้ต่อได้ --- */
+DB.appts=DB.appts||[];DB.counters=DB.counters||{};
+DB.counters.job=DB.counters.job||1;DB.counters.ap=DB.counters.ap||1;
+DB.jobs.forEach(j=>j.photos=j.photos||[]);
+DB.settings=Object.assign({name:'อู่ช่างสมชายการช่าง',tax:'0000000000000',
+ addr:'123 ถ.ตัวอย่าง ต.ในเมือง อ.เมือง จ.ขอนแก่น 40000',phone:'***-***-****',
+ vat:7,vatMode:'ex',due:30,open:'08:00',close:'17:30',cap:8,imgMax:1000},DB.settings);
+
+const ST=['รอตรวจเช็ก','รออะไหล่','กำลังซ่อม','ซ่อมเสร็จ','รับรถแล้ว','ยกเลิก'];
+const STC={'รอตรวจเช็ก':'#6b7b90','รออะไหล่':'#e8911a','กำลังซ่อม':'#1b6ec2','ซ่อมเสร็จ':'#1e9e5a','รับรถแล้ว':'#10243e','ยกเลิก':'#c0392b'};
+const AST=['จองแล้ว','ยืนยันแล้ว','มาแล้ว','ไม่มาตามนัด','ยกเลิก'];
+const ASTC={'จองแล้ว':'#6b7b90','ยืนยันแล้ว':'#1b6ec2','มาแล้ว':'#1e9e5a','ไม่มาตามนัด':'#c0392b','ยกเลิก':'#95a5a6'};
+const SRV=['เช็กระยะ/เปลี่ยนถ่ายน้ำมันเครื่อง','ซ่อมเครื่องยนต์','ระบบเบรก','ช่วงล่าง/โช้ค','ระบบไฟ-แบตเตอรี่','แอร์รถยนต์','ยาง/ตั้งศูนย์ถ่วงล้อ','ตรวจเช็กทั่วไป','เคาะพ่นสี','อื่น ๆ'];
+const PTAG=['ก่อนซ่อม','ความเสียหาย','ระหว่างซ่อม','หลังซ่อม','อะไหล่เก่า','เอกสาร/ป้ายทะเบียน'];
+
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){alert('⚠ พื้นที่เก็บข้อมูลเต็ม! กรุณาสำรองไฟล์ แล้วลบรูปถ่ายของงานเก่าออกบ้างครับ');}};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const n2=v=>(+v||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today=()=>fmt(new Date());
+const addDay=(ds,n)=>{const d=new Date(ds+'T12:00:00');d.setDate(d.getDate()+n);return fmt(d);};
+const thDate=d=>{if(!d)return'-';const[y,m,dd]=d.split('-');return dd+'/'+m+'/'+(+y+543);};
+const DOW=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+const thFull=d=>{if(!d)return'-';const dt=new Date(d+'T12:00:00');return 'วัน'+DOW[dt.getDay()]+'ที่ '+thDate(d);};
+const el=i=>document.getElementById(i);
+const cus=id=>DB.customers.find(c=>c.id===id)||{};
+const veh=id=>DB.vehicles.find(v=>v.id===id)||{};
+const part=id=>DB.parts.find(p=>p.id===id)||{};
+const openM=h=>{el('mdlBox').innerHTML=h;el('mdl').classList.add('on');};
+const closeM=()=>el('mdl').classList.remove('on');
+const bigImg=(src,cap)=>{el('imgBig').src=src;el('imgCap').textContent=cap||'';el('imgM').classList.add('on');};
+
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  ['dash','appt','job','cus','part','rep','set'].forEach(t=>el('t-'+t).style.display=t===b.dataset.t?'':'none');
+  renderAll();
+});
+
+/* ============ คำนวณยอด ============ */
+function calc(j){
+  const gross=j.items.reduce((s,i)=>s+(+i.qty||0)*(+i.price||0),0);
+  let sub=gross-(+j.discount||0);
+  const r=(+DB.settings.vat||0)/100;let base=sub,vat=0,total=sub;
+  if(j.vatMode==='ex'){vat=sub*r;total=sub+vat;}
+  else if(j.vatMode==='in'){vat=sub*r/(1+r);base=sub-vat;}
+  return{sub:gross,disc:+j.discount||0,base,vat,total};
+}
+
+/* ============ หน้าหลัก ============ */
+function renderDash(){
+  const open=DB.jobs.filter(j=>!['รับรถแล้ว','ยกเลิก'].includes(j.status));
+  const td=DB.jobs.filter(j=>j.date===today());
+  const income=DB.jobs.filter(j=>j.date===today()&&j.status!=='ยกเลิก').reduce((s,j)=>s+calc(j).total,0);
+  const low=DB.parts.filter(p=>+p.qty<=+p.minQty);
+  const apTd=DB.appts.filter(a=>a.date===today()&&!['ยกเลิก','ไม่มาตามนัด'].includes(a.status));
+  el('kpi').innerHTML=`
+   <div><label>งานค้างในอู่</label><b>${open.length}</b></div>
+   <div class="ok"><label>นัดหมายวันนี้</label><b>${apTd.length}</b></div>
+   <div class="ok"><label>รับรถเข้าวันนี้</label><b>${td.length}</b></div>
+   <div class="ok"><label>ยอดขายวันนี้ (บาท)</label><b>${n2(income)}</b></div>
+   <div class="${low.length?'warn':''}"><label>อะไหล่ใกล้หมด</label><b>${low.length}</b></div>`;
+
+  let a='';
+  const apSoon=DB.appts.filter(a=>(a.date===today()||a.date===addDay(today(),1))&&['จองแล้ว','ยืนยันแล้ว'].includes(a.status))
+                        .sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));
+  if(apSoon.length) a+=`<div class="alert info"><b>📅 คิวนัดวันนี้ / พรุ่งนี้ (${apSoon.length})</b>
+   <table><tr><th>วัน-เวลา</th><th>ลูกค้า</th><th>ทะเบียน</th><th>บริการ</th><th>สถานะ</th><th></th></tr>`+
+   apSoon.map(a=>`<tr><td>${a.date===today()?'<b>วันนี้</b>':'พรุ่งนี้'} ${esc(a.time)}</td>
+   <td>${esc(apName(a))}<br><small style="color:#5a6b80">${esc(apPhone(a))}</small></td>
+   <td>${esc(apPlate(a))}</td><td>${esc(a.service)}</td>
+   <td><span class="pill" style="background:${ASTC[a.status]}">${a.status}</span></td>
+   <td style="white-space:nowrap"><button class="b o" onclick="apNotify('${a.id}')">เตือนลูกค้า</button>
+   <button class="b g" onclick="apToJob('${a.id}')">รับรถ</button></td></tr>`).join('')+`</table></div>`;
+
+  if(low.length) a+=`<div class="alert danger"><b>⚠ อะไหล่ต่ำกว่าจุดสั่งซื้อ ${low.length} รายการ</b><br>`+
+    low.map(p=>`${esc(p.name)} (เหลือ ${p.qty} ${esc(p.unit)} / ขั้นต่ำ ${p.minQty})`).join(' · ')+`</div>`;
+
+  const lim=addDay(today(),+DB.settings.due||30);
+  const due=DB.jobs.filter(j=>j.nextDate&&j.nextDate<=lim&&j.status==='รับรถแล้ว');
+  if(due.length) a+=`<div class="alert"><b>🔔 ถึงกำหนดนัดเช็กระยะ ${due.length} คัน</b><table><tr><th>ทะเบียน</th><th>ลูกค้า</th><th>นัดวันที่</th><th></th></tr>`+
+    due.map(j=>`<tr><td>${esc(veh(j.vehId).plate)}</td><td>${esc(cus(j.custId).name)} (${esc(cus(j.custId).phone)})</td><td>${thDate(j.nextDate)}</td>
+    <td style="white-space:nowrap"><button class="b o" onclick="notify('${j.id}','due')">ข้อความแจ้ง</button>
+    <button class="b g" onclick="apEdit('',{custId:'${j.custId}',vehId:'${j.vehId}',date:'${j.nextDate}',service:'เช็กระยะ/เปลี่ยนถ่ายน้ำมันเครื่อง'})">จองคิวให้</button></td></tr>`).join('')+`</table></div>`;
+
+  const rdy=DB.jobs.filter(j=>j.status==='ซ่อมเสร็จ');
+  if(rdy.length) a+=`<div class="alert"><b>✅ ซ่อมเสร็จ รอลูกค้ามารับ ${rdy.length} คัน</b> — อย่าลืมแจ้งลูกค้า</div>`;
+  el('alerts').innerHTML=a||'<p style="font-size:13px;color:#1e9e5a">ไม่มีแจ้งเตือน ทุกอย่างเรียบร้อย 👍</p>';
+  el('openJobs').innerHTML=open.length?tbl(open):'<p style="font-size:13px;color:#5a6b80">ไม่มีงานค้าง</p>';
+}
+
+/* ============ นัดหมาย ============ */
+const apName =a=>a.custId?cus(a.custId).name :(a.walkName||'-');
+const apPhone=a=>a.custId?cus(a.custId).phone:(a.walkPhone||'-');
+const apPlate=a=>a.vehId?veh(a.vehId).plate :(a.walkPlate||'-');
+function goDate(d){el('aDate').value=d;el('aFil').value='day';renderAppt();}
+
+function renderAppt(){
+  if(!el('aDate').value)el('aDate').value=today();
+  const base=el('aDate').value,mode=el('aFil').value;
+  /* แถบ 7 วัน */
+  let w='';
+  for(let i=-1;i<6;i++){
+    const ds=addDay(base,i),d=new Date(ds+'T12:00:00');
+    const n=DB.appts.filter(a=>a.date===ds&&!['ยกเลิก','ไม่มาตามนัด'].includes(a.status)).length;
+    const full=n>=(+DB.settings.cap||8);
+    w+=`<div class="${ds===base?'sel':''} ${full?'hol':''}" onclick="goDate('${ds}')">
+     ${DOW[d.getDay()].slice(0,2)} ${d.getDate()}/${d.getMonth()+1}<b>${n}</b>${full?'<span style="color:#c0392b">เต็ม</span>':'คิว'}</div>`;
+  }
+  el('wkStrip').innerHTML=w;
+
+  let L=DB.appts.slice();
+  if(mode==='day')L=L.filter(a=>a.date===base);
+  else if(mode==='up')L=L.filter(a=>a.date>=today());
+  L.sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));
+
+  const cnt=DB.appts.filter(a=>a.date===base&&!['ยกเลิก','ไม่มาตามนัด'].includes(a.status)).length;
+  el('apCap').innerHTML=mode==='day'
+   ?`<div class="alert ${cnt>=(+DB.settings.cap||8)?'danger':'info'}">
+      <b>${thFull(base)}</b> — จองแล้ว ${cnt} / ${DB.settings.cap} คิว
+      ${cnt>=(+DB.settings.cap||8)?' ⚠ คิวเต็มแล้ว ควรเลื่อนลูกค้าไปวันถัดไป':''}</div>`:'';
+
+  el('apList').innerHTML=L.length?L.map(a=>{
+    const past=a.date<today();
+    return `<div class="slot" style="border-left-color:${ASTC[a.status]};${past&&['จองแล้ว','ยืนยันแล้ว'].includes(a.status)?'background:#fff6f6':''}">
+    <div class="t">${esc(a.time)}<div style="font-size:11px;font-weight:400;color:#5a6b80">${mode!=='day'?thDate(a.date):esc(a.no)}</div></div>
+    <div style="min-width:190px"><b>${esc(apName(a))}</b><br><small style="color:#5a6b80">📞 ${esc(apPhone(a))}</small></div>
+    <div style="min-width:120px">🚗 <b>${esc(apPlate(a))}</b><br><small style="color:#5a6b80">${esc(a.vehId?(veh(a.vehId).brand+' '+veh(a.vehId).model):(a.walkModel||''))}</small></div>
+    <div style="min-width:190px">${esc(a.service)}<br><small style="color:#5a6b80">ช่าง: ${esc(a.tech||'-')} · ใช้เวลา ~${esc(a.dur||'1')} ชม.</small>
+    ${a.note?`<br><small style="color:#e8911a">📝 ${esc(a.note)}</small>`:''}</div>
+    <div class="sp"></div>
+    <span class="pill" style="background:${ASTC[a.status]}">${a.status}</span>
+    <div style="white-space:nowrap">
+      ${a.jobId?`<button class="b" onclick="jobEdit('${a.jobId}')">ดูใบงาน</button>`
+        :`<button class="b g" onclick="apToJob('${a.id}')">✓ รับรถ/เปิดงาน</button>`}
+      <button class="b o" onclick="apNotify('${a.id}')">LINE</button>
+      <button class="b" onclick="apEdit('${a.id}')">แก้ไข</button>
+      <button class="b r" onclick="apDel('${a.id}')">ลบ</button>
+    </div></div>`}).join('')
+   :'<p style="font-size:13px;color:#5a6b80">ยังไม่มีนัดหมายในช่วงนี้</p>';
+}
+
+function apEdit(id,pre){
+  const a=id?DB.appts.find(x=>x.id===id):Object.assign(
+    {id:'',no:'',date:el('aDate')&&el('aDate').value||today(),time:'09:00',custId:'',vehId:'',
+     walkName:'',walkPhone:'',walkPlate:'',walkModel:'',service:SRV[0],tech:DB.techs[0]||'',dur:1,status:'จองแล้ว',note:''},pre||{});
+  openM(`<h3>${id?'แก้ไขนัดหมาย '+esc(a.no):'จองคิวซ่อมใหม่'}</h3>
+  <div class="row">
+    <div class="col"><label>วันที่นัด *</label><input type="date" id="aD" value="${a.date}" onchange="apCapCheck()"></div>
+    <div class="col"><label>เวลา *</label><input type="time" id="aT" value="${a.time}" min="${DB.settings.open}" max="${DB.settings.close}"></div>
+    <div class="col"><label>ใช้เวลาโดยประมาณ (ชม.)</label><input type="number" step="0.5" id="aDur" value="${a.dur||1}"></div>
+    <div class="col"><label>สถานะ</label><select id="aS">${AST.map(s=>`<option ${s===a.status?'selected':''}>${s}</option>`).join('')}</select></div>
+  </div>
+  <div id="capMsg"></div>
+  <div class="alert info">เลือกลูกค้าเดิมจากระบบ หรือถ้าเป็นลูกค้าใหม่/โทรมาจอง ให้กรอกชื่อ-เบอร์ในช่อง "ลูกค้าใหม่" ด้านล่างได้เลย</div>
+  <div class="row">
+    <div class="col" style="min-width:260px"><label>ลูกค้าเดิมในระบบ</label><select id="aC" onchange="apFillVeh()">${optCus(a.custId)}</select></div>
+    <div class="col"><label>รถ</label><select id="aV"></select></div>
+  </div>
+  <div class="row">
+    <div class="col"><label>ลูกค้าใหม่ — ชื่อ</label><input id="aWN" value="${esc(a.walkName||'')}"></div>
+    <div class="col"><label>เบอร์โทร</label><input id="aWP" value="${esc(a.walkPhone||'')}"></div>
+    <div class="col"><label>ทะเบียน</label><input id="aWL" value="${esc(a.walkPlate||'')}"></div>
+    <div class="col"><label>ยี่ห้อ/รุ่น</label><input id="aWM" value="${esc(a.walkModel||'')}"></div>
+  </div>
+  <div class="row">
+    <div class="col" style="min-width:260px"><label>บริการที่ต้องการ</label><select id="aSv">${SRV.map(s=>`<option ${s===a.service?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="col"><label>มอบหมายช่าง</label><select id="aTc"><option value="">— ยังไม่ระบุ —</option>${DB.techs.map(t=>`<option ${t===a.tech?'selected':''}>${esc(t)}</option>`).join('')}</select></div>
+    <div class="col" style="min-width:260px"><label>หมายเหตุ</label><input id="aN" value="${esc(a.note||'')}"></div>
+  </div>
+  <div style="text-align:right"><button class="b s" onclick="closeM()">ยกเลิก</button>
+  <button class="b g" onclick="apSave('${id||''}')">💾 บันทึกนัดหมาย</button></div>`);
+  apFillVeh(a.vehId);apCapCheck(id);
+}
+function apFillVeh(pre){
+  const c=el('aC').value,L=DB.vehicles.filter(v=>v.custId===c);
+  el('aV').innerHTML='<option value="">— เลือกรถ —</option>'+L.map(v=>`<option value="${v.id}" ${v.id===pre?'selected':''}>${esc(v.plate)} ${esc(v.brand||'')} ${esc(v.model||'')}</option>`).join('');
+}
+function apCapCheck(skip){
+  const d=el('aD').value,n=DB.appts.filter(a=>a.date===d&&a.id!==skip&&!['ยกเลิก','ไม่มาตามนัด'].includes(a.status)).length;
+  const cap=+DB.settings.cap||8;
+  el('capMsg').innerHTML=n>=cap?`<div class="alert danger">⚠ วันที่ ${thDate(d)} มีคิวแล้ว ${n}/${cap} — <b>คิวเต็ม</b> แนะนำเลื่อนเป็นวันที่ ${thDate(addDay(d,1))}</div>`
+    :`<div class="alert">วันที่ ${thDate(d)} มีคิวแล้ว ${n}/${cap} คิว — ยังรับได้อีก ${cap-n} คัน</div>`;
+}
+function apSave(id){
+  const o={date:el('aD').value,time:el('aT').value,dur:+el('aDur').value,status:el('aS').value,
+   custId:el('aC').value,vehId:el('aV').value,walkName:el('aWN').value.trim(),walkPhone:el('aWP').value.trim(),
+   walkPlate:el('aWL').value.trim(),walkModel:el('aWM').value.trim(),service:el('aSv').value,
+   tech:el('aTc').value,note:el('aN').value.trim()};
+  if(!o.custId&&!o.walkName)return alert('กรุณาเลือกลูกค้าเดิม หรือกรอกชื่อลูกค้าใหม่');
+  if(!o.date||!o.time)return alert('กรุณาระบุวันและเวลานัด');
+  if(id)Object.assign(DB.appts.find(a=>a.id===id),o);
+  else{DB.appts.push({id:uid(),no:'AP'+String(DB.counters.ap).padStart(5,'0'),jobId:'',...o});DB.counters.ap++;}
+  save();closeM();renderAll();
+}
+function apDel(id){if(confirm('ยืนยันลบนัดหมายนี้?')){DB.appts=DB.appts.filter(a=>a.id!==id);save();renderAll();}}
+
+/* สร้างใบงานจากนัดหมาย */
+function apToJob(id){
+  const a=DB.appts.find(x=>x.id===id);
+  let cid=a.custId,vid=a.vehId;
+  if(!cid){
+    if(!confirm('ลูกค้ารายนี้ยังไม่มีในระบบ — สร้างประวัติลูกค้าและรถใหม่อัตโนมัติ?'))return;
+    cid=uid();DB.customers.push({id:cid,name:a.walkName,phone:a.walkPhone,taxId:'',email:'',addr:''});
+    vid=uid();const bm=(a.walkModel||'').split(' ');
+    DB.vehicles.push({id:vid,custId:cid,plate:a.walkPlate||'-',brand:bm[0]||'',model:bm.slice(1).join(' '),year:'',color:'',vin:''});
+    a.custId=cid;a.vehId=vid;
+  }
+  if(!vid)return alert('กรุณาแก้ไขนัดหมายแล้วเลือกรถก่อนครับ');
+  a.status='มาแล้ว';
+  jobNew({custId:cid,vehId:vid,symptom:a.service+(a.note?' — '+a.note:''),tech:a.tech||DB.techs[0]||'',apptId:a.id});
+  save();
+}
+
+/* ข้อความเตือนนัด */
+function apNotify(id){
+  const a=DB.appts.find(x=>x.id===id),s=DB.settings;
+  const msg=`เรียน คุณ${apName(a)}\n\n${s.name} ขอยืนยันนัดหมายครับ 📅\n`+
+   `วันที่: ${thFull(a.date)}\nเวลา: ${a.time} น.\n`+
+   `รถทะเบียน: ${apPlate(a)}\nบริการ: ${a.service}\n`+
+   `ใช้เวลาประมาณ: ${a.dur||1} ชั่วโมง\n${a.tech?'ช่างผู้ดูแล: '+a.tech+'\n':''}`+
+   `\nรบกวนมาถึงก่อนเวลานัดประมาณ 10 นาทีนะครับ\nหากไม่สะดวกตามวันเวลานี้ แจ้งเลื่อนล่วงหน้าได้ที่ ${s.phone}\n\nขอบคุณที่ใช้บริการครับ 🙏`;
+  msgBox('ข้อความยืนยัน/เตือนนัดหมาย',msg);
+}
+
+/* ============ ตารางใบงาน ============ */
+function tbl(list){
+  return `<table><tr><th>เลขที่</th><th>วันที่</th><th>ทะเบียน</th><th>ลูกค้า</th><th>อาการ</th><th>ช่าง</th><th>รูป</th><th>สถานะ</th><th>ยอดรวม</th><th>จัดการ</th></tr>`+
+  list.map(j=>`<tr>
+   <td><b>${esc(j.no)}</b></td><td>${thDate(j.date)}</td>
+   <td>${esc(veh(j.vehId).plate)}<br><small style="color:#5a6b80">${esc(veh(j.vehId).brand||'')} ${esc(veh(j.vehId).model||'')}</small></td>
+   <td>${esc(cus(j.custId).name)}<br><small style="color:#5a6b80">${esc(cus(j.custId).phone||'')}</small></td>
+   <td style="max-width:170px">${esc((j.symptom||'').slice(0,55))}</td>
+   <td>${esc(j.tech||'-')}</td>
+   <td>${(j.photos||[]).length?`<button class="b s" onclick="viewPhotos('${j.id}')">📷 ${j.photos.length}</button>`:'-'}</td>
+   <td><span class="pill" style="background:${STC[j.status]}">${j.status}</span></td>
+   <td style="text-align:right">${n2(calc(j).total)}</td>
+   <td style="white-space:nowrap">
+     <button class="b" onclick="jobEdit('${j.id}')">แก้ไข</button>
+     <button class="b s" onclick="docMenu('${j.id}')">เอกสาร</button>
+     <button class="b o" onclick="notify('${j.id}','done')">แจ้ง</button>
+     <button class="b r" onclick="jobDel('${j.id}')">ลบ</button>
+   </td></tr>`).join('')+`</table>`;
+}
+function renderJobs(){
+  const q=(el('qJob').value||'').toLowerCase(),f=el('fStatus').value;
+  if(!el('fStatus').dataset.f){el('fStatus').innerHTML='<option value="">— ทุกสถานะ —</option>'+ST.map(s=>`<option>${s}</option>`).join('');el('fStatus').dataset.f=1;}
+  let L=DB.jobs.slice().sort((a,b)=>b.no.localeCompare(a.no));
+  if(f)L=L.filter(j=>j.status===f);
+  if(q)L=L.filter(j=>(j.no+(veh(j.vehId).plate||'')+(cus(j.custId).name||'')).toLowerCase().includes(q));
+  el('jobList').innerHTML=L.length?tbl(L):'<p style="font-size:13px;color:#5a6b80">ไม่พบข้อมูล</p>';
+}
+
+/* ============ ฟอร์มใบงาน ============ */
+let CUR=null;
+function jobNew(pre){
+  CUR=Object.assign({id:uid(),no:'JO'+String(DB.counters.job).padStart(5,'0'),date:today(),custId:'',vehId:'',mileage:'',symptom:'',
+       tech:DB.techs[0]||'',status:'รอตรวจเช็ก',items:[],photos:[],discount:0,vatMode:DB.settings.vatMode,note:'',
+       nextDate:'',nextKm:'',paid:false,payMethod:'เงินสด',deducted:false,apptId:'',isNew:true},pre||{});
+  jobForm();
+}
+function jobEdit(id){CUR=JSON.parse(JSON.stringify(DB.jobs.find(j=>j.id===id)));CUR.photos=CUR.photos||[];jobForm();}
+function jobForm(){
+  openM(`<h3>ใบงานซ่อมเลขที่ ${esc(CUR.no)} ${CUR.apptId?'<span class="pill" style="background:#1e9e5a">จากนัดหมาย</span>':''}</h3>
+  <div class="row">
+    <div class="col"><label>วันที่รับรถ</label><input type="date" id="jDate" value="${CUR.date}"></div>
+    <div class="col"><label>ลูกค้า</label><select id="jCus" onchange="fillVeh()">${optCus(CUR.custId)}</select></div>
+    <div class="col"><label>รถ (ทะเบียน)</label><select id="jVeh"></select></div>
+    <div class="col"><label>เลขไมล์</label><input id="jKm" value="${esc(CUR.mileage)}"></div>
+  </div>
+  <div class="row">
+    <div class="col" style="min-width:300px"><label>อาการ / สิ่งที่ลูกค้าแจ้ง</label><textarea id="jSym" rows="2">${esc(CUR.symptom)}</textarea></div>
+    <div class="col"><label>ช่างผู้รับผิดชอบ</label><select id="jTech">${DB.techs.map(t=>`<option ${t===CUR.tech?'selected':''}>${esc(t)}</option>`).join('')}</select></div>
+    <div class="col"><label>สถานะ</label><select id="jSt">${ST.map(s=>`<option ${s===CUR.status?'selected':''}>${s}</option>`).join('')}</select></div>
+  </div>
+
+  <h2 style="font-size:14px;margin:14px 0 6px;border-left:4px solid #e8911a;padding-left:8px">📷 รูปถ่ายสภาพรถ / งานซ่อม</h2>
+  <div class="drop" id="drop" onclick="document.getElementById('fPh').click()">
+    คลิกเพื่อเลือกรูป · หรือลากรูปมาวางตรงนี้ · เลือกได้หลายรูปพร้อมกัน<br>
+    <small>บนมือถือ/แท็บเล็ตจะเปิดกล้องถ่ายได้เลย — ระบบย่อรูปอัตโนมัติเพื่อประหยัดพื้นที่</small>
+  </div>
+  <input type="file" id="fPh" accept="image/*" multiple capture="environment" style="display:none" onchange="addPhotos(this)">
+  <div id="phBox" class="gal" style="margin-top:10px"></div>
+
+  <h2 style="font-size:14px;margin:14px 0 6px;border-left:4px solid #e8911a;padding-left:8px">รายการค่าแรง / อะไหล่</h2>
+  <div class="tools">
+    <button class="b g" onclick="addItem('labor')">+ ค่าแรง / ค่าบริการ</button>
+    <select id="pSel" style="max-width:320px">${DB.parts.map(p=>`<option value="${p.id}">${esc(p.code)} | ${esc(p.name)} (คงเหลือ ${p.qty})</option>`).join('')}</select>
+    <button class="b o" onclick="addItem('part')">+ อะไหล่จากสต็อก</button>
+  </div>
+  <div id="itemBox"></div>
+  <div class="row" style="margin-top:12px">
+    <div class="col"><label>ส่วนลด (บาท)</label><input type="number" id="jDisc" value="${+CUR.discount||0}" oninput="calcBox()"></div>
+    <div class="col"><label>รูปแบบภาษี</label><select id="jVm" onchange="calcBox()">
+      <option value="ex" ${CUR.vatMode==='ex'?'selected':''}>แยกนอก</option>
+      <option value="in" ${CUR.vatMode==='in'?'selected':''}>รวมใน</option>
+      <option value="no" ${CUR.vatMode==='no'?'selected':''}>ไม่คิด VAT</option></select></div>
+    <div class="col"><label>การชำระเงิน</label><select id="jPay">
+      ${['เงินสด','โอนธนาคาร','บัตรเครดิต','เครดิต/ค้างชำระ'].map(p=>`<option ${p===CUR.payMethod?'selected':''}>${p}</option>`).join('')}</select></div>
+    <div class="col"><label>ชำระแล้ว?</label><select id="jPaid"><option value="0">ยังไม่ชำระ</option><option value="1" ${CUR.paid?'selected':''}>ชำระแล้ว</option></select></div>
+  </div>
+  <div class="row">
+    <div class="col"><label>นัดเช็กระยะครั้งหน้า (วันที่)</label><input type="date" id="jND" value="${CUR.nextDate||''}"></div>
+    <div class="col"><label>หรือเมื่อเลขไมล์ถึง</label><input id="jNK" value="${esc(CUR.nextKm)}"></div>
+    <div class="col" style="min-width:300px"><label>หมายเหตุภายใน</label><input id="jNote" value="${esc(CUR.note)}"></div>
+  </div>
+  <div id="sumBox" class="alert"></div>
+  <div style="text-align:right">
+    <button class="b s" onclick="closeM()">ปิด</button>
+    <button class="b g" onclick="jobSave()">💾 บันทึกใบงาน</button>
+  </div>`);
+  fillVeh(CUR.vehId);renderItems();renderPhotos();initDrop();
+}
+const optCus=s=>'<option value="">— เลือกลูกค้า —</option>'+DB.customers.map(c=>`<option value="${c.id}" ${c.id===s?'selected':''}>${esc(c.name)} (${esc(c.phone||'')})</option>`).join('');
+function fillVeh(pre){
+  const c=el('jCus').value,L=DB.vehicles.filter(v=>v.custId===c);
+  el('jVeh').innerHTML='<option value="">— เลือกรถ —</option>'+L.map(v=>`<option value="${v.id}" ${v.id===(pre||CUR.vehId)?'selected':''}>${esc(v.plate)} ${esc(v.brand||'')} ${esc(v.model||'')}</option>`).join('');
+}
+
+/* ---------- รูปถ่าย ---------- */
+function initDrop(){
+  const d=el('drop');if(!d)return;
+  d.ondragover=e=>{e.preventDefault();d.classList.add('hot');};
+  d.ondragleave=()=>d.classList.remove('hot');
+  d.ondrop=e=>{e.preventDefault();d.classList.remove('hot');handleFiles(e.dataTransfer.files);};
+}
+function addPhotos(inp){handleFiles(inp.files);inp.value='';}
+function handleFiles(files){
+  [...files].filter(f=>f.type.startsWith('image/')).forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const max=+DB.settings.imgMax||1000;let w=img.width,h=img.height;
+        if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}
+        const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+        const cx=cv.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,w,h);cx.drawImage(img,0,0,w,h);
+        CUR.photos.push({id:uid(),data:cv.toDataURL('image/jpeg',0.62),tag:PTAG[0],cap:'',ts:new Date().toLocaleString('th-TH')});
+        renderPhotos();
+      };img.src=e.target.result;
+    };r.readAsDataURL(f);
+  });
+}
+function renderPhotos(){
+  const b=el('phBox');if(!b)return;
+  b.innerHTML=CUR.photos.length?CUR.photos.map((p,i)=>`<div class="ph">
+   <img src="${p.data}" onclick="bigImg(this.src,'${esc(p.tag)} — ${esc(p.cap)}')">
+   <div class="m">
+     <select onchange="CUR.photos[${i}].tag=this.value">${PTAG.map(t=>`<option ${t===p.tag?'selected':''}>${t}</option>`).join('')}</select>
+     <input placeholder="คำอธิบาย" value="${esc(p.cap)}" oninput="CUR.photos[${i}].cap=this.value">
+     <div style="display:flex;gap:4px"><button class="b s" style="flex:1;padding:4px" onclick="bigImg(CUR.photos[${i}].data)">ดู</button>
+     <button class="b r" style="flex:1;padding:4px" onclick="if(confirm('ลบรูปนี้?')){CUR.photos.splice(${i},1);renderPhotos()}">ลบ</button></div>
+   </div></div>`).join('')
+  :'<p style="font-size:13px;color:#5a6b80">ยังไม่มีรูป — แนะนำถ่ายรอบคันตอนรับรถไว้ทุกครั้ง ป้องกันข้อโต้แย้งเรื่องรอยเดิมครับ</p>';
+}
+function viewPhotos(jid){
+  const j=DB.jobs.find(x=>x.id===jid),v=veh(j.vehId);
+  openM(`<h3>รูปถ่าย — ใบงาน ${esc(j.no)} / ทะเบียน ${esc(v.plate)}</h3>
+  <div class="gal">${(j.photos||[]).map(p=>`<div class="ph">
+   <img src="${p.data}" onclick="bigImg(this.src,'${esc(p.tag)} — ${esc(p.cap)}')">
+   <div class="m" style="font-size:11px"><b>${esc(p.tag)}</b><br>${esc(p.cap||'')}<br><span style="color:#5a6b80">${esc(p.ts||'')}</span></div></div>`).join('')||'ไม่มีรูป'}</div>
+  <div style="text-align:right;margin-top:12px"><button class="b s" onclick="closeM()">ปิด</button></div>`);
+}
+
+/* ---------- รายการ ---------- */
+function addItem(type){
+  if(type==='part'){
+    const p=part(el('pSel').value);if(!p.id)return alert('ยังไม่มีอะไหล่ในสต็อก');
+    CUR.items.push({type:'part',partId:p.id,name:p.name,unit:p.unit,qty:1,price:+p.price});
+  }else CUR.items.push({type:'labor',name:'',unit:'งาน',qty:1,price:0});
+  renderItems();
+}
+function renderItems(){
+  el('itemBox').innerHTML=`<table><tr><th>ประเภท</th><th>รายการ</th><th width="80">จำนวน</th><th width="60">หน่วย</th><th width="110">ราคา/หน่วย</th><th width="110">รวม</th><th width="50"></th></tr>`+
+  (CUR.items.length?CUR.items.map((it,i)=>`<tr>
+    <td>${it.type==='part'?'<span class="pill" style="background:#e8911a">อะไหล่</span>':'<span class="pill" style="background:#1b6ec2">ค่าแรง</span>'}</td>
+    <td><input value="${esc(it.name)}" oninput="CUR.items[${i}].name=this.value"></td>
+    <td><input type="number" step="0.01" value="${it.qty}" oninput="CUR.items[${i}].qty=this.value;calcBox()"></td>
+    <td><input value="${esc(it.unit||'')}" oninput="CUR.items[${i}].unit=this.value"></td>
+    <td><input type="number" step="0.01" value="${it.price}" oninput="CUR.items[${i}].price=this.value;calcBox()"></td>
+    <td style="text-align:right" id="ln${i}">${n2(it.qty*it.price)}</td>
+    <td><button class="b r" onclick="CUR.items.splice(${i},1);renderItems()">×</button></td></tr>`).join('')
+   :'<tr><td colspan="7" style="color:#5a6b80">ยังไม่มีรายการ</td></tr>')+`</table>`;
+  calcBox();
+}
+function calcBox(){
+  CUR.discount=el('jDisc')?el('jDisc').value:0;CUR.vatMode=el('jVm')?el('jVm').value:'ex';
+  CUR.items.forEach((it,i)=>{const c=el('ln'+i);if(c)c.textContent=n2(it.qty*it.price);});
+  const c=calc(CUR);
+  el('sumBox').innerHTML=`<table class="sum" style="margin-left:auto;width:320px">
+   <tr><td>รวมเป็นเงิน</td><td style="text-align:right">${n2(c.sub)}</td></tr>
+   <tr><td>ส่วนลด</td><td style="text-align:right">-${n2(c.disc)}</td></tr>
+   <tr><td>ฐานภาษี</td><td style="text-align:right">${n2(c.base)}</td></tr>
+   <tr><td>VAT ${DB.settings.vat}%</td><td style="text-align:right">${n2(c.vat)}</td></tr>
+   <tr><td><b>ยอดสุทธิ</b></td><td style="text-align:right;font-size:17px"><b>${n2(c.total)}</b></td></tr></table>`;
+}
+function jobSave(){
+  CUR.date=el('jDate').value;CUR.custId=el('jCus').value;CUR.vehId=el('jVeh').value;
+  CUR.mileage=el('jKm').value;CUR.symptom=el('jSym').value;CUR.tech=el('jTech').value;
+  CUR.status=el('jSt').value;CUR.discount=el('jDisc').value;CUR.vatMode=el('jVm').value;
+  CUR.payMethod=el('jPay').value;CUR.paid=el('jPaid').value==='1';
+  CUR.nextDate=el('jND').value;CUR.nextKm=el('jNK').value;CUR.note=el('jNote').value;
+  if(!CUR.custId||!CUR.vehId)return alert('กรุณาเลือกลูกค้าและรถก่อนบันทึก');
+  if(!CUR.deducted&&['ซ่อมเสร็จ','รับรถแล้ว'].includes(CUR.status)){
+    CUR.items.filter(i=>i.type==='part').forEach(i=>{const p=part(i.partId);if(p.id)p.qty=+p.qty-(+i.qty||0);});
+    CUR.deducted=true;
+  }
+  if(CUR.isNew){delete CUR.isNew;DB.counters.job++;DB.jobs.push(CUR);
+    if(CUR.apptId){const a=DB.appts.find(x=>x.id===CUR.apptId);if(a){a.jobId=CUR.id;a.status='มาแล้ว';}}}
+  else{const k=DB.jobs.findIndex(j=>j.id===CUR.id);DB.jobs[k]=CUR;}
+  save();closeM();renderAll();
+}
+function jobDel(id){if(confirm('ยืนยันลบใบงานนี้? (รูปถ่ายจะถูกลบด้วย)')){DB.jobs=DB.jobs.filter(j=>j.id!==id);save();renderAll();}}
+
+/* ============ ลูกค้า / รถ ============ */
+function renderCus(){
+  const q=(el('qCus').value||'').toLowerCase();
+  const L=DB.customers.filter(c=>((c.name||'')+(c.phone||'')).toLowerCase().includes(q));
+  el('cusList').innerHTML=`<table><tr><th>ชื่อลูกค้า</th><th>โทรศัพท์</th><th>เลขผู้เสียภาษี</th><th>ที่อยู่</th><th>รถ</th><th></th></tr>`+
+   (L.length?L.map(c=>`<tr><td><b>${esc(c.name)}</b></td><td>${esc(c.phone)}</td><td>${esc(c.taxId||'-')}</td>
+   <td style="max-width:220px">${esc(c.addr||'-')}</td>
+   <td>${DB.vehicles.filter(v=>v.custId===c.id).map(v=>esc(v.plate)).join(', ')||'-'}</td>
+   <td style="white-space:nowrap"><button class="b" onclick="cusEdit('${c.id}')">แก้ไข</button>
+   <button class="b r" onclick="cusDel('${c.id}')">ลบ</button></td></tr>`).join('')
+   :'<tr><td colspan="6" style="color:#5a6b80">ยังไม่มีข้อมูล</td></tr>')+`</table>`;
+}
+function cusEdit(id){
+  const c=id?cus(id):{name:'',phone:'',taxId:'',addr:'',email:''};
+  openM(`<h3>${id?'แก้ไข':'เพิ่ม'}ลูกค้า</h3>
+  <div class="row"><div class="col"><label>ชื่อ-นามสกุล / ชื่อบริษัท *</label><input id="cN" value="${esc(c.name)}"></div>
+  <div class="col"><label>โทรศัพท์ *</label><input id="cP" value="${esc(c.phone)}"></div></div>
+  <div class="row"><div class="col"><label>เลขประจำตัวผู้เสียภาษี</label><input id="cT" value="${esc(c.taxId||'')}"></div>
+  <div class="col"><label>LINE / อีเมล</label><input id="cE" value="${esc(c.email||'')}"></div></div>
+  <div class="row"><div class="col"><label>ที่อยู่ (สำหรับใบกำกับภาษี)</label><textarea id="cA" rows="2">${esc(c.addr||'')}</textarea></div></div>
+  <div style="text-align:right"><button class="b s" onclick="closeM()">ยกเลิก</button>
+  <button class="b g" onclick="cusSave('${id||''}')">บันทึก</button></div>`);
+}
+function cusSave(id){
+  const o={name:el('cN').value.trim(),phone:el('cP').value.trim(),taxId:el('cT').value.trim(),email:el('cE').value.trim(),addr:el('cA').value.trim()};
+  if(!o.name)return alert('กรุณากรอกชื่อลูกค้า');
+  if(id)Object.assign(cus(id),o);else DB.customers.push({id:uid(),...o});
+  save();closeM();renderAll();
+}
+function cusDel(id){
+  if(DB.vehicles.some(v=>v.custId===id))return alert('ลบไม่ได้ — ลูกค้ารายนี้มีรถผูกอยู่ กรุณาลบรถก่อน');
+  if(confirm('ยืนยันลบลูกค้า?')){DB.customers=DB.customers.filter(c=>c.id!==id);save();renderAll();}
+}
+function renderVeh(){
+  const q=(el('qVeh').value||'').toLowerCase();
+  const L=DB.vehicles.filter(v=>((v.plate||'')+(v.brand||'')+(v.model||'')).toLowerCase().includes(q));
+  el('vehList').innerHTML=`<table><tr><th>ทะเบียน</th><th>ยี่ห้อ/รุ่น</th><th>ปี</th><th>สี</th><th>เลขตัวถัง</th><th>เจ้าของ</th><th>ประวัติซ่อม</th><th></th></tr>`+
+   (L.length?L.map(v=>`<tr><td><b>${esc(v.plate)}</b></td><td>${esc(v.brand)} ${esc(v.model)}</td><td>${esc(v.year||'-')}</td>
+   <td>${esc(v.color||'-')}</td><td>${esc(v.vin||'-')}</td><td>${esc(cus(v.custId).name)}</td>
+   <td><button class="b s" onclick="history('${v.id}')">ดู (${DB.jobs.filter(j=>j.vehId===v.id).length})</button></td>
+   <td style="white-space:nowrap"><button class="b g" onclick="apEdit('',{custId:'${v.custId}',vehId:'${v.id}'})">จองคิว</button>
+   <button class="b" onclick="vehEdit('${v.id}')">แก้ไข</button>
+   <button class="b r" onclick="vehDel('${v.id}')">ลบ</button></td></tr>`).join('')
+   :'<tr><td colspan="8" style="color:#5a6b80">ยังไม่มีข้อมูล</td></tr>')+`</table>`;
+}
+function vehEdit(id){
+  const v=id?veh(id):{plate:'',brand:'',model:'',year:'',color:'',vin:'',custId:''};
+  openM(`<h3>${id?'แก้ไข':'เพิ่ม'}ข้อมูลรถ</h3>
+  <div class="row"><div class="col"><label>เจ้าของรถ *</label><select id="vC">${optCus(v.custId)}</select></div>
+  <div class="col"><label>ทะเบียน *</label><input id="vP" value="${esc(v.plate)}"></div></div>
+  <div class="row"><div class="col"><label>ยี่ห้อ</label><input id="vB" value="${esc(v.brand)}"></div>
+  <div class="col"><label>รุ่น</label><input id="vM" value="${esc(v.model)}"></div>
+  <div class="col"><label>ปี</label><input id="vY" value="${esc(v.year||'')}"></div>
+  <div class="col"><label>สี</label><input id="vCo" value="${esc(v.color||'')}"></div></div>
+  <div class="row"><div class="col"><label>เลขตัวถัง / VIN</label><input id="vV" value="${esc(v.vin||'')}"></div></div>
+  <div style="text-align:right"><button class="b s" onclick="closeM()">ยกเลิก</button>
+  <button class="b g" onclick="vehSave('${id||''}')">บันทึก</button></div>`);
+}
+function vehSave(id){
+  const o={custId:el('vC').value,plate:el('vP').value.trim(),brand:el('vB').value.trim(),model:el('vM').value.trim(),
+   year:el('vY').value.trim(),color:el('vCo').value.trim(),vin:el('vV').value.trim()};
+  if(!o.custId||!o.plate)return alert('กรุณาเลือกเจ้าของและกรอกทะเบียน');
+  if(id)Object.assign(veh(id),o);else DB.vehicles.push({id:uid(),...o});
+  save();closeM();renderAll();
+}
+function vehDel(id){
+  if(DB.jobs.some(j=>j.vehId===id))return alert('ลบไม่ได้ — รถคันนี้มีประวัติใบงานอยู่');
+  if(confirm('ยืนยันลบรถ?')){DB.vehicles=DB.vehicles.filter(v=>v.id!==id);save();renderAll();}
+}
+function history(vid){
+  const v=veh(vid),L=DB.jobs.filter(j=>j.vehId===vid).sort((a,b)=>b.date.localeCompare(a.date));
+  const AP=DB.appts.filter(a=>a.vehId===vid&&a.date>=today());
+  openM(`<h3>ประวัติการซ่อม — ${esc(v.plate)} ${esc(v.brand)} ${esc(v.model)}</h3>
+  ${AP.length?`<div class="alert info">📅 มีนัดหมายล่วงหน้า: ${AP.map(a=>thDate(a.date)+' '+a.time+' ('+a.service+')').join(' · ')}</div>`:''}
+  <table><tr><th>วันที่</th><th>เลขที่</th><th>เลขไมล์</th><th>รายการที่ทำ</th><th>รูป</th><th>ยอด</th></tr>`+
+  (L.length?L.map(j=>`<tr><td>${thDate(j.date)}</td><td>${esc(j.no)}</td><td>${esc(j.mileage||'-')}</td>
+  <td>${j.items.map(i=>esc(i.name)).join(', ')||esc(j.symptom)}</td>
+  <td>${(j.photos||[]).length?`<button class="b s" onclick="viewPhotos('${j.id}')">📷 ${j.photos.length}</button>`:'-'}</td>
+  <td style="text-align:right">${n2(calc(j).total)}</td></tr>`).join('')
+  :'<tr><td colspan="6" style="color:#5a6b80">ยังไม่มีประวัติ</td></tr>')+
+  `</table><div style="text-align:right;margin-top:12px"><button class="b s" onclick="closeM()">ปิด</button></div>`);
+}
+
+/* ============ อะไหล่ ============ */
+function renderParts(){
+  const q=(el('qPart').value||'').toLowerCase(),lo=el('onlyLow').checked;
+  let L=DB.parts.filter(p=>((p.code||'')+(p.name||'')).toLowerCase().includes(q));
+  if(lo)L=L.filter(p=>+p.qty<=+p.minQty);
+  el('partList').innerHTML=`<table><tr><th>รหัส</th><th>ชื่อรายการ</th><th>หน่วย</th><th style="text-align:right">ทุน</th><th style="text-align:right">ขาย</th>
+   <th style="text-align:right">คงเหลือ</th><th style="text-align:right">ขั้นต่ำ</th><th>สถานะ</th><th></th></tr>`+
+   (L.length?L.map(p=>{const low=+p.qty<=+p.minQty;return `<tr>
+   <td>${esc(p.code)}</td><td><b>${esc(p.name)}</b></td><td>${esc(p.unit)}</td>
+   <td style="text-align:right">${n2(p.cost)}</td><td style="text-align:right">${n2(p.price)}</td>
+   <td style="text-align:right;${low?'color:#c0392b;font-weight:700':''}">${p.qty}</td><td style="text-align:right">${p.minQty}</td>
+   <td><span class="pill" style="background:${low?'#c0392b':'#1e9e5a'}">${low?'ใกล้หมด / สั่งเพิ่ม':'ปกติ'}</span></td>
+   <td style="white-space:nowrap"><button class="b" onclick="partEdit('${p.id}')">แก้ไข</button>
+   <button class="b r" onclick="partDel('${p.id}')">ลบ</button></td></tr>`}).join('')
+   :'<tr><td colspan="9" style="color:#5a6b80">ยังไม่มีข้อมูล</td></tr>')+`</table>`;
+}
+function partEdit(id){
+  const p=id?part(id):{code:'',name:'',unit:'ชิ้น',cost:0,price:0,qty:0,minQty:2};
+  openM(`<h3>${id?'แก้ไข':'เพิ่ม'}อะไหล่ / สินค้า</h3>
+  <div class="row"><div class="col"><label>รหัส</label><input id="pC" value="${esc(p.code)}"></div>
+  <div class="col" style="min-width:260px"><label>ชื่อรายการ *</label><input id="pN" value="${esc(p.name)}"></div>
+  <div class="col"><label>หน่วย</label><input id="pU" value="${esc(p.unit)}"></div></div>
+  <div class="row"><div class="col"><label>ราคาทุน</label><input type="number" step="0.01" id="pCo" value="${p.cost}"></div>
+  <div class="col"><label>ราคาขาย</label><input type="number" step="0.01" id="pPr" value="${p.price}"></div>
+  <div class="col"><label>จำนวนคงเหลือ</label><input type="number" step="0.01" id="pQ" value="${p.qty}"></div>
+  <div class="col"><label>จุดสั่งซื้อ (แจ้งเตือนเมื่อถึง)</label><input type="number" id="pM" value="${p.minQty}"></div></div>
+  <div style="text-align:right"><button class="b s" onclick="closeM()">ยกเลิก</button>
+  <button class="b g" onclick="partSave('${id||''}')">บันทึก</button></div>`);
+}
+function partSave(id){
+  const o={code:el('pC').value.trim(),name:el('pN').value.trim(),unit:el('pU').value.trim()||'ชิ้น',
+   cost:+el('pCo').value,price:+el('pPr').value,qty:+el('pQ').value,minQty:+el('pM').value};
+  if(!o.name)return alert('กรุณากรอกชื่อรายการ');
+  if(!o.code)o.code='P'+String(DB.parts.length+1).padStart(4,'0');
+  if(id)Object.assign(part(id),o);else DB.parts.push({id:uid(),...o});
+  save();closeM();renderAll();
+}
+function partDel(id){if(confirm('ยืนยันลบรายการนี้?')){DB.parts=DB.parts.filter(p=>p.id!==id);save();renderAll();}}
+function stockIn(){
+  if(!DB.parts.length)return alert('ยังไม่มีอะไหล่ในระบบ');
+  openM(`<h3>รับของเข้าสต็อก</h3>
+  <div class="row"><div class="col" style="min-width:320px"><label>เลือกรายการ</label>
+  <select id="siP">${DB.parts.map(p=>`<option value="${p.id}">${esc(p.code)} | ${esc(p.name)} (คงเหลือ ${p.qty})</option>`).join('')}</select></div>
+  <div class="col"><label>จำนวนที่รับเข้า</label><input type="number" step="0.01" id="siQ" value="1"></div>
+  <div class="col"><label>ราคาทุนใหม่ (ว่าง = ไม่เปลี่ยน)</label><input type="number" step="0.01" id="siC"></div></div>
+  <div style="text-align:right"><button class="b s" onclick="closeM()">ยกเลิก</button>
+  <button class="b g" onclick="stockInSave()">บันทึกรับเข้า</button></div>`);
+}
+function stockInSave(){
+  const p=part(el('siP').value);p.qty=+p.qty+(+el('siQ').value||0);
+  if(el('siC').value!=='')p.cost=+el('siC').value;
+  save();closeM();renderAll();
+}
+
+/* ============ เอกสาร ============ */
+function docMenu(id){
+  const j=DB.jobs.find(x=>x.id===id);
+  openM(`<h3>พิมพ์เอกสาร — ใบงาน ${esc(j.no)}</h3>
+  <p style="font-size:13px;color:#5a6b80">เลือกเอกสาร แล้วกดพิมพ์ (หรือเลือก "Save as PDF" ในหน้าต่างพิมพ์)</p>
+  <label style="font-size:13px"><input type="checkbox" id="wPh" style="width:auto" ${j.photos&&j.photos.length?'checked':''}> แนบรูปถ่ายท้ายเอกสาร (มี ${(j.photos||[]).length} รูป)</label>
+  <div class="tools" style="margin-top:12px">
+   <button class="b" onclick="makeDoc('${id}','quote')">📄 ใบเสนอราคา</button>
+   <button class="b" onclick="makeDoc('${id}','order')">🧾 ใบรับรถ / ใบสั่งซ่อม</button>
+   <button class="b" onclick="makeDoc('${id}','invoice')">💵 ใบแจ้งหนี้</button>
+   <button class="b o" onclick="makeDoc('${id}','tax')">🏛 ใบกำกับภาษี/ใบเสร็จรับเงิน</button>
+   <button class="b g" onclick="makeDoc('${id}','receipt')">🧾 ใบเสร็จรับเงิน</button>
+  </div>
+  <div style="text-align:right"><button class="b s" onclick="closeM()">ปิด</button></div>`);
+}
+function makeDoc(id,type){
+  const withPh=el('wPh')&&el('wPh').checked;
+  const j=DB.jobs.find(x=>x.id===id),c=cus(j.custId),v=veh(j.vehId),s=DB.settings,m=calc(j);
+  const T={quote:['ใบเสนอราคา','QUOTATION','QT'],order:['ใบรับรถ / ใบสั่งซ่อม','JOB ORDER','JO'],
+   invoice:['ใบแจ้งหนี้','INVOICE','IV'],tax:['ใบกำกับภาษี / ใบเสร็จรับเงิน','TAX INVOICE / RECEIPT','TX'],
+   receipt:['ใบเสร็จรับเงิน','RECEIPT','RC']}[type];
+  const no=T[2]+j.no.replace('JO','');
+  el('doc').innerHTML=`<div class="paper">
+   <div class="dhead">
+     <div><div style="font-size:18px;font-weight:700">${esc(s.name)}</div>
+     <div style="font-size:12px;line-height:1.6">${esc(s.addr)}<br>โทร. ${esc(s.phone)}<br>เลขประจำตัวผู้เสียภาษี ${esc(s.tax)}</div></div>
+     <div><div class="dtitle">${T[0]}</div><div style="text-align:right;font-size:11px;color:#666">${T[1]}</div>
+     <div style="text-align:right;font-size:12px;margin-top:6px">เลขที่ <b>${no}</b><br>วันที่ ${thDate(type==='quote'||type==='order'?j.date:today())}</div></div>
+   </div>
+   <table style="margin-bottom:12px"><tr>
+     <td width="50%"><b>ลูกค้า:</b> ${esc(c.name)}<br>${esc(c.addr||'-')}<br>โทร. ${esc(c.phone||'-')}<br>เลขผู้เสียภาษี: ${esc(c.taxId||'-')}</td>
+     <td><b>ข้อมูลรถ</b><br>ทะเบียน: ${esc(v.plate)}<br>ยี่ห้อ/รุ่น: ${esc(v.brand||'')} ${esc(v.model||'')} ${esc(v.year||'')}<br>
+     เลขไมล์: ${esc(j.mileage||'-')} กม. | ช่าง: ${esc(j.tech||'-')}</td></tr></table>
+   <div style="font-size:12px;margin-bottom:8px"><b>อาการ/สิ่งที่ลูกค้าแจ้ง:</b> ${esc(j.symptom||'-')}</div>
+   <table><tr><th width="35">ลำดับ</th><th>รายการ</th><th width="60">จำนวน</th><th width="55">หน่วย</th>
+   <th width="90">ราคา/หน่วย</th><th width="95">จำนวนเงิน</th></tr>
+   ${j.items.map((i,k)=>`<tr><td style="text-align:center">${k+1}</td><td>${esc(i.name)}</td>
+   <td style="text-align:center">${i.qty}</td><td style="text-align:center">${esc(i.unit||'')}</td>
+   <td style="text-align:right">${n2(i.price)}</td><td style="text-align:right">${n2(i.qty*i.price)}</td></tr>`).join('')}
+   ${Array(Math.max(0,6-j.items.length)).fill('<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>').join('')}
+   </table>
+   <table class="sum" style="margin-left:auto;width:300px;margin-top:8px">
+     <tr><td>รวมเป็นเงิน</td><td style="text-align:right">${n2(m.sub)}</td></tr>
+     <tr><td>ส่วนลด</td><td style="text-align:right">${n2(m.disc)}</td></tr>
+     <tr><td>มูลค่าก่อนภาษี</td><td style="text-align:right">${n2(m.base)}</td></tr>
+     <tr><td>ภาษีมูลค่าเพิ่ม ${s.vat}%</td><td style="text-align:right">${n2(m.vat)}</td></tr>
+     <tr><td style="border-top:1px solid #000"><b>ยอดสุทธิ</b></td><td style="text-align:right;border-top:1px solid #000"><b>${n2(m.total)}</b></td></tr>
+   </table>
+   <div style="font-size:12px;margin-top:6px">(${bahtText(m.total)})</div>
+   <div style="font-size:12px;margin-top:6px">ชำระโดย: ${esc(j.payMethod)} ${j.paid?'(ชำระแล้ว)':'(ยังไม่ชำระ)'}</div>
+   ${j.nextDate?`<div style="font-size:12px;margin-top:4px">นัดเช็กระยะครั้งหน้า: ${thDate(j.nextDate)} หรือเลขไมล์ ${esc(j.nextKm||'-')} กม.</div>`:''}
+   ${withPh&&(j.photos||[]).length?`<div style="margin-top:14px"><b style="font-size:13px">ภาพบันทึกสภาพรถ / งานซ่อม</b>
+     <div class="pgal">${j.photos.map(p=>`<figure><img src="${p.data}"><figcaption>${esc(p.tag)}${p.cap?' — '+esc(p.cap):''}</figcaption></figure>`).join('')}</div></div>`:''}
+   <div style="display:flex;justify-content:space-between;margin-top:45px;font-size:12px;text-align:center">
+     <div style="width:45%">...........................................<br>ผู้รับบริการ / ลูกค้า<br>วันที่ ........../........../..........</div>
+     <div style="width:45%">...........................................<br>ผู้มีอำนาจลงนาม<br>วันที่ ........../........../..........</div>
+   </div>
+   <div class="noprint" style="text-align:center;margin-top:20px">
+     <button class="b g" onclick="window.print()">🖨 พิมพ์ / บันทึกเป็น PDF</button>
+     <button class="b s" onclick="document.getElementById('doc').style.display='none'">ปิด</button></div>
+  </div>`;
+  closeM();el('doc').style.display='block';window.scrollTo(0,0);
+}
+function bahtText(num){
+  const t=['','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'],p=['','สิบ','ร้อย','พัน','หมื่น','แสน','ล้าน'];
+  num=Math.round(num*100)/100;let[i,d]=num.toFixed(2).split('.');
+  const conv=s=>{s=String(+s);if(s==='0')return'';let r='',L=s.length;
+    for(let k=0;k<L;k++){const n=+s[k],pos=L-k-1;if(!n)continue;
+      if(pos===0&&n===1&&L>1)r+='เอ็ด';else if(pos===1&&n===1)r+='';
+      else if(pos===1&&n===2)r+='ยี่';else r+=t[n];r+=p[pos%6]||'';}
+    return r;};
+  let txt=i.length>6?conv(i.slice(0,-6))+'ล้าน'+conv(i.slice(-6)):conv(i);
+  txt=(txt||'ศูนย์')+'บาท';
+  txt+=(+d)?conv(d)+'สตางค์':'ถ้วน';
+  return txt;
+}
+
+/* ============ ข้อความแจ้งลูกค้า ============ */
+function msgBox(title,msg){
+  openM(`<h3>${title}</h3>
+  <div class="alert">คัดลอกข้อความนี้ไปส่งทาง LINE / SMS ให้ลูกค้าได้เลยครับ</div>
+  <textarea id="msgTA" rows="15">${esc(msg)}</textarea>
+  <div style="text-align:right;margin-top:10px">
+    <button class="b g" onclick="navigator.clipboard.writeText(document.getElementById('msgTA').value);alert('คัดลอกข้อความแล้ว ✅')">📋 คัดลอกข้อความ</button>
+    <a class="b" style="text-decoration:none;padding:9px 14px" href="https://line.me/R/" target="_blank">เปิด LINE</a>
+    <button class="b s" onclick="closeM()">ปิด</button></div>`);
+}
+function notify(id,kind){
+  const j=DB.jobs.find(x=>x.id===id),c=cus(j.custId),v=veh(j.vehId),m=calc(j);
+  const msg=kind==='due'
+   ?`เรียน คุณ${c.name}\n\n${DB.settings.name} ขอแจ้งเตือนครับ 🔔\nรถทะเบียน ${v.plate} (${v.brand} ${v.model})\nถึงกำหนดเข้ารับบริการเช็กระยะในวันที่ ${thDate(j.nextDate)}${j.nextKm?` หรือเมื่อเลขไมล์ถึง ${j.nextKm} กม.`:''}\n\nสะดวกเข้ามาวันไหน แจ้งนัดล่วงหน้าได้เลยครับ\nโทร. ${DB.settings.phone}`
+   :`เรียน คุณ${c.name}\n\n${DB.settings.name} ขอแจ้งความคืบหน้าครับ\nใบงานเลขที่: ${j.no}\nรถทะเบียน: ${v.plate} (${v.brand} ${v.model})\nสถานะ: ${j.status}\nรายการที่ดำเนินการ:\n${j.items.map(i=>'• '+i.name).join('\n')||'• '+j.symptom}\nยอดรวมทั้งสิ้น: ${n2(m.total)} บาท\n${(j.photos||[]).length?'\n*มีภาพถ่ายงานซ่อมให้ดูที่ร้านครับ ('+j.photos.length+' รูป)\n':''}\n${j.status==='ซ่อมเสร็จ'?'รถพร้อมให้เข้ามารับได้แล้วครับ 🚗':''}\nสอบถามเพิ่มเติม โทร. ${DB.settings.phone}`;
+  msgBox('ข้อความแจ้งลูกค้า',msg);
+}
+
+/* ============ รายงาน ============ */
+function renderRep(){
+  const a=el('r1').value||'0000-01-01',b=el('r2').value||'9999-12-31';
+  const L=DB.jobs.filter(j=>j.date>=a&&j.date<=b&&j.status!=='ยกเลิก');
+  let lab=0,prt=0,cost=0,vat=0,tot=0;const top={};
+  L.forEach(j=>{const m=calc(j);tot+=m.total;vat+=m.vat;
+    j.items.forEach(i=>{const amt=i.qty*i.price;
+      if(i.type==='part'){prt+=amt;cost+=(+part(i.partId).cost||0)*i.qty;top[i.name]=(top[i.name]||0)+ +i.qty;}
+      else lab+=amt;});});
+  const unpaid=L.filter(j=>!j.paid);
+  const byTech={};L.forEach(j=>byTech[j.tech||'-']=(byTech[j.tech||'-']||0)+calc(j).total);
+  const AP=DB.appts.filter(x=>x.date>=a&&x.date<=b);
+  const noShow=AP.filter(x=>x.status==='ไม่มาตามนัด').length;
+  el('repOut').innerHTML=`
+  <div class="kpi" style="margin-bottom:14px">
+   <div><label>จำนวนใบงาน</label><b>${L.length}</b></div>
+   <div><label>ค่าแรงรวม</label><b>${n2(lab)}</b></div>
+   <div><label>ค่าอะไหล่รวม</label><b>${n2(prt)}</b></div>
+   <div class="ok"><label>กำไรขั้นต้นอะไหล่</label><b>${n2(prt-cost)}</b></div>
+   <div class="ok"><label>ยอดขายสุทธิ</label><b>${n2(tot)}</b></div>
+   <div class="${unpaid.length?'warn':''}"><label>ค้างชำระ</label><b>${unpaid.length} ใบ</b></div>
+  </div>
+  <div class="kpi" style="margin-bottom:14px">
+   <div><label>นัดหมายทั้งหมด</label><b>${AP.length}</b></div>
+   <div class="ok"><label>มาตามนัด</label><b>${AP.filter(x=>x.status==='มาแล้ว').length}</b></div>
+   <div class="${noShow?'warn':''}"><label>ไม่มาตามนัด</label><b>${noShow}</b></div>
+   <div><label>อัตรามาตามนัด</label><b>${AP.length?Math.round(AP.filter(x=>x.status==='มาแล้ว').length/AP.length*100):0}%</b></div>
+  </div>
+  <div class="row">
+   <div class="col"><h2 style="font-size:14px">ยอดตามช่าง</h2><table><tr><th>ช่าง</th><th style="text-align:right">ยอดงาน</th></tr>
+    ${Object.entries(byTech).sort((x,y)=>y[1]-x[1]).map(([k,v])=>`<tr><td>${esc(k)}</td><td style="text-align:right">${n2(v)}</td></tr>`).join('')||'<tr><td colspan="2">-</td></tr>'}</table></div>
+   <div class="col"><h2 style="font-size:14px">อะไหล่ขายดี</h2><table><tr><th>รายการ</th><th style="text-align:right">จำนวน</th></tr>
+    ${Object.entries(top).sort((x,y)=>y[1]-x[1]).slice(0,10).map(([k,v])=>`<tr><td>${esc(k)}</td><td style="text-align:right">${v}</td></tr>`).join('')||'<tr><td colspan="2">-</td></tr>'}</table></div>
+  </div>
+  <h2 style="font-size:14px;margin-top:14px">ภาษีขาย (VAT) ในช่วงนี้: <b>${n2(vat)}</b> บาท</h2>
+  ${unpaid.length?`<h2 style="font-size:14px;color:#c0392b">รายการค้างชำระ</h2><table><tr><th>เลขที่</th><th>ลูกค้า</th><th>ทะเบียน</th><th style="text-align:right">ยอด</th></tr>
+   ${unpaid.map(j=>`<tr><td>${esc(j.no)}</td><td>${esc(cus(j.custId).name)}</td><td>${esc(veh(j.vehId).plate)}</td><td style="text-align:right">${n2(calc(j).total)}</td></tr>`).join('')}</table>`:''}`;
+}
+
+/* ============ ตั้งค่า ============ */
+function saveSet(){
+  Object.assign(DB.settings,{name:el('sName').value,tax:el('sTax').value,addr:el('sAddr').value,phone:el('sPhone').value,
+   vat:+el('sVat').value,vatMode:el('sVatMode').value,due:+el('sDue').value,
+   open:el('sOpen').value,close:el('sClose').value,cap:+el('sCap').value,imgMax:+el('sImg').value});
+  save();renderAll();alert('บันทึกแล้ว ✅');
+}
+function addTech(){const t=el('newTech').value.trim();if(!t)return;DB.techs.push(t);el('newTech').value='';save();renderAll();}
+function renderSet(){
+  const s=DB.settings;
+  el('sName').value=s.name;el('sTax').value=s.tax;el('sAddr').value=s.addr;el('sPhone').value=s.phone;
+  el('sVat').value=s.vat;el('sVatMode').value=s.vatMode;el('sDue').value=s.due;
+  el('sOpen').value=s.open;el('sClose').value=s.close;el('sCap').value=s.cap;el('sImg').value=s.imgMax;
+  const mb=(new Blob([JSON.stringify(DB)]).size/1048576),np=DB.jobs.reduce((n,j)=>n+(j.photos||[]).length,0);
+  el('stInfo').innerHTML=`<div class="alert ${mb>4?'danger':'info'}">
+   ใช้พื้นที่ไปแล้ว <b>${mb.toFixed(2)} MB</b> (เบราว์เซอร์รองรับประมาณ 5 MB) · รูปถ่ายในระบบ ${np} รูป
+   ${mb>4?'<br>⚠ ใกล้เต็ม! กรุณาสำรองไฟล์ แล้วลบรูปของงานเก่าที่ปิดแล้วออกครับ':''}
+   <br><small>ข้อมูลเก็บในเครื่องนี้เท่านั้น — แนะนำกดสำรองไฟล์ทุกสัปดาห์</small></div>`;
+  el('techList').innerHTML=`<table><tr><th>ชื่อช่าง</th><th>ใบงาน</th><th>คิวนัดล่วงหน้า</th><th></th></tr>`+
+   DB.techs.map((t,i)=>`<tr><td>${esc(t)}</td><td>${DB.jobs.filter(j=>j.tech===t).length} ใบ</td>
+   <td>${DB.appts.filter(a=>a.tech===t&&a.date>=today()&&!['ยกเลิก','ไม่มาตามนัด'].includes(a.status)).length} คิว</td>
+   <td><button class="b r" onclick="DB.techs.splice(${i},1);save();renderAll()">ลบ</button></td></tr>`).join('')+`</table>`;
+}
+function backup(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(DB)],{type:'application/json'}));
+  a.download='garage_backup_'+today()+'.json';a.click();
+}
+function restore(f){
+  const r=new FileReader();
+  r.onload=e=>{try{DB=JSON.parse(e.target.result);save();location.reload();}catch{alert('ไฟล์ไม่ถูกต้อง');}};
+  r.readAsText(f.files[0]);
+}
+function wipe(){if(confirm('ลบข้อมูลทั้งหมดถาวร? แนะนำสำรองไฟล์ก่อน'))if(confirm('ยืนยันอีกครั้ง')){localStorage.removeItem(KEY);location.reload();}}
+
+/* ============ ระบบนำเข้า/ส่งออก Excel (CSV) ============ */
+function exportExcelCSV(){
+  let csv = '\ufeff=== ข้อมูลลูกค้า ===\nรหัสลูกค้า,ชื่อลูกค้า,โทรศัพท์,เลขผู้เสียภาษี,อีเมล,ที่อยู่\n';
+  DB.customers.forEach(c => {
+    csv += `"${c.id}","${c.name || ''}","${c.phone || ''}","${c.taxId || ''}","${c.email || ''}","${c.addr || ''}"\n`;
+  });
+
+  csv += '\n\ufeff=== ข้อมูลรถ ===\nรหัสรถ,รหัสลูกค้า,ทะเบียน,ยี่ห้อ,รุ่น,ปี,สี,เลขตัวถัง\n';
+  DB.vehicles.forEach(v => {
+    csv += `"${v.id}","${v.custId || ''}","${v.plate || ''}","${v.brand || ''}","${v.model || ''}","${v.year || ''}","${v.color || ''}","${v.vin || ''}"\n`;
+  });
+
+  csv += '\n\ufeff=== ข้อมูลอะไหล่ ===\nรหัสอะไหล่,ชื่ออะไหล่,หน่วย,ราคาทุน,ราคาขาย,คงเหลือ,จุดสั่งซื้อ\n';
+  DB.parts.forEach(p => {
+    csv += `"${p.code || ''}","${p.name || ''}","${p.unit || ''}","${p.cost || 0}","${p.price || 0}","${p.qty || 0}","${p.minQty || 0}"\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `garage_data_${today()}.csv`;
+  a.click();
+}
+
+function restoreExcelCSV(inp){
+  const f = inp.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = function(e){
+    try {
+      const text = e.target.result;
+      const lines = text.split(/\r\n|\n/);
+      let mode = '';
+      let cCount = 0, vCount = 0, pCount = 0;
+      let newCus = [], newVeh = [], newParts = [];
+
+      lines.forEach(line => {
+        if (!line.trim()) return;
+        if (line.includes('=== ข้อมูลลูกค้า ===')) { mode = 'cus'; return; }
+        if (line.includes('=== ข้อมูลรถ ===')) { mode = 'veh'; return; }
+        if (line.includes('=== ข้อมูลอะไหล่ ===')) { mode = 'part'; return; }
+
+        const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/^["=]+|["']+$/g, '').trim());
+        if (mode === 'cus' && cols[0] && cols[0] !== 'รหัสลูกค้า') {
+          newCus.push({ id: cols[0], name: cols[1], phone: cols[2], taxId: cols[3], email: cols[4], addr: cols[5] });
+          cCount++;
+        } else if (mode === 'veh' && cols[0] && cols[0] !== 'รหัสรถ') {
+          newVeh.push({ id: cols[0], custId: cols[1], plate: cols[2], brand: cols[3], model: cols[4], year: cols[5], color: cols[6], vin: cols[7] });
+          vCount++;
+        } else if (mode === 'part' && cols[0] && cols[0] !== 'รหัสอะไหล่') {
+          newParts.push({ id: uid(), code: cols[0], name: cols[1], unit: cols[2]||'ชิ้น', cost: Number(cols[3])||0, price: Number(cols[4])||0, qty: Number(cols[5])||0, minQty: Number(cols[6])||2 });
+          pCount++;
+        }
+      });
+
+      if (!confirm('ข้อมูลปัจจุบันจะถูกผสานหรือแทนที่ ยืนยันการนำเข้าข้อมูล Excel (CSV) หรือไม่?')) return;
+      if (newCus.length > 0) DB.customers = newCus;
+      if (newVeh.length > 0) DB.vehicles = newVeh;
+      if (newParts.length > 0) DB.parts = newParts;
+
+      save(); location.reload();
+      alert(`นำเข้าข้อมูลสำเร็จ!\n- ลูกค้า: ${cCount} ราย\n- รถ: ${vCount} คัน\n- อะไหล่: ${pCount} รายการ`);
+    } catch(err) {
+      alert('เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาใช้ไฟล์ CSV ที่ส่งอกจากระบบเท่านั้น');
+    }
+  };
+  rd.readAsText(f, 'UTF-8');
+  inp.value = '';
+}
+
+/* ============ เริ่มต้น ============ */
+function renderAll(){
+  el('hShop').textContent=DB.settings.name;
+  el('today').textContent=thFull(today());
+  renderDash();renderAppt();renderJobs();renderCus();renderVeh();renderParts();renderSet();
+}
+el('mdl').onclick=e=>{if(e.target.id==='mdl')closeM();};
+if(!DB.parts.length){
+  DB.parts=[
+   {id:uid(),code:'P0001',name:'น้ำมันเครื่องสังเคราะห์ 5W-30 (1 ลิตร)',unit:'ลิตร',cost:220,price:350,qty:24,minQty:8},
+   {id:uid(),code:'P0002',name:'กรองน้ำมันเครื่อง',unit:'ลูก',cost:90,price:180,qty:10,minQty:4},
+   {id:uid(),code:'P0003',name:'ผ้าเบรกหน้า',unit:'ชุด',cost:650,price:1200,qty:3,minQty:4},
+   {id:uid(),code:'P0004',name:'แบตเตอรี่ 12V 60Ah',unit:'ลูก',cost:1900,price:2800,qty:2,minQty:2}
+  ];save();
+}
+el('aDate').value=today();
+el('r1').value=today().slice(0,8)+'01';el('r2').value=today();
+renderAll();
+</script>
+<!-- ===================== ซ่อนหัว/ท้ายกระดาษของเบราว์เซอร์ ===================== -->
+<style>
+@page{size:A4;margin:0}
+@media print{
+  html,body{margin:0;padding:0}
+  #doc .paper{max-width:none;width:210mm;padding:14mm 15mm 12mm;margin:0}
+}
+</style>
+<!-- ===================== ปรับหน้าเอกสาร: ตัดรูป/การชำระ/วันนัด + ย้ายจำนวนเงินตัวหนังสือ ===================== -->
+<script>
+(function(){
+  const oldMenu=docMenu, oldDoc=makeDoc;
+
+  /* เอาช่องติ๊ก "แนบรูปถ่ายท้ายเอกสาร" ออก */
+  docMenu=function(id){
+    oldMenu(id);
+    const c=el('wPh'); if(c) c.closest('label').remove();
+  };
+
+  /* จัดหน้าเอกสารใหม่ */
+  makeDoc=function(id,type){
+    oldDoc(id,type);
+    const paper=document.querySelector('#doc .paper'); if(!paper) return;
+    const sum=paper.querySelector('table.sum'); if(!sum) return;
+
+    // บรรทัดถัดจากตารางยอดเงิน = จำนวนเงินตัวหนังสือ
+    const baht=sum.nextElementSibling; if(!baht) return;
+
+    // ลบทุกอย่างระหว่างจำนวนเงินตัวหนังสือกับช่องลงชื่อ (ชำระโดย / นัดเช็กระยะ / รูปถ่าย)
+    let n=baht.nextElementSibling;
+    while(n && n.style.display!=='flex' && !n.classList.contains('noprint')){
+      const next=n.nextElementSibling; n.remove(); n=next;
+    }
+
+    // ย้ายจำนวนเงินตัวหนังสือไปไว้ซ้ายมือ ข้างตารางยอดเงิน
+    const box=document.createElement('div');
+    box.style.cssText='display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-top:8px';
+    sum.parentNode.insertBefore(box,sum);
+    baht.style.cssText='flex:1;font-size:12px;text-align:center;padding-top:4px';
+    sum.style.margin='0';
+    box.appendChild(baht);
+    box.appendChild(sum);
+  };
+})();
+</script>
+</body>
+</html>
