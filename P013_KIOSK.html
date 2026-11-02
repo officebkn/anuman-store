@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตู้กดรับบัตรคิว - ศูนย์บริการ</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Sarabun', 'Tahoma', sans-serif; text-align: center; background: #f0f2f5; padding: 20px; margin: 0; }
+        .container { max-width: 450px; margin: 40px auto; background: white; padding: 35px 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+        h2 { color: #1a1a1a; margin-bottom: 10px; font-size: 26px; }
+        p { color: #666; margin-bottom: 25px; font-size: 16px; }
+        .btn-ticket { background: linear-gradient(135deg, #007bff, #0056b3); color: white; border: none; padding: 22px 30px; font-size: 24px; font-weight: bold; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; width: 100%; box-shadow: 0 4px 15px rgba(0,123,255,0.3); }
+        .btn-ticket:hover { background: linear-gradient(135deg, #0056b3, #003d82); transform: translateY(-2px); }
+        .btn-ticket:active { transform: translateY(1px); }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #ticket-print, #ticket-print * { visibility: visible; }
+            #ticket-print { position: absolute; left: 0; top: 0; width: 100%; text-align: center; }
+        }
+        #ticket-print { display: none; }
+        .ticket-box { border: 2px dashed #333; padding: 20px; margin: 0 auto; text-align: center; width: 280px; font-family: monospace; }
+        .ticket-number { font-size: 52px; font-weight: bold; margin: 15px 0; color: #000; }
+    </style>
+</head>
+<body>
+
+
+<script>
+const LICENSE_SECRET='Family2026-Anuman-Secret';
+const LS_MACHINE_SALT='queue_system_machine_salt_v1';
+const LS_LICENSE='queue_system_license_key_v1';
+function hashString(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}return Math.abs(h);}
+function to36(n){return n.toString(36).toUpperCase().padStart(6,'0');}
+function getMachineID(){
+  let salt=localStorage.getItem(LS_MACHINE_SALT);
+  if(!salt){salt='SALT-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);localStorage.setItem(LS_MACHINE_SALT,salt);}
+  let raw=navigator.userAgent+'|'+screen.width+'x'+screen.height+'|'+navigator.hardwareConcurrency+'|'+navigator.language+'|'+(navigator.platform||'')+'|'+salt;
+  let h=hashString(raw); let h2=hashString(raw.split('').reverse().join(''));
+  let combined=(h.toString(36)+h2.toString(36)).toUpperCase();
+  combined=(combined+'000000000000').slice(0,12);
+  return combined.slice(0,4)+'-'+combined.slice(4,8)+'-'+combined.slice(8,12);
+}
+function makeLicense(mid){let s=mid+'|'+LICENSE_SECRET;let h=hashString(s);return 'LIC-'+to36(h)+'-'+mid.slice(-4)+'-'+mid.slice(0,4);}
+function isLicenseValid(){
+  let mid=getMachineID();
+  let el=document.getElementById('machineIdDisplay'); if(el) el.textContent=mid;
+  let lic=localStorage.getItem(LS_LICENSE);
+  if(!lic) return false;
+  return lic===makeLicense(mid);
+}
+function activateLicense(){
+  let mid=getMachineID();
+  let input=document.getElementById('licenseInput').value.trim().toUpperCase();
+  let expected=makeLicense(mid);
+  let err=document.getElementById('licenseError');
+  if(input===expected){
+    localStorage.setItem(LS_LICENSE,input);
+    err.style.display='none';
+    alert('เปิดใช้งานสำเร็จ!');
+    document.getElementById('licenseScreen').style.display='none';
+    location.reload();
+  }else{
+    err.textContent='License ไม่ถูกต้อง (ควรเป็น '+expected+')';
+    err.style.display='block';
+  }
+}
+</script>
+
+
+    <div class="container">
+        <h2>ยินดีต้อนรับ</h2>
+        <p>กดปุ่มด้านล่างเพื่อรับบัตรคิวบริการทั่วไป</p>
+        <button class="btn-ticket" onclick="generateQueue()">กดรับบัตรคิว</button>
+    </div>
+
+    <div id="ticket-print">
+        <div class="ticket-box">
+            <h2 style="margin:0; font-size: 22px;">ศูนย์บริการ</h2>
+            <p style="margin: 5px 0; font-size: 14px;">บริการทั่วไป</p>
+            <hr style="border-top: 1px dashed #000;">
+            <p style="margin:5px 0 0 0; font-size: 14px;">หมายเลขคิวของคุณ</p>
+            <div class="ticket-number" id="print-queue-num">A001</div>
+            <p style="font-size:12px; margin:0;" id="print-time"></p>
+            <p style="font-size:12px; margin-top:15px;">กรุณารอเรียกคิวที่หน้าจอ</p>
+        </div>
+    </div>
+
+    <script>
+        function generateQueue() {
+            let currentNum = parseInt(localStorage.getItem('queueCounter') || '0') + 1;
+            localStorage.setItem('queueCounter', currentNum);
+
+            let queueCode = 'A' + String(currentNum).padStart(3, '0');
+
+            let waitingQueue = JSON.parse(localStorage.getItem('waitingQueue') || '[]');
+            waitingQueue.push(queueCode);
+            localStorage.setItem('waitingQueue', JSON.stringify(waitingQueue));
+
+            document.getElementById('print-queue-num').innerText = queueCode;
+            document.getElementById('print-time').innerText = new Date().toLocaleString('th-TH');
+            
+            document.getElementById('ticket-print').style.display = 'block';
+            window.print();
+            document.getElementById('ticket-print').style.display = 'none';
+        }
+    </script>
+
+
+</body>
+</html>

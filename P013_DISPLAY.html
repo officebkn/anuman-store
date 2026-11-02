@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>หน้าจอแสดงผลคิว - Display</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Sarabun', 'Tahoma', sans-serif; background: #121212; color: white; margin: 0; padding: 25px; height: 100vh; overflow: hidden; }
+        .header { text-align: center; font-size: 38px; padding: 15px; background: #0066cc; border-radius: 12px; font-weight: bold; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(0,102,204,0.4); }
+        .main-display { display: flex; margin-top: 25px; gap: 25px; height: calc(100vh - 120px); }
+        .calling-box { flex: 1.2; background: #1e1e1e; border-radius: 16px; padding: 40px 20px; text-align: center; border: 4px solid #ffb300; display: flex; flex-direction: column; justify-content: center; align-items: center; box-shadow: 0 0 30px rgba(255,179,0,0.2); }
+        .calling-title { font-size: 36px; color: #ffb300; font-weight: bold; }
+        .calling-number { font-size: 110px; font-weight: bold; color: #00ff66; margin: 15px 0; line-height: 1; text-shadow: 0 0 20px rgba(0,255,102,0.3); }
+        .calling-counter { font-size: 52px; color: #ffffff; font-weight: bold; }
+        .grid-counters { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .counter-card { background: #252525; padding: 25px 15px; border-radius: 14px; text-align: center; border-left: 10px solid #0066cc; display: flex; flex-direction: column; justify-content: center; }
+        .counter-card h3 { margin: 0; font-size: 28px; color: #aaa; }
+        .counter-card .q-num { font-size: 48px; font-weight: bold; color: #fff; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+
+<script>
+const LICENSE_SECRET='Family2026-Anuman-Secret';
+const LS_MACHINE_SALT='queue_system_machine_salt_v1';
+const LS_LICENSE='queue_system_license_key_v1';
+function hashString(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}return Math.abs(h);}
+function to36(n){return n.toString(36).toUpperCase().padStart(6,'0');}
+function getMachineID(){
+  let salt=localStorage.getItem(LS_MACHINE_SALT);
+  if(!salt){salt='SALT-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);localStorage.setItem(LS_MACHINE_SALT,salt);}
+  let raw=navigator.userAgent+'|'+screen.width+'x'+screen.height+'|'+navigator.hardwareConcurrency+'|'+navigator.language+'|'+(navigator.platform||'')+'|'+salt;
+  let h=hashString(raw); let h2=hashString(raw.split('').reverse().join(''));
+  let combined=(h.toString(36)+h2.toString(36)).toUpperCase();
+  combined=(combined+'000000000000').slice(0,12);
+  return combined.slice(0,4)+'-'+combined.slice(4,8)+'-'+combined.slice(8,12);
+}
+function makeLicense(mid){let s=mid+'|'+LICENSE_SECRET;let h=hashString(s);return 'LIC-'+to36(h)+'-'+mid.slice(-4)+'-'+mid.slice(0,4);}
+function isLicenseValid(){
+  let mid=getMachineID();
+  let el=document.getElementById('machineIdDisplay'); if(el) el.textContent=mid;
+  let lic=localStorage.getItem(LS_LICENSE);
+  if(!lic) return false;
+  return lic===makeLicense(mid);
+}
+function activateLicense(){
+  let mid=getMachineID();
+  let input=document.getElementById('licenseInput').value.trim().toUpperCase();
+  let expected=makeLicense(mid);
+  let err=document.getElementById('licenseError');
+  if(input===expected){
+    localStorage.setItem(LS_LICENSE,input);
+    err.style.display='none';
+    alert('เปิดใช้งานสำเร็จ!');
+    document.getElementById('licenseScreen').style.display='none';
+    location.reload();
+  }else{
+    err.textContent='License ไม่ถูกต้อง (ควรเป็น '+expected+')';
+    err.style.display='block';
+  }
+}
+</script>
+
+
+    <div class="header">หมายเลขคิวที่กำลังให้บริการ</div>
+
+    <div class="main-display">
+        <div class="calling-box">
+            <div class="calling-title">🔔 กำลังเรียกคิว</div>
+            <div class="calling-number" id="callNum">---</div>
+            <div class="calling-counter" id="callCounter">ช่องบริการ -</div>
+        </div>
+
+        <div class="grid-counters">
+            <div class="counter-card">
+                <h3>ช่องบริการ 1</h3>
+                <div class="q-num" id="c1">-</div>
+            </div>
+            <div class="counter-card">
+                <h3>ช่องบริการ 2</h3>
+                <div class="q-num" id="c2">-</div>
+            </div>
+            <div class="counter-card">
+                <h3>ช่องบริการ 3</h3>
+                <div class="q-num" id="c3">-</div>
+            </div>
+            <div class="counter-card">
+                <h3>ช่องบริการ 4</h3>
+                <div class="q-num" id="c4">-</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let lastTimestamp = 0;
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                let msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'th-TH';
+                msg.rate = 0.9;
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        setInterval(() => {
+            let data = localStorage.getItem('lastCalledQueue');
+            if (data) {
+                let parsed = JSON.parse(data);
+                if (parsed.timestamp > lastTimestamp) {
+                    lastTimestamp = parsed.timestamp;
+
+                    document.getElementById('callNum').innerText = parsed.number;
+                    document.getElementById('callCounter').innerText = 'ช่องบริการ ' + parsed.counter;
+
+                    document.getElementById('c' + parsed.counter).innerText = parsed.number;
+
+                    let numSpoken = parsed.number.split('').join(' ');
+                    let speechText = `ขอเชิญหมายเลข ${numSpoken} ที่ช่องบริการ ${parsed.counter} ครับ`;
+                    speak(speechText);
+                }
+            }
+        }, 800);
+    </script>
+
+
+</body>
+</html>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>จับสลากของขวัญ งานเลี้ยงสุดเหวี่ยง 🎉</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Sarabun', sans-serif; }
+    @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    .animate-bounce-slow { animation: bounce-slow 2s infinite; }
+    @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 15px rgba(234, 179, 8, 0.5); } 50% { box-shadow: 0 0 30px rgba(234, 179, 8, 0.9); } }
+    .glow-effect { animation: pulse-glow 1.5s infinite; }
+    @keyframes float-gift { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-8px) rotate(5deg); } }
+    .animate-gift { animation: float-gift 3s ease-in-out infinite; }
+  </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center justify-between p-4 selection:bg-pink-500 selection:text-white">
+
+  <!-- หัวข้อเว็บ พร้อมไอคอนกล่องของขวัญสุดน่ารัก -->
+  <header class="w-full max-w-7xl flex items-center justify-center gap-3 py-3 text-center">
+    <div class="text-3xl md:text-4xl animate-gift">🎁</div>
+    <div>
+      <h1 class="text-xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-400 animate-bounce-slow">
+        🎉 สุ่มแจกของขวัญ มหาสนุก 🎁
+      </h1>
+      <p class="text-slate-400 text-[11px] md:text-xs mt-0.5">ระบบจับสลากผู้โชคดีและกล่องสุ่มอัจฉริยะ (ตัดรายชื่อและของรางวัลที่ได้แล้วออกอัตโนมัติ)</p>
+    </div>
+    <div class="text-3xl md:text-4xl animate-gift" style="animation-delay: 1.5s;">🧸</div>
+  </header>
+
+  <!-- เนื้อหาหลักแบบ 3 คอลัมน์ -->
+  <main class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-4 gap-4 my-auto">
+    
+    <!-- คอลัมน์ซ้าย: ตั้งค่าและนำเข้าข้อมูล -->
+    <section class="bg-slate-800/85 backdrop-blur border border-slate-700 p-4 rounded-2xl flex flex-col justify-between shadow-xl">
+      <div>
+        <h2 class="font-bold text-xs text-yellow-400 mb-2 flex items-center justify-between">
+          <span>⚙️ ตั้งค่าข้อมูลเริ่มต้น</span>
+          <button onclick="app.resetData()" class="text-[10px] text-red-400 hover:underline">รีเซ็ตทั้งหมด</button>
+        </h2>
+
+        <!-- รายชื่อผู้มีสิทธิ์ -->
+        <div class="flex justify-between items-center mb-1">
+          <label class="font-bold text-xs text-slate-300 flex items-center gap-1">
+            <span>👥</span> รายชื่อผู้ร่วมลุ้น (<span id="total-names">0</span>)
+          </label>
+          <label class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-[10px] px-2 py-0.5 rounded cursor-pointer transition">
+            📁 นำเข้า (.txt)
+            <input type="file" accept=".txt" onchange="app.importFile(event, 'name-input')" class="hidden">
+          </label>
+        </div>
+        <textarea id="name-input" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-yellow-400 resize-none mb-3" placeholder="พิมพ์หรือนำเข้ารายชื่อ (บรรทัดละคน)"></textarea>
+
+        <!-- รายการของขวัญ -->
+        <div class="flex justify-between items-center mb-1">
+          <label class="font-bold text-xs text-slate-300 flex items-center gap-1">
+            <span>🎁</span> ของขวัญในกล่อง (<span id="total-prizes">0</span>)
+          </label>
+          <label class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-[10px] px-2 py-0.5 rounded cursor-pointer transition">
+            📁 นำเข้า (.txt)
+            <input type="file" accept=".txt" onchange="app.importFile(event, 'prizes-input')" class="hidden">
+          </label>
+        </div>
+        <textarea id="prizes-input" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-pink-400 resize-none" placeholder="พิมพ์หรือนำเข้ารายการของขวัญ"></textarea>
+      </div>
+
+      <button onclick="app.saveSettings()" class="mt-3 w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 font-bold py-2 rounded-xl transition shadow-lg text-xs">
+        💾 อัปเดตข้อมูลเข้าระบบ
+      </button>
+    </section>
+
+    <!-- คอลัมน์กลาง: หน้าจอแสดงผลการสุ่ม -->
+    <section class="lg:col-span-2 bg-slate-800/85 backdrop-blur border border-slate-700 p-6 rounded-2xl flex flex-col items-center justify-center text-center shadow-xl relative overflow-hidden">
+      
+      <!-- เอฟเฟกต์แสงพื้นหลังตอนลุ้น -->
+      <div id="glow-bg" class="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-pink-500/10 opacity-0 transition-opacity duration-300 pointer-events-none"></div>
+
+      <!-- กล่องโชว์ชื่อผู้โชคดี -->
+      <div class="my-4 w-full">
+        <span class="text-xs uppercase tracking-widest text-pink-400 font-bold">ผู้โชคดีรอบนี้คือ...</span>
+        <div id="result-box" class="mt-2 text-3xl md:text-5xl font-extrabold text-yellow-300 min-h-[100px] flex items-center justify-center px-4 bg-slate-900/80 border-2 border-dashed border-slate-700 rounded-2xl glow-effect transition-all transform scale-100">
+          กดปุ่มสุ่มด้านล่างเลย! 🎯
+        </div>
+      </div>
+
+      <!-- ปุ่มสั่งงานหลัก -->
+      <div class="flex flex-wrap justify-center gap-3 w-full mt-2">
+        <button onclick="app.startLuckyDraw()" id="btn-draw" class="flex-1 min-w-[160px] bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 text-slate-950 font-extrabold text-base py-3.5 px-6 rounded-xl shadow-lg transform active:scale-95 transition">
+          🎲 สุ่มผู้โชคดี!
+        </button>
+        <button onclick="app.openMysteryBox()" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 font-bold py-3.5 px-6 rounded-xl shadow-lg transition text-xs flex items-center gap-2">
+          🎁 เปิดกล่องสุ่มรางวัล
+        </button>
+      </div>
+
+    </section>
+
+    <!-- คอลัมน์ขวา: ประวัติผู้โชคดีและของรางวัลที่ถูกจับไปแล้ว -->
+    <section class="bg-slate-800/85 backdrop-blur border border-slate-700 p-4 rounded-2xl flex flex-col gap-4 shadow-xl">
+      
+      <!-- ผู้ที่ได้รับรางวัลแล้ว -->
+      <div class="flex-1 flex flex-col">
+        <div class="flex justify-between items-center mb-1 border-b border-slate-700 pb-1">
+          <span class="text-xs font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-1">
+            <span>🏆</span> ผู้ที่ได้รางวัล (<span id="total-winners">0</span>)
+          </span>
+        </div>
+        <div id="winners-list" class="flex flex-col gap-1 max-h-[140px] overflow-y-auto text-xs pr-1 mt-1">
+          <span class="text-slate-500 italic text-center py-4">ยังไม่มีการสุ่มรางวัล...</span>
+        </div>
+      </div>
+
+      <!-- ของรางวัลที่ถูกจับไปแล้ว -->
+      <div class="flex-1 flex flex-col border-t border-slate-700 pt-3">
+        <div class="flex justify-between items-center mb-1 border-b border-slate-700 pb-1">
+          <span class="text-xs font-bold text-pink-400 uppercase tracking-wider flex items-center gap-1">
+            <span>🎁</span> ของรางวัลที่แจกแล้ว (<span id="total-claimed-prizes">0</span>)
+          </span>
+        </div>
+        <div id="claimed-prizes-list" class="flex flex-col gap-1 max-h-[140px] overflow-y-auto text-xs pr-1 mt-1">
+          <span class="text-slate-500 italic text-center py-4">ยังไม่มีของรางวัลที่ถูกเปิด...</span>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- แผงควบคุมเปิดเพลง MP3 จากเครื่อง -->
+  <footer class="w-full max-w-7xl bg-slate-800/90 border border-slate-700 p-3 rounded-2xl shadow-xl mt-3 flex flex-col md:flex-row items-center justify-between gap-3">
+    <div class="flex items-center gap-2 w-full md:w-auto">
+      <span class="text-lg">🎵</span>
+      <div>
+        <div class="text-xs font-bold text-yellow-400">เครื่องเล่นเพลงประกอบงานเลี้ยง</div>
+        <div class="text-[10px] text-slate-400">เลือกไฟล์เพลง MP3 จากเครื่อง แล้วกด เล่น / หยุด ได้ทันที</div>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-2 w-full md:w-auto flex-1 max-w-md justify-end">
+      <label class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-3 py-1.5 rounded-xl cursor-pointer transition">
+        📁 เลือกเพลง MP3
+        <input type="file" accept="audio/mp3,audio/*" onchange="loadMusicFile(event)" class="hidden">
+      </label>
+      <button onclick="playMusic()" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 text-xs font-bold px-4 py-1.5 rounded-xl transition shadow whitespace-nowrap">
+        ▶ เล่นเพลง
+      </button>
+      <button onclick="stopMusic()" class="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-xs font-bold px-4 py-1.5 rounded-xl transition shadow whitespace-nowrap">
+        ⏹ หยุดเพลง
+      </button>
+    </div>
+  </footer>
+
+  <!-- Audio Element สำหรับเล่นเพลง -->
+  <audio id="bg-music" loop></audio>
+
+  <!-- Modal กล่องสุ่มของรางวัล -->
+  <div id="modal-box" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-800 border border-slate-700 max-w-md w-full p-6 rounded-2xl text-center shadow-2xl transform scale-95 transition-transform">
+      <div class="text-4xl mb-2 animate-gift">🎁</div>
+      <h3 class="text-lg font-bold text-yellow-400 mb-1">กล่องสุ่มของรางวัล</h3>
+      <p class="text-slate-300 text-xs mb-3">ของขวัญจะถูกสุ่มและตัดออกจากรายการทันทีที่ออกรางวัล!</p>
+      
+      <div id="box-prize-result" class="bg-slate-900 border border-slate-700 py-5 px-3 rounded-xl text-xl font-bold text-pink-400 mb-4 min-h-[70px] flex items-center justify-center">
+        กดปุ่มเพื่อเปิดกล่องลุ้นรางวัลใหญ่!
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="app.spinBoxPrize()" id="btn-spin-box" class="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 font-bold py-2.5 rounded-xl text-xs transition">
+          ✨ เปิดกล่องเลย!
+        </button>
+        <button onclick="app.closeModal()" class="bg-slate-700 hover:bg-slate-600 px-4 py-2.5 rounded-xl font-bold transition text-xs">
+          ปิด
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- สคริปต์การทำงาน -->
+  <script>
+    const audioPlayer = document.getElementById('bg-music');
+
+    function loadMusicFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const fileURL = URL.createObjectURL(file);
+      audioPlayer.src = fileURL;
+      audioPlayer.play();
+      alert(`โหลดและเล่นเพลง "${file.name}" เรียบร้อยแล้วครับ!`);
+    }
+
+    function playMusic() {
+      if (!audioPlayer.src) {
+        return alert('กรุณาเลือกไฟล์เพลง MP3 จากเครื่องก่อนครับ');
+      }
+      audioPlayer.play();
+    }
+
+    function stopMusic() {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+    }
+
+    const SoundFX = {
+      ctx: null,
+      init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+      tick() {
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.08);
+      },
+      win() {
+        this.init();
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, i) => {
+          setTimeout(() => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+          }, i * 120);
+        });
+      }
+    };
+
+    const app = {
+      names: [],
+      winners: [],
+      prizes: [],
+      claimedPrizes: [],
+      
+      init() {
+        const defaultNames = "สมชาย ใจดี\nสมหญิง รักสงบ\nหัวหน้าฝ่ายขาย\nน้องใหม่ไฟแรง\nพี่ใหญ่ใจ Stong";
+        const defaultPrizes = "ทองคำแท่ง\nSmart TV 32 นิ้ว\nเงินสด 1,000 บาท\nบัตรของขวัญ 500 บาท\nหูฟังบลูทูธ";
+        
+        document.getElementById('name-input').value = defaultNames;
+        document.getElementById('prizes-input').value = defaultPrizes;
+        this.saveSettings();
+      },
+
+      importFile(event, targetId) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const content = e.target.result;
+          const textarea = document.getElementById(targetId);
+          textarea.value = textarea.value ? textarea.value + '\n' + content : content;
+          app.saveSettings();
+          alert('นำเข้าข้อมูลสำเร็จแล้วครับ!');
+        };
+        reader.readAsText(file, 'UTF-8');
+      },
+
+      saveSettings() {
+        const rawNames = document.getElementById('name-input').value;
+        this.names = rawNames.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+        document.getElementById('total-names').innerText = this.names.length;
+
+        const rawPrizes = document.getElementById('prizes-input').value;
+        this.prizes = rawPrizes.split('\n')
+          .map(p => p.trim())
+          .filter(p => p.length > 0)
+          .map(p => p.startsWith('🎁') || p.startsWith('🏆') || p.startsWith('💰') || p.startsWith('📺') ? p : '🎁 ' + p);
+
+        document.getElementById('prizes-input').value = this.prizes.join('\n');
+        document.getElementById('total-prizes').innerText = this.prizes.length;
+      },
+
+      startLuckyDraw() {
+        this.saveSettings();
+        if (this.names.length === 0) return alert('รายชื่อผู้ร่วมลุ้นหมดแล้วครับ!');
+
+        const btn = document.getElementById('btn-draw');
+        const box = document.getElementById('result-box');
+        const glow = document.getElementById('glow-bg');
+        
+        btn.disabled = true;
+        glow.style.opacity = '1';
+        
+        let counter = 0;
+        let speed = 40;
+        const totalSteps = 30;
+
+        const roll = () => {
+          const randomIndex = Math.floor(Math.random() * this.names.length);
+          box.innerText = this.names[randomIndex];
+          box.classList.add('scale-105');
+          setTimeout(() => box.classList.remove('scale-105'), 40);
+          
+          SoundFX.tick();
+          counter++;
+
+          if (counter < totalSteps) {
+            speed += 6;
+            setTimeout(roll, speed);
+          } else {
+            const finalIndex = Math.floor(Math.random() * this.names.length);
+            const winner = this.names[finalIndex];
+            
+            box.innerText = `🎉 ${winner} 🎉`;
+            box.classList.add('animate-bounce');
+            SoundFX.win();
+            
+            this.winners.push(winner);
+            this.names.splice(finalIndex, 1);
+            
+            document.getElementById('name-input').value = this.names.join('\n');
+            document.getElementById('total-names').innerText = this.names.length;
+            
+            this.renderLists();
+
+            setTimeout(() => {
+              box.classList.remove('animate-bounce');
+              btn.disabled = false;
+              glow.style.opacity = '0';
+            }, 1000);
+          }
+        };
+
+        roll();
+      },
+
+      renderLists() {
+        // อัปเดตรายชื่อผู้ที่ได้รางวัล
+        const winnersList = document.getElementById('winners-list');
+        document.getElementById('total-winners').innerText = this.winners.length;
+        if (this.winners.length === 0) {
+          winnersList.innerHTML = `<span class="text-slate-500 italic text-center py-4">ยังไม่มีการสุ่มรางวัล...</span>`;
+        } else {
+          winnersList.innerHTML = this.winners.map((w, i) => `
+            <div class="bg-slate-900/90 border border-slate-700/80 px-2.5 py-1.5 rounded-lg text-yellow-300 font-semibold flex items-center justify-between">
+              <span>${i+1}. ${w}</span>
+              <span class="text-[10px] text-slate-400">🎉 ได้รับแล้ว</span>
+            </div>
+          `).join('');
+        }
+
+        // อัปเดตของรางวัลที่ถูกจับไปแล้ว
+        const claimedList = document.getElementById('claimed-prizes-list');
+        document.getElementById('total-claimed-prizes').innerText = this.claimedPrizes.length;
+        if (this.claimedPrizes.length === 0) {
+          claimedList.innerHTML = `<span class="text-slate-500 italic text-center py-4">ยังไม่มีของรางวัลที่ถูกเปิด...</span>`;
+        } else {
+          claimedList.innerHTML = this.claimedPrizes.map((p, i) => `
+            <div class="bg-slate-900/90 border border-slate-700/80 px-2.5 py-1.5 rounded-lg text-pink-300 font-semibold flex items-center justify-between">
+              <span>${i+1}. ${p}</span>
+              <span class="text-[10px] text-slate-400">🎁 แจกแล้ว</span>
+            </div>
+          `).join('');
+        }
+      },
+
+      resetData() {
+        if(confirm('ต้องการรีเซ็ตข้อมูลทั้งหมดหรือไม่?')) {
+          this.winners = [];
+          this.claimedPrizes = [];
+          this.renderLists();
+          this.init();
+        }
+      },
+
+      openMysteryBox() {
+        this.saveSettings();
+        if (this.prizes.length === 0) return alert('รายการของขวัญหมดแล้วครับ!');
+        document.getElementById('modal-box').classList.remove('hidden');
+        document.getElementById('box-prize-result').innerText = "กดปุ่มเพื่อเปิดกล่องลุ้นรางวัลใหญ่!";
+      },
+
+      closeModal() {
+        document.getElementById('modal-box').classList.add('hidden');
+      },
+
+      spinBoxPrize() {
+        if (this.prizes.length === 0) return alert('รายการของขวัญในกล่องหมดแล้วครับ!');
+        
+        const prizeBox = document.getElementById('box-prize-result');
+        const btn = document.getElementById('btn-spin-box');
+        btn.disabled = true;
+        
+        let count = 0;
+        const interval = setInterval(() => {
+          const randPrize = this.prizes[Math.floor(Math.random() * this.prizes.length)];
+          prizeBox.innerText = randPrize;
+          SoundFX.tick();
+          count++;
+          if (count > 20) {
+            clearInterval(interval);
+            
+            const finalIndex = Math.floor(Math.random() * this.prizes.length);
+            const finalPrize = this.prizes[finalIndex];
+            
+            // ตัดออกจากรายการยังไม่เปิด และย้ายมาใส่รายการที่แจกแล้ว
+            this.prizes.splice(finalIndex, 1);
+            this.claimedPrizes.push(finalPrize);
+            
+            document.getElementById('prizes-input').value = this.prizes.join('\n');
+            document.getElementById('total-prizes').innerText = this.prizes.length;
+
+            prizeBox.innerText = `${finalPrize}`;
+            SoundFX.win();
+            btn.disabled = false;
+
+            this.renderLists();
+          }
+        }, 50);
+      }
+    };
+
+    window.onload = () => app.init();
+  </script>
+</body>
+</html>

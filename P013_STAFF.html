@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบเรียกคิว - เจ้าหน้าที่</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Sarabun', 'Tahoma', sans-serif; background: #eef2f5; padding: 20px; text-align: center; margin: 0; }
+        .card { max-width: 480px; margin: 30px auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+        h2 { color: #222; margin-top: 0; }
+        label { font-weight: bold; color: #444; display: block; margin-bottom: 8px; text-align: left; }
+        select { width: 100%; padding: 12px; font-size: 18px; margin-bottom: 25px; border-radius: 8px; border: 1px solid #ccc; background: #fafafa; }
+        .current-queue { font-size: 56px; color: #28a745; font-weight: bold; margin: 10px 0 25px 0; background: #f8fff9; border: 2px solid #28a745; border-radius: 12px; padding: 10px; }
+        .btn { padding: 15px 25px; font-size: 18px; font-weight: bold; margin: 6px; border: none; border-radius: 10px; cursor: pointer; color: white; transition: 0.2s; }
+        .btn-next { background: #28a745; width: 100%; font-size: 24px; padding: 18px; box-shadow: 0 4px 12px rgba(40,167,69,0.3); }
+        .btn-next:hover { background: #218838; }
+        .btn-repeat { background: #ffc107; color: #212529; width: 48%; }
+        .btn-repeat:hover { background: #e0a800; }
+        .btn-reset { background: #dc3545; width: 48%; }
+        .btn-reset:hover { background: #c82333; }
+        .action-group { display: flex; justify-content: space-between; margin-top: 10px; }
+        .waiting-box { font-size: 18px; color: #495057; margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee; }
+        .waiting-count { font-weight: bold; color: #007bff; font-size: 22px; }
+    </style>
+</head>
+<body>
+
+
+<script>
+const LICENSE_SECRET='Family2026-Anuman-Secret';
+const LS_MACHINE_SALT='queue_system_machine_salt_v1';
+const LS_LICENSE='queue_system_license_key_v1';
+function hashString(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}return Math.abs(h);}
+function to36(n){return n.toString(36).toUpperCase().padStart(6,'0');}
+function getMachineID(){
+  let salt=localStorage.getItem(LS_MACHINE_SALT);
+  if(!salt){salt='SALT-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);localStorage.setItem(LS_MACHINE_SALT,salt);}
+  let raw=navigator.userAgent+'|'+screen.width+'x'+screen.height+'|'+navigator.hardwareConcurrency+'|'+navigator.language+'|'+(navigator.platform||'')+'|'+salt;
+  let h=hashString(raw); let h2=hashString(raw.split('').reverse().join(''));
+  let combined=(h.toString(36)+h2.toString(36)).toUpperCase();
+  combined=(combined+'000000000000').slice(0,12);
+  return combined.slice(0,4)+'-'+combined.slice(4,8)+'-'+combined.slice(8,12);
+}
+function makeLicense(mid){let s=mid+'|'+LICENSE_SECRET;let h=hashString(s);return 'LIC-'+to36(h)+'-'+mid.slice(-4)+'-'+mid.slice(0,4);}
+function isLicenseValid(){
+  let mid=getMachineID();
+  let el=document.getElementById('machineIdDisplay'); if(el) el.textContent=mid;
+  let lic=localStorage.getItem(LS_LICENSE);
+  if(!lic) return false;
+  return lic===makeLicense(mid);
+}
+function activateLicense(){
+  let mid=getMachineID();
+  let input=document.getElementById('licenseInput').value.trim().toUpperCase();
+  let expected=makeLicense(mid);
+  let err=document.getElementById('licenseError');
+  if(input===expected){
+    localStorage.setItem(LS_LICENSE,input);
+    err.style.display='none';
+    alert('เปิดใช้งานสำเร็จ!');
+    document.getElementById('licenseScreen').style.display='none';
+    location.reload();
+  }else{
+    err.textContent='License ไม่ถูกต้อง (ควรเป็น '+expected+')';
+    err.style.display='block';
+  }
+}
+</script>
+
+
+    <div class="card">
+        <h2>แผงควบคุมเจ้าหน้าที่</h2>
+        
+        <label for="counterSelect">เลือกช่องบริการของคุณ:</label>
+        <select id="counterSelect">
+            <option value="1">ช่องบริการที่ 1</option>
+            <option value="2">ช่องบริการที่ 2</option>
+            <option value="3">ช่องบริการที่ 3</option>
+            <option value="4">ช่องบริการที่ 4</option>
+        </select>
+
+        <p style="margin:0; color:#666;">คิวกำลังให้บริการ</p>
+        <div class="current-queue" id="activeQueue">-</div>
+
+        <button class="btn btn-next" onclick="callNext()">เรียกคิวถัดไป 🔔</button>
+        
+        <div class="action-group">
+            <button class="btn btn-repeat" onclick="repeatCall()">🔁 เรียกซ้ำ</button>
+            <button class="btn btn-reset" onclick="resetQueue()">🧹 รีเซ็ตคิวประจำวัน</button>
+        </div>
+
+        <div class="waiting-box">จำนวนคิวรอขณะนี้: <span class="waiting-count" id="waitingCount">0</span> คิว</div>
+    </div>
+
+    <script>
+        function updateWaitingCount() {
+            let waitingQueue = JSON.parse(localStorage.getItem('waitingQueue') || '[]');
+            document.getElementById('waitingCount').innerText = waitingQueue.length;
+        }
+
+        function callNext() {
+            let waitingQueue = JSON.parse(localStorage.getItem('waitingQueue') || '[]');
+            if (waitingQueue.length === 0) {
+                alert('ไม่มีคิวรอในขณะนี้');
+                return;
+            }
+
+            let nextQueue = waitingQueue.shift();
+            localStorage.setItem('waitingQueue', JSON.stringify(waitingQueue));
+
+            let counterNum = document.getElementById('counterSelect').value;
+            document.getElementById('activeQueue').innerText = nextQueue;
+
+            let callData = {
+                number: nextQueue,
+                counter: counterNum,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('lastCalledQueue', JSON.stringify(callData));
+
+            updateWaitingCount();
+        }
+
+        function repeatCall() {
+            let current = document.getElementById('activeQueue').innerText;
+            if (current === '-') return;
+            let counterNum = document.getElementById('counterSelect').value;
+            
+            let callData = {
+                number: current,
+                counter: counterNum,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('lastCalledQueue', JSON.stringify(callData));
+        }
+
+        function resetQueue() {
+            if (confirm('คุณต้องการรีเซ็ตคิวทั้งหมดเป็น 0 ใช่หรือไม่?')) {
+                localStorage.removeItem('queueCounter');
+                localStorage.removeItem('waitingQueue');
+                localStorage.removeItem('lastCalledQueue');
+                document.getElementById('activeQueue').innerText = '-';
+                updateWaitingCount();
+                alert('รีเซ็ตคิวเรียบร้อยแล้ว');
+            }
+        }
+
+        setInterval(updateWaitingCount, 1000);
+    </script>
+
+
+</body>
+</html>
