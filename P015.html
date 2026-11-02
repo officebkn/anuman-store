@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>เครื่องคำนวณการผ่อนชำระ v2.7</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Sarabun",sans-serif;background:#0f172a;color:#e2e8f0;padding:14px;line-height:1.6}
+.wrap{max-width:900px;margin:0 auto}
+h1{font-size:21px;text-align:center}
+.sub{text-align:center;color:#94a3b8;font-size:13px;margin-bottom:16px}
+.tabs{display:flex;gap:5px;margin-bottom:14px;flex-wrap:wrap}
+.tabs button{flex:1;min-width:74px;padding:11px 3px;border:0;border-radius:10px;background:#1e293b;color:#94a3b8;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.tabs button.on{background:#3b82f6;color:#fff}
+.card{background:#1e293b;border-radius:14px;padding:18px;margin-bottom:14px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:13px;color:#94a3b8;margin:9px 0 5px}
+input,select{width:100%;padding:10px 12px;border:1px solid #334155;border-radius:9px;background:#0f172a;color:#e2e8f0;font-size:15px;font-family:inherit}
+input:focus,select:focus{outline:none;border-color:#3b82f6}
+input:disabled{opacity:.55}
+.btn{width:100%;margin-top:14px;padding:13px;border:0;border-radius:10px;background:#3b82f6;color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn.sv{background:#059669;margin-top:9px}
+.btn.pr{background:#7c3aed;margin-top:9px}
+.btn.gh{background:#334155;font-size:14px;padding:10px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.big{background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:12px;padding:15px;text-align:center;margin:14px 0 11px}
+.big span{font-size:13px;opacity:.9;display:block}
+.big strong{font-size:29px;display:block;line-height:1.25}
+.big small{font-size:12px;opacity:.85}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.box{background:#0f172a;border-radius:10px;padding:10px;text-align:center}
+.box span{font-size:11px;color:#94a3b8;display:block}
+.box b{font-size:16.5px;color:#38bdf8}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+th{background:#0f172a;padding:8px 4px;color:#94a3b8;position:sticky;top:0;font-size:11.5px}
+td{padding:7px 4px;text-align:right;border-bottom:1px solid #1e293b}
+td:first-child{text-align:center;color:#94a3b8}
+.scroll{max-height:330px;overflow:auto;border-radius:10px;margin-top:10px}
+.note{font-size:12px;color:#64748b;margin-top:11px;padding:10px;background:#0f172a;border-radius:8px;border-left:3px solid #3b82f6}
+.warn{border-left-color:#f59e0b;color:#fbbf24}
+.hide{display:none}
+.sthead,.step{display:grid;grid-template-columns:26px 1fr 1.3fr 34px;gap:7px;align-items:center;margin-bottom:7px}
+.sthead div{font-size:11px;color:#64748b;text-align:center}
+.step .sn{background:#3b82f6;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.step input{padding:8px;font-size:14px}
+.step button{background:#7f1d1d;color:#fecaca;border:0;border-radius:8px;padding:8px 0;cursor:pointer}
+.step button:disabled{opacity:.3}
+.ttl{font-size:14px;font-weight:700;color:#cbd5e1;margin:16px 0 8px;border-left:3px solid #3b82f6;padding-left:8px}
+.ofc{background:#0f172a;border-radius:11px;padding:12px;margin-bottom:9px;border:1px solid #1e293b}
+.ofc.best{border-color:#059669;background:#052e23}
+.ofh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.ofh b{font-size:14.5px}
+.tag{font-size:10px;background:#059669;color:#fff;padding:2px 7px;border-radius:20px}
+.mini{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:11px}
+.mini div{background:#1e293b;border-radius:7px;padding:6px 3px;text-align:center}
+.mini span{color:#94a3b8;display:block;font-size:10px}
+.mini b{color:#38bdf8;font-size:13px}
+.acts{display:flex;gap:6px}
+.acts button{border:0;border-radius:7px;padding:5px 9px;font-size:11.5px;cursor:pointer;font-family:inherit}
+.ld{background:#1d4ed8;color:#fff}.dl{background:#7f1d1d;color:#fecaca}.pt{background:#7c3aed;color:#fff}
+.chk{display:flex;align-items:center;gap:8px;background:#0f172a;padding:10px;border-radius:9px;margin-top:8px;cursor:pointer}
+.chk input{width:18px;height:18px;flex:none}
+.chk span{font-size:13.5px;color:#cbd5e1}
+.sw{display:flex;gap:6px;margin-top:12px}
+.sw button{flex:1;padding:9px;border:0;border-radius:9px;background:#0f172a;color:#94a3b8;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.sw button.on{background:#7c3aed;color:#fff}
+td.up{color:#f87171}td.dn{color:#4ade80}
+.tier{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.tier div{background:#0f172a;border-radius:9px;padding:8px 4px;text-align:center;font-size:11px;color:#64748b;border:1px solid #1e293b}
+.tier div.on{border-color:#a78bfa;background:#2e1065;color:#e9d5ff}
+.tier b{display:block;font-size:17px;color:#a78bfa}
+tr.now td{background:#2e1065;color:#e9d5ff;font-weight:700}
+@media(max-width:520px){.row,.two{grid-template-columns:1fr}.mini{grid-template-columns:repeat(2,1fr)}}
+
+/* ============ PRINT ============ */
+#printArea{display:none}
+@media print{
+  @page{size:A4 portrait;margin:14mm 12mm}
+  body{background:#fff!important;color:#000!important;padding:0;font-size:12px}
+  .wrap{display:none!important}
+  #printArea{display:block!important}
+  .pg{page-break-after:always}
+  .pg:last-child{page-break-after:auto}
+  thead{display:table-header-group}
+  tr{page-break-inside:avoid}
+}
+#printArea{color:#000;font-family:"Sarabun","Segoe UI",sans-serif}
+.ph{border-bottom:2.5px solid #000;padding-bottom:8px;margin-bottom:14px}
+.ph h2{font-size:19px;text-align:center;margin-bottom:2px}
+.ph .org{text-align:center;font-size:12px;color:#444;margin-bottom:8px}
+.pmeta{display:flex;justify-content:space-between;font-size:11.5px;color:#333;margin-top:3px}
+.psec{font-size:13.5px;font-weight:700;background:#eee;padding:5px 9px;border-left:4px solid #000;margin:14px 0 7px}
+table.pt2{width:100%;border-collapse:collapse;font-size:11.5px}
+table.pt2 th,table.pt2 td{border:1px solid #999;padding:5px 7px;text-align:right;color:#000;background:none;position:static}
+table.pt2 th{background:#e8e8e8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;text-align:center;font-size:11px}
+table.pt2 td:first-child{text-align:left}
+table.pt2 tr.hl td{background:#f2f2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-weight:700;font-size:13px}
+table.pt2 tr.wn td{background:#dff0e4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-weight:700}
+.pnote{font-size:10.5px;color:#333;border:1px solid #bbb;padding:8px;margin-top:11px;line-height:1.55}
+.sign{display:flex;justify-content:space-around;margin-top:42px;font-size:11.5px;text-align:center}
+.sign div{width:42%}
+.sign .ln{border-bottom:1px dotted #000;height:32px;margin-bottom:5px}
+.pfoot{margin-top:16px;padding-top:6px;border-top:1px solid #bbb;font-size:10px;color:#666;display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🧮 เครื่องคำนวณการผ่อนชำระ</h1>
+<p class="sub">รถ · บ้าน (ขั้นบันได) · เครื่องใช้ไฟฟ้า · เปรียบเทียบ · พิมพ์เอกสาร · ปิดบัญชีก่อนกำหนด</p>
+
+<div class="tabs">
+  <button class="on" data-t="car" onclick="tab('car',this)">🚗 รถ</button>
+  <button data-t="home" onclick="tab('home',this)">🏠 บ้าน</button>
+  <button data-t="item" onclick="tab('item',this)">📺 ไฟฟ้า</button>
+  <button data-t="cmp" onclick="tab('cmp',this);renderCmp()">📊 เทียบ<span id="cnt"></span></button>
+  <button data-t="prn" onclick="tab('prn',this);renderPrn()">🖨 พิมพ์</button>
+  <button data-t="stl" onclick="tab('stl',this);pullCar()">💰 ปิดบัญชี</button>
+</div>
+
+<!-- ===== รถ ===== -->
+<div id="car" class="card">
+<button class="btn clear" style="background:#7f1d1d; margin-top:10px;" onclick="resetApp()">🗑 ล้างข้อมูลคำนวณ</button>
+  <div class="row">
+    <div><label>ราคารถ (บาท)</label><input id="cPrice" type="number" value="800000"></div>
+    <div><label>เงินดาวน์ (บาท)</label><input id="cDown" type="number" value="160000"></div>
+    <div><label>ดอกเบี้ยคงที่ต่อปี (%)</label><input id="cRate" type="number" step="0.01" value="3.25"></div>
+    <div><label>ระยะเวลาผ่อน (เดือน)</label>
+      <select id="cTerm"><option>12</option><option>24</option><option>36</option><option selected>48</option><option>60</option><option>72</option><option>84</option></select>
+    </div>
+  </div>
+  <button class="btn" onclick="calcCar()">คำนวณ</button>
+  <div id="cOut"></div>
+</div>
+
+<!-- ===== บ้าน ===== -->
+<div id="home" class="card hide">
+<button class="btn clear" style="background:#7f1d1d; margin-top:10px;" onclick="resetApp()">🗑 ล้างข้อมูลคำนวณ</button>
+  <div class="row">
+    <div><label>ราคาบ้าน (บาท)</label><input id="hPrice" type="number" value="3000000"></div>
+    <div><label>เงินดาวน์ (บาท)</label><input id="hDown" type="number" value="0"></div>
+    <div><label>ระยะเวลากู้ (ปี)</label><input id="hYear" type="number" value="30"></div>
+    <div><label>โปะเพิ่มต่อเดือน (บาท)</label><input id="hExtra" type="number" value="0"></div>
+    <div><label>MRR ปัจจุบัน (%)</label><input id="hMRR" type="number" step="0.01" value="7.30"></div>
+    <div><label>MLR ปัจจุบัน (%)</label><input id="hMLR" type="number" step="0.01" value="7.05"></div>
+  </div>
+  <div class="ttl">📶 ดอกเบี้ยขั้นบันได</div>
+  <div class="sthead"><div>#</div><div>ระยะเวลา (ปี)</div><div>อัตรา (%)</div><div></div></div>
+  <div id="hSteps"></div>
+  <button class="btn gh" onclick="addStep()">+ เพิ่มช่วงดอกเบี้ย</button>
+  <div class="note">ใส่ตัวเลขตรง ๆ เช่น <b>3.25</b> หรือสูตร <b>MRR-1.5</b> / <b>MLR-0.75</b> · ช่วงสุดท้ายใช้กับปีที่เหลือทั้งหมด</div>
+  <div class="row">
+    <div><label>รูปแบบค่างวด</label>
+      <select id="hMode" onchange="$('hCustBox').classList.toggle('hide',this.value!=='custom')">
+        <option value="fixed">คงที่ทั้งสัญญา (คิดจากอัตราสุดท้าย)</option>
+        <option value="adjust">ปรับค่างวดเมื่อดอกเบี้ยเปลี่ยน</option>
+        <option value="custom">กำหนดค่างวดเอง</option>
+      </select></div>
+    <div><label>ตารางผ่อน</label><select id="hView"><option value="y">รายปี</option><option value="m">รายเดือน</option></select></div>
+    <div id="hCustBox" class="hide"><label>ค่างวดที่ต้องการ (บาท/เดือน)</label><input id="hCust" type="number" value="20000"></div>
+  </div>
+  <button class="btn" onclick="calcHome()">คำนวณ</button>
+  <div id="hOut"></div>
+</div>
+
+<!-- ===== ไฟฟ้า ===== -->
+<div id="item" class="card hide">
+<button class="btn clear" style="background:#7f1d1d; margin-top:10px;" onclick="resetApp()">🗑 ล้างข้อมูลคำนวณ</button>
+  <div class="row">
+    <div><label>ราคาสินค้า (บาท)</label><input id="iPrice" type="number" value="35000"></div>
+    <div><label>เงินดาวน์ (บาท)</label><input id="iDown" type="number" value="0"></div>
+    <div><label>รูปแบบดอกเบี้ย</label>
+      <select id="iType" onchange="$('iRateBox').classList.toggle('hide',this.value==='0')">
+        <option value="0">ผ่อน 0% (ไม่มีดอกเบี้ย)</option>
+        <option value="m">ดอกเบี้ยต่อเดือน (%)</option>
+        <option value="y">ดอกเบี้ยคงที่ต่อปี (%)</option>
+      </select></div>
+    <div id="iRateBox" class="hide"><label>อัตราดอกเบี้ย (%)</label><input id="iRate" type="number" step="0.01" value="0.8"></div>
+    <div><label>จำนวนงวด (เดือน)</label><input id="iTerm" type="number" value="10"></div>
+    <div><label>ค่าธรรมเนียม/แรกเข้า (บาท)</label><input id="iFee" type="number" value="0"></div>
+  </div>
+  <button class="btn" onclick="calcItem()">คำนวณ</button>
+  <div id="iOut"></div>
+</div>
+
+<!-- ===== เปรียบเทียบ ===== -->
+<div id="cmp" class="card hide"><div id="cmpOut"></div></div>
+
+<!-- ===== พิมพ์ ===== -->
+<div id="prn" class="card hide">
+  <div class="ttl">📝 ข้อมูลหัวเอกสาร</div>
+  <div class="row">
+    <div><label>ชื่อเอกสาร</label><input id="pTitle" type="text" value="รายละเอียดการผ่อนชำระ"></div>
+    <div><label>ชื่อบริษัท / ร้าน / ผู้ออกเอกสาร</label><input id="pOrg" type="text" placeholder="เช่น บจก. ตัวอย่าง"></div>
+    <div><label>ชื่อผู้กู้ / ลูกค้า</label><input id="pName" type="text" placeholder="เช่น นายสมชาย ใจดี"></div>
+    <div><label>เลขที่เอกสาร</label><input id="pNo" type="text" placeholder="เช่น QT-2568-001"></div>
+  </div>
+  <label class="chk"><input id="pSch" type="checkbox" checked><span>แนบตารางผ่อนชำระรายงวด</span></label>
+  <label class="chk"><input id="pCmp" type="checkbox" checked><span>แนบตารางเทียบดอกเบี้ยจริง (เฉพาะสินเชื่อรถ)</span></label>
+  <label class="chk"><input id="pSign" type="checkbox" checked><span>แสดงช่องลงนาม 2 ช่อง</span></label>
+  <label class="chk"><input id="pDis" type="checkbox" checked><span>แสดงหมายเหตุ / ข้อจำกัดความรับผิด</span></label>
+
+  <div class="ttl">🖨 เลือกสิ่งที่ต้องการพิมพ์</div>
+  <div id="prnOut"></div>
+  <div class="note">💡 ในหน้าต่างพิมพ์ เลือกปลายทางเป็น <b>“บันทึกเป็น PDF”</b> เพื่อเก็บไฟล์ · เปิด “กราฟิกพื้นหลัง” เพื่อให้หัวตารางมีสีเทา</div>
+</div>
+
+<!-- ===== ปิดบัญชีก่อนกำหนด ===== -->
+<div id="stl" class="card hide">
+  <div class="note">คำนวณยอดปิดบัญชีก่อนกำหนดของ <b>สินเชื่อเช่าซื้อรถยนต์/จักรยานยนต์</b> ตามประกาศคณะกรรมการว่าด้วยสัญญาฯ พ.ศ. 2565 (มีผล 10 ม.ค. 2566)</div>
+  <button class="btn gh" onclick="pullCar()">⬇ ดึงข้อมูลจากแท็บ 🚗 รถ</button>
+  <div class="row">
+    <div><label>ยอดจัดไฟแนนซ์ (บาท)</label><input id="sL" type="number" value="640000"></div>
+    <div><label>ดอกเบี้ยคงที่ต่อปี (%)</label><input id="sR" type="number" step="0.01" value="3.25"></div>
+    <div><label>จำนวนงวดทั้งหมด</label><input id="sN" type="number" value="48"></div>
+    <div><label>ผ่อนมาแล้ว (งวด)</label><input id="sK" type="number" value="24"></div>
+    <div><label>วิธีคำนวณดอกเบี้ยที่ยังไม่ถึงกำหนด</label>
+      <select id="sM">
+        <option value="eir">ตารางลดต้นลดดอก (EIR) — ใกล้เคียงจริงที่สุด</option>
+        <option value="r78">กฎผลรวมจำนวนงวด (Rule of 78)</option>
+        <option value="sl">เฉลี่ยเส้นตรง (ประมาณการหยาบ)</option>
+      </select></div>
+    <div><label>ส่วนลดดอกเบี้ย</label>
+      <select id="sD" onchange="$('sDcBox').classList.toggle('hide',this.value!=='x')">
+        <option value="auto">อัตโนมัติตามประกาศ สคบ. 2565</option>
+        <option value="x">กำหนดเอง (%)</option>
+      </select></div>
+    <div id="sDcBox" class="hide"><label>ส่วนลดที่ได้รับ (%)</label><input id="sDc" type="number" value="70"></div>
+    <div><label>ค่าธรรมเนียม/ค่าดำเนินการ (บาท)</label><input id="sF" type="number" value="0"></div>
+  </div>
+  <button class="btn" onclick="calcStl()">คำนวณยอดปิดบัญชี</button>
+  <div id="sOut"></div>
+</div>
+
+</div>
+
+<div id="printArea"></div>
+
+<script>
+function resetApp() {
+  // 1. เคลียร์ค่า Input ของหน้ารถ
+  ['cPrice', 'cDown', 'cRate', 'cTerm'].forEach(id => $(id).value = '');
+  $('cOut').innerHTML = '';
+
+  // 2. เคลียร์ค่า Input ของหน้าบ้าน
+  ['hPrice', 'hDown', 'hYear', 'hExtra', 'hMRR', 'hMLR', 'hCust'].forEach(id => $(id).value = '');
+  $('hOut').innerHTML = '';
+  steps = [{y:3, r:'3.00'}, {y:0, r:'MRR-1.50'}]; 
+  renderSteps();
+
+  // 3. เคลียร์ค่า Input ของหน้าไฟฟ้า
+  ['iPrice', 'iDown', 'iRate', 'iTerm', 'iFee'].forEach(id => $(id).value = '');
+  $('iOut').innerHTML = '';
+
+  alert('ล้างข้อมูลคำนวณเรียบร้อยแล้วครับ');
+}
+const $=id=>document.getElementById(id);
+const v=id=>parseFloat($(id).value)||0;
+const f0=n=>Math.round(n).toLocaleString('th-TH');
+const f2=n=>n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const mth=m=>`${Math.floor(m/12)} ปี ${m%12} เดือน`;
+const esc=s=>String(s||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+let last={},offers=JSON.parse(localStorage.getItem('loanOffers')||'[]');
+
+function tab(id,el){
+  ['car','home','item','cmp','prn','stl'].forEach(x=>$(x).classList.add('hide'));
+  $(id).classList.remove('hide');
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('on'));
+  (el||document.querySelector(`[data-t="${id}"]`)).classList.add('on');
+  window.scrollTo(0,0);
+}
+function eir(P,pmt,n){let lo=0,hi=1;for(let k=0;k<200;k++){const r=(lo+hi)/2,pv=r===0?pmt*n:pmt*(1-Math.pow(1+r,-n))/r;pv>P?lo=r:hi=r;}return ((lo+hi)/2)*1200;}
+
+/* ---- ขั้นบันได ---- */
+let steps=[{y:3,r:'3.00'},{y:0,r:'MRR-1.50'}];
+function renderSteps(){
+  $('hSteps').innerHTML=steps.map((s,i)=>{const L=i===steps.length-1;
+   return `<div class="step"><span class="sn">${i+1}</span>
+   <input type="${L?'text':'number'}" step="0.5" ${L?'disabled value="ปีที่เหลือ"':`value="${s.y}"`} onchange="steps[${i}].y=+this.value">
+   <input type="text" value="${s.r}" onchange="steps[${i}].r=this.value">
+   <button onclick="delStep(${i})" ${steps.length<2?'disabled':''}>✕</button></div>`;}).join('');
+}
+function addStep(){steps.splice(steps.length-1,0,{y:2,r:'5.00'});renderSteps();}
+function delStep(i){if(steps.length>1){steps.splice(i,1);renderSteps();}}
+function parseRate(s,mrr,mlr){
+  s=String(s).trim().toUpperCase().replace(/\s/g,'');
+  const m=s.match(/^(MRR|MLR|MOR)([+-][\d.]+)?$/);
+  if(m)return (m[1]==='MLR'?mlr:mrr)+(m[2]?parseFloat(m[2]):0);
+  return parseFloat(s)||0;
+}
+function rateAt(m,mrr,mlr){let a=0;
+  for(let i=0;i<steps.length-1;i++){a+=Math.round(steps[i].y*12);if(m<=a)return parseRate(steps[i].r,mrr,mlr)/1200;}
+  return parseRate(steps[steps.length-1].r,mrr,mlr)/1200;}
+
+/* ---- รถ ---- */
+function carView(k,el){
+  $('cTa').classList.toggle('hide',k!=='a');$('cTb').classList.toggle('hide',k!=='b');
+  el.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));el.classList.add('on');
+}
+function calcCar(){
+  const P=v('cPrice'),D=v('cDown'),R=v('cRate'),n=+$('cTerm').value,L=P-D;
+  if(L<=0){$('cOut').innerHTML='<div class="note warn">เงินดาวน์ต้องน้อยกว่าราคารถ</div>';return;}
+  const int=L*(R/100)*(n/12),pmt=(L+int)/n,e=eir(L,pmt,n),r=e/1200;
+  const fi=int/n,fp=L/n;
+  let bal=L,fbal=L,sch=[],cmp=[],cross=0,mg=0,mgm=0,ra='',rb='';
+  for(let k=1;k<=n;k++){
+    const ti=bal*r;let tp=pmt-ti;if(tp>bal)tp=bal;
+    bal-=tp;if(bal<0.005)bal=0;fbal=Math.max(L-fp*k,0);
+    const gap=ti-fi,bgap=bal-fbal;
+    if(!cross&&gap<0)cross=k;
+    if(bgap>mg){mg=bgap;mgm=k;}
+    sch.push([`งวดที่ ${k}`,(r*1200).toFixed(2)+'%',pmt,ti,tp,bal]);
+    cmp.push([k,fi,ti,gap,fbal,bal,bgap]);
+    ra+=`<tr><td>${k}</td><td>${f0(pmt)}</td><td>${f0(fi)}</td><td>${f0(fp)}</td><td>${f0(fbal)}</td></tr>`;
+    rb+=`<tr><td>${k}</td><td>${f0(fi)}</td><td>${f0(ti)}</td><td class="${gap>0?'up':'dn'}">${gap>0?'+':''}${f0(gap)}</td><td>${f0(fbal)}</td><td>${f0(bal)}</td><td class="up">+${f0(bgap)}</td></tr>`;
+  }
+  last.car={type:'car',tn:'🚗 รถ',loan:L,pmt,interest:int,total:D+pmt*n,months:n,eir:e,sch,cmp,cross,mg,mgm,
+    det:[['ราคารถ (บาท)',f2(P)],['เงินดาวน์',`${f2(D)}  (${(D/P*100).toFixed(1)}%)`],['ยอดจัดไฟแนนซ์',f2(L)],
+     ['อัตราดอกเบี้ยคงที่ (Flat Rate)',R.toFixed(2)+' % ต่อปี'],['ระยะเวลาผ่อนชำระ',`${n} งวด (${mth(n)})`],
+     ['ค่างวดต่อเดือน',f2(pmt)],['ดอกเบี้ยรวมตลอดสัญญา',f2(int)],['ยอดชำระรวมทั้งสิ้น',f2(D+pmt*n)],
+     ['อัตราดอกเบี้ยแท้จริงต่อปี (EIR)',e.toFixed(2)+' %'],
+     ['งวดที่ดอกเบี้ยจริงเริ่มต่ำกว่าสัญญา',cross?`งวดที่ ${cross}`:'-'],
+     ['ส่วนต่างเงินต้นคงเหลือสูงสุด',`${f2(mg)} บาท (งวดที่ ${mgm})`]],
+    inp:{cPrice:P,cDown:D,cRate:R,cTerm:n}};
+  $('cOut').innerHTML=`
+  <div class="big"><span>ค่างวดต่อเดือน</span><strong>${f0(pmt)} ฿</strong><small>${n} งวด</small></div>
+  <div class="grid">
+    <div class="box"><span>ยอดจัดไฟแนนซ์</span><b>${f0(L)}</b></div>
+    <div class="box"><span>ดาวน์ ${(D/P*100).toFixed(1)}%</span><b>${f0(D)}</b></div>
+    <div class="box"><span>ดอกเบี้ยรวม</span><b>${f0(int)}</b></div>
+    <div class="box"><span>จ่ายทั้งหมด</span><b>${f0(D+pmt*n)}</b></div>
+    <div class="box"><span>ดอกเบี้ยแท้จริง EIR</span><b>${e.toFixed(2)}%</b></div>
+    <div class="box"><span>Flat ${R.toFixed(2)}% → EIR</span><b>×${(e/R).toFixed(2)}</b></div>
+    <div class="box"><span>จุดพลิก (ดบ.จริง&lt;สัญญา)</span><b>งวดที่ ${cross||'-'}</b></div>
+    <div class="box"><span>ส่วนต่างเงินต้นสูงสุด</span><b>${f0(mg)}</b></div>
+  </div>
+  <div class="sw"><button class="on" onclick="carView('a',this)">📄 ตารางตามสัญญา (Flat)</button>
+  <button onclick="carView('b',this)">🔍 เทียบดอกเบี้ยจริง</button></div>
+  <div id="cTa" class="scroll"><table>
+    <tr><th>งวด</th><th>ชำระ</th><th>ดอกเบี้ย</th><th>เงินต้น</th><th>คงเหลือ</th></tr>${ra}</table></div>
+  <div id="cTb" class="scroll hide"><table>
+    <tr><th>งวด</th><th>ดบ.สัญญา</th><th>ดบ.จริง</th><th>ต่าง</th><th>คงเหลือสัญญา</th><th>คงเหลือจริง</th><th>ต่าง</th></tr>${rb}</table></div>
+  <div class="two"><button class="btn sv" onclick="save('car')">💾 บันทึก</button>
+  <button class="btn pr" onclick="printOne(last.car)">🖨 พิมพ์เอกสาร</button></div>
+  <div class="note">💡 ดอกเบี้ยรวมทั้งสองคอลัมน์เท่ากันเป๊ะที่ <b>${f0(int)} บาท</b> — ต่างกันแค่ "จังหวะ" ที่ถูกคิด
+  · ช่วงต้นสัญญาดอกเบี้ยจริงสูงกว่าที่ตารางสัญญาแสดง เงินต้นจึงลดช้ากว่าที่คิด สูงสุดถึง <b>${f0(mg)} บาท</b> ที่งวดที่ ${mgm}
+  · นี่คือเหตุผลที่ "ปิดบัญชีก่อนกำหนด" มักได้ส่วนลดน้อยกว่าที่คาดไว้ครับ</div>`;
+}
+
+/* ---- บ้าน ---- */
+function calcHome(){
+  const P=v('hPrice')-v('hDown'),N=Math.round(v('hYear')*12),ex=v('hExtra'),mrr=v('hMRR'),mlr=v('hMLR'),mode=$('hMode').value;
+  if(P<=0||N<=0){$('hOut').innerHTML='<div class="note warn">กรุณากรอกข้อมูลให้ถูกต้อง</div>';return;}
+  const base=r=>r===0?P/N:P*r/(1-Math.pow(1+r,-N));
+  let fp=mode==='custom'?v('hCust'):base(rateAt(N,mrr,mlr));
+  let bal=P,ti=0,m=0,rows=[],sch=[],yI=0,yP=0,yPay=0,pmt=fp,pmt1=0,bad=false,maxP=0,minP=1e12;
+  while(bal>0.01&&m<600){
+    m++;
+    const r=rateAt(m,mrr,mlr),rp=rateAt(m-1||1,mrr,mlr);
+    if(mode==='adjust'&&(m===1||r!==rp)){const nl=Math.max(N-m+1,1);pmt=r===0?bal/nl:bal*r/(1-Math.pow(1+r,-nl));}
+    const pay=pmt+ex,i=bal*r;
+    if(pay<=i){bad=true;break;}
+    let pr=pay-i;if(pr>bal)pr=bal;
+    bal-=pr;ti+=i;yI+=i;yP+=pr;yPay+=pr+i;
+    if(m===1)pmt1=pay;maxP=Math.max(maxP,pay);minP=Math.min(minP,pay);
+    if($('hView').value==='m'){
+      rows.push(`<tr><td>${m}</td><td>${(r*1200).toFixed(2)}%</td><td>${f0(pr+i)}</td><td>${f0(i)}</td><td>${f0(pr)}</td><td>${f0(bal)}</td></tr>`);
+      sch.push([`งวดที่ ${m}`,(r*1200).toFixed(2)+'%',pr+i,i,pr,bal]);
+    }else if(m%12===0||bal<=0.01){
+      rows.push(`<tr><td>ปีที่ ${Math.ceil(m/12)}</td><td>${(r*1200).toFixed(2)}%</td><td>${f0(yPay)}</td><td>${f0(yI)}</td><td>${f0(yP)}</td><td>${f0(bal)}</td></tr>`);
+      sch.push([`ปีที่ ${Math.ceil(m/12)}`,(r*1200).toFixed(2)+'%',yPay,yI,yP,bal]);
+      yI=yP=yPay=0;
+    }
+  }
+  if(bad){$('hOut').innerHTML='<div class="note warn">⚠️ ค่างวดต่ำเกินไป ไม่พอตัดดอกเบี้ย — เพิ่มค่างวดหรือลดวงเงินกู้ครับ</div>';return;}
+  let a3=0;const n3=Math.min(36,m);for(let k=1;k<=n3;k++)a3+=rateAt(k,mrr,mlr)*1200;a3/=n3;
+  const ne=(()=>{let b=P,t=0,p=fp,mm=0;while(b>0.01&&mm<600){mm++;const r=rateAt(mm,mrr,mlr);
+    if(mode==='adjust'&&(mm===1||r!==rateAt(mm-1||1,mrr,mlr))){const nl=Math.max(N-mm+1,1);p=r===0?b/nl:b*r/(1-Math.pow(1+r,-nl));}
+    const i=b*r;if(p<=i)break;let pr=p-i;if(pr>b)pr=b;b-=pr;t+=i;}return{t,mm};})();
+  const stxt=steps.map((s,i)=>`${i===steps.length-1?'ปีที่เหลือ':(s.y+' ปี')} @ ${s.r}`).join('  →  ');
+  last.home={type:'home',tn:'🏠 บ้าน',loan:P,pmt:pmt1,interest:ti,total:P+ti,months:m,eir:a3,sch,note:stxt,
+    vary:maxP-minP>1,pmax:maxP,pmin:minP,
+    det:[['ราคาบ้าน / หลักประกัน (บาท)',f2(v('hPrice'))],['เงินดาวน์',f2(v('hDown'))],['วงเงินกู้',f2(P)],
+     ['โครงสร้างดอกเบี้ยขั้นบันได',stxt],['อัตราอ้างอิง',`MRR = ${mrr.toFixed(2)}% , MLR = ${mlr.toFixed(2)}%`],
+     ['ระยะเวลากู้ตามสัญญา',mth(N)],['ค่างวดงวดแรก',f2(pmt1)],
+     ...(maxP-minP>1?[['ค่างวดสูงสุดหลังพ้นโปรโมชัน',f2(maxP)]]:[]),
+     ...(ex>0?[['เงินโปะเพิ่มต่อเดือน',f2(ex)],['ดอกเบี้ยที่ประหยัดได้จากการโปะ',f2(ne.t-ti)],['ปิดหนี้เร็วขึ้น',mth(ne.mm-m)]]:[]),
+     ['ระยะเวลาผ่อนจริง',mth(m)],['ดอกเบี้ยรวมตลอดสัญญา',f2(ti)],['ยอดชำระรวมทั้งสิ้น',f2(P+ti)],
+     ['อัตราดอกเบี้ยเฉลี่ย 3 ปีแรก',a3.toFixed(2)+' %']],
+    inp:{hPrice:v('hPrice'),hDown:v('hDown'),hYear:v('hYear'),hExtra:ex,hMRR:mrr,hMLR:mlr,hMode:mode,hCust:v('hCust'),steps:JSON.parse(JSON.stringify(steps))}};
+  $('hOut').innerHTML=`
+  <div class="big"><span>ค่างวดต่อเดือน${ex>0?' (รวมโปะ)':''}</span><strong>${f0(pmt1)} ฿</strong>
+  <small>${maxP-minP>1?`ปรับขึ้นสูงสุด ${f0(maxP)} ฿ เมื่อพ้นโปรฯ`:'คงที่ตลอดสัญญา'}</small></div>
+  <div class="grid">
+    <div class="box"><span>วงเงินกู้</span><b>${f0(P)}</b></div>
+    <div class="box"><span>ดอกเบี้ยรวม</span><b>${f0(ti)}</b></div>
+    <div class="box"><span>จ่ายทั้งหมด</span><b>${f0(P+ti)}</b></div>
+    <div class="box"><span>ผ่อนจริง</span><b>${mth(m)}</b></div>
+    <div class="box"><span>ดบ.เฉลี่ย 3 ปีแรก</span><b>${a3.toFixed(2)}%</b></div>
+    ${ex>0?`<div class="box"><span>ประหยัดดอกเบี้ย</span><b>${f0(ne.t-ti)}</b></div>
+    <div class="box"><span>หมดเร็วขึ้น</span><b>${mth(ne.mm-m)}</b></div>`:
+    `<div class="box"><span>รายได้ที่ควรมี</span><b>${f0(maxP*3)}</b></div>`}
+    <div class="box"><span>ดอกเบี้ย/เงินต้น</span><b>${(ti/P*100).toFixed(0)}%</b></div>
+  </div>
+  <div class="scroll"><table><tr><th>งวด</th><th>อัตรา</th><th>ชำระ</th><th>ดอกเบี้ย</th><th>เงินต้น</th><th>คงเหลือ</th></tr>${rows.join('')}</table></div>
+  <div class="two"><button class="btn sv" onclick="save('home')">💾 บันทึก</button>
+  <button class="btn pr" onclick="printOne(last.home)">🖨 พิมพ์เอกสาร</button></div>
+  <div class="note">💡 ธนาคารไทยเทียบกันด้วย <b>ดอกเบี้ยเฉลี่ย 3 ปีแรก</b> (${a3.toFixed(2)}%) เพราะครบ 3 ปีรีไฟแนนซ์ได้</div>`;
+}
+
+/* ---- ไฟฟ้า ---- */
+function calcItem(){
+  const P=v('iPrice'),D=v('iDown'),t=$('iType').value,R=v('iRate'),n=Math.round(v('iTerm')),fee=v('iFee'),L=P-D;
+  if(L<=0||n<=0){$('iOut').innerHTML='<div class="note warn">กรุณากรอกข้อมูลให้ถูกต้อง</div>';return;}
+  const int=t==='m'?L*(R/100)*n:t==='y'?L*(R/100)*(n/12):0;
+  const total=L+int+fee,pmt=total/n,e=(int+fee)>0?eir(L,pmt,n):0;
+  const mi=(int+fee)/n,mp=L/n;let b=L,sch=[];
+  for(let k=1;k<=n;k++){b-=mp;sch.push([`งวดที่ ${k}`,'-',pmt,mi,mp,Math.max(b,0)]);}
+  const tn=t==='0'?'ผ่อน 0% ไม่มีดอกเบี้ย':t==='m'?R.toFixed(2)+' % ต่อเดือน':R.toFixed(2)+' % ต่อปี (คงที่)';
+  last.item={type:'item',tn:'📺 ไฟฟ้า',loan:L,pmt,interest:int+fee,total:D+total,months:n,eir:e,sch,
+    det:[['ราคาสินค้า (บาท)',f2(P)],['เงินดาวน์',f2(D)],['ยอดจัดผ่อน',f2(L)],['รูปแบบดอกเบี้ย',tn],
+     ['ค่าธรรมเนียม / แรกเข้า',f2(fee)],['จำนวนงวด',`${n} งวด`],['ค่างวดต่อเดือน',f2(pmt)],
+     ['ดอกเบี้ย + ค่าธรรมเนียมรวม',f2(int+fee)],['ยอดชำระรวมทั้งสิ้น',f2(D+total)],
+     ['ส่วนต่างเทียบเงินสด',`${f2(D+total-P)}  (${(((D+total)/P-1)*100).toFixed(1)}%)`],
+     ['อัตราดอกเบี้ยแท้จริงต่อปี (EIR)',e.toFixed(2)+' %']],
+    inp:{iPrice:P,iDown:D,iType:t,iRate:R,iTerm:n,iFee:fee}};
+  $('iOut').innerHTML=`
+  <div class="big"><span>ค่างวดต่อเดือน</span><strong>${f0(pmt)} ฿</strong><small>${n} งวด</small></div>
+  <div class="grid">
+    <div class="box"><span>ยอดผ่อน</span><b>${f0(L)}</b></div>
+    <div class="box"><span>ดอกเบี้ย+ค่าธรรมเนียม</span><b>${f0(int+fee)}</b></div>
+    <div class="box"><span>จ่ายทั้งหมด</span><b>${f0(D+total)}</b></div>
+    <div class="box"><span>แพงกว่าเงินสด</span><b>${(((D+total)/P-1)*100).toFixed(1)}%</b></div>
+    <div class="box"><span>ดอกเบี้ยแท้จริง EIR</span><b>${e.toFixed(2)}%</b></div>
+    <div class="box"><span>จำนวนงวด</span><b>${n} งวด</b></div>
+  </div>
+  <div class="two"><button class="btn sv" onclick="save('item')">💾 บันทึก</button>
+  <button class="btn pr" onclick="printOne(last.item)">🖨 พิมพ์เอกสาร</button></div>
+  <div class="note">💡 ผ่อน 0% คุ้มสุด แต่เช็ก "ค่าธรรมเนียมแรกเข้า" แฝงด้วย แล้วดู EIR ประกอบ</div>`;
+}
+
+/* ---- บันทึก / เปรียบเทียบ ---- */
+function save(k){
+  const d=last[k];if(!d)return;
+  const nm=prompt('ตั้งชื่อข้อเสนอ (เช่น ธนาคาร A / ไฟแนนซ์ B)','');
+  if(nm===null)return;
+  offers.push({...d,id:Date.now(),name:nm.trim()||d.tn+' '+(offers.length+1)});
+  localStorage.setItem('loanOffers',JSON.stringify(offers));badge();alert('บันทึกแล้ว ✓');
+}
+function badge(){$('cnt').textContent=offers.length?`(${offers.length})`:'';}
+function del(id){offers=offers.filter(o=>o.id!==id);localStorage.setItem('loanOffers',JSON.stringify(offers));badge();renderCmp();}
+function clearAll(){if(confirm('ลบข้อเสนอทั้งหมด?')){offers=[];localStorage.removeItem('loanOffers');badge();renderCmp();}}
+function load(id){
+  const o=offers.find(x=>x.id===id),p=o.inp;
+  for(const k in p){if(k!=='steps'&&$(k))$(k).value=p[k];}
+  if(o.type==='car'){tab('car');calcCar();}
+  else if(o.type==='home'){steps=JSON.parse(JSON.stringify(p.steps));renderSteps();
+    $('hCustBox').classList.toggle('hide',p.hMode!=='custom');tab('home');calcHome();}
+  else{$('iRateBox').classList.toggle('hide',p.iType==='0');tab('item');calcItem();}
+}
+function renderCmp(){
+  if(!offers.length){$('cmpOut').innerHTML='<div class="note">ยังไม่มีข้อเสนอที่บันทึกไว้ — คำนวณแล้วกด <b>💾 บันทึก</b> เพื่อนำมาเทียบกันครับ</div>';return;}
+  let h='';
+  [['car','🚗 สินเชื่อรถ'],['home','🏠 สินเชื่อบ้าน'],['item','📺 เครื่องใช้ไฟฟ้า']].forEach(([t,title])=>{
+    const g=offers.filter(o=>o.type===t);if(!g.length)return;
+    const bt=Math.min(...g.map(o=>o.total));
+    h+=`<div class="ttl">${title} (${g.length})</div>`;
+    g.forEach(o=>{h+=`<div class="ofc ${o.total===bt&&g.length>1?'best':''}">
+      <div class="ofh"><b>${esc(o.name)} ${o.total===bt&&g.length>1?'<span class="tag">คุ้มสุด</span>':''}</b>
+      <div class="acts"><button class="pt" onclick="printOne(offers.find(x=>x.id===${o.id}))">🖨</button>
+      <button class="ld" onclick="load(${o.id})">↺ แก้ไข</button><button class="dl" onclick="del(${o.id})">ลบ</button></div></div>
+      <div class="mini">
+        <div><span>ค่างวด/เดือน</span><b>${f0(o.pmt)}</b></div>
+        <div><span>ดอกเบี้ยรวม</span><b>${f0(o.interest)}</b></div>
+        <div><span>จ่ายทั้งหมด</span><b>${f0(o.total)}</b></div>
+        <div><span>${o.type==='home'?'ดบ.เฉลี่ย 3 ปี':'EIR'}</span><b>${o.eir.toFixed(2)}%</b></div>
+      </div>
+      <div class="note" style="margin-top:8px;padding:7px">ยอดกู้ ${f0(o.loan)} ฿ · ${mth(o.months)}${o.note?' · '+o.note:''}${o.vary?` · ค่างวดสูงสุด ${f0(o.pmax)} ฿`:''}</div></div>`;});
+    if(g.length>1){const w=g.find(o=>o.total===bt),x=g.reduce((a,b)=>a.total>b.total?a:b);
+      h+=`<div class="note">✅ <b>${esc(w.name)}</b> ถูกกว่า <b>${esc(x.name)}</b> ทั้งสิ้น <b>${f0(x.total-w.total)} บาท</b> ตลอดสัญญา</div>`;}
+  });
+  h+=`<button class="btn pr" onclick="printCmp()">🖨 พิมพ์ตารางเปรียบเทียบ</button>
+  <button class="btn gh" onclick="copySum()">📋 คัดลอกสรุปเป็นข้อความ</button>
+  <button class="btn gh" style="background:#7f1d1d;color:#fecaca" onclick="clearAll()">🗑 ล้างข้อมูลทั้งหมด</button>`;
+  $('cmpOut').innerHTML=h;
+}
+function copySum(){
+  const t=offers.map(o=>`${o.tn} ${o.name}\n ค่างวด ${f0(o.pmt)} ฿/ด. | ดอกเบี้ย ${f0(o.interest)} ฿ | รวม ${f0(o.total)} ฿ | ${mth(o.months)}`).join('\n\n');
+  navigator.clipboard.writeText('สรุปเปรียบเทียบสินเชื่อ\n\n'+t).then(()=>alert('คัดลอกแล้ว ✓'));
+}
+
+/* ========== ปิดบัญชีก่อนกำหนด ========== */
+function pullCar(){
+  const c=last.car;if(!c)return;
+  $('sL').value=c.loan;$('sR').value=c.inp.cRate;$('sN').value=c.inp.cTerm;
+  if(v('sK')>=c.inp.cTerm)$('sK').value=Math.floor(c.inp.cTerm/2);
+}
+function tierOf(k,n){return k<=n/3?60:k<=2*n/3?70:100;}
+function unearn(L,int,n,k,m,r){
+  const rem=n-k,pmt=(L+int)/n;
+  if(m==='sl')return int*rem/n;
+  if(m==='r78')return int*(rem*(rem+1))/(n*(n+1));
+  let bal=L;
+  for(let i=1;i<=k;i++){const it=bal*r;let p=pmt-it;if(p>bal)p=bal;bal-=p;}
+  return Math.max(pmt*rem-bal,0);
+}
+function calcStl(){
+  const L=v('sL'),R=v('sR'),n=Math.round(v('sN')),k=Math.round(v('sK')),
+        m=$('sM').value,fee=v('sF'),auto=$('sD').value==='auto';
+  if(L<=0||n<=0){$('sOut').innerHTML='<div class="note warn">กรุณากรอกยอดจัดและจำนวนงวดให้ถูกต้อง</div>';return;}
+  if(k<0||k>=n){$('sOut').innerHTML='<div class="note warn">จำนวนงวดที่ผ่อนมาแล้วต้องอยู่ระหว่าง 0 ถึง '+(n-1)+' งวด</div>';return;}
+  const int=L*(R/100)*(n/12),pmt=(L+int)/n,r=eir(L,pmt,n)/1200;
+  const rem=n-k,owed=pmt*rem,U=unearn(L,int,n,k,m,r);
+  const dc=auto?tierOf(k,n):v('sDc'),disc=U*dc/100,pay=owed-disc+fee;
+  const t1=Math.floor(n/3),t2=Math.floor(2*n/3);
+  let rows='';
+  for(let i=k;i<n;i++){
+    const rm=n-i,ow=pmt*rm,uu=unearn(L,int,n,i,m,r),d=auto?tierOf(i,n):v('sDc');
+    rows+=`<tr class="${i===k?'now':''}"><td>${i}</td><td>${rm}</td><td>${f0(ow)}</td><td>${f0(uu)}</td><td>${d}%</td><td>${f0(uu*d/100)}</td><td>${f0(ow-uu*d/100+fee)}</td></tr>`;
+  }
+  last.stl={type:'stl',tn:'💰 ปิดบัญชี',pmt,months:k,pay,
+    det:[['ยอดจัดไฟแนนซ์ (บาท)',f2(L)],['อัตราดอกเบี้ยคงที่ (Flat Rate)',R.toFixed(2)+' % ต่อปี'],
+     ['ดอกเบี้ยรวมตลอดสัญญา',f2(int)],['ค่างวดต่อเดือน',f2(pmt)],
+     ['จำนวนงวดทั้งหมด',n+' งวด'],['ชำระมาแล้ว',`${k} งวด  (เป็นเงิน ${f2(pmt*k)} บาท)`],
+     ['งวดคงเหลือ',rem+' งวด'],['ยอดหนี้คงเหลือตามสัญญา',f2(owed)],
+     ['วิธีคำนวณดอกเบี้ยที่ยังไม่ถึงกำหนด',{eir:'ตารางลดต้นลดดอก (EIR '+(r*1200).toFixed(2)+'%)',r78:'กฎผลรวมจำนวนงวด (Rule of 78)',sl:'เฉลี่ยเส้นตรง'}[m]],
+     ['ดอกเบี้ยที่ยังไม่ถึงกำหนดชำระ',f2(U)],
+     ['อัตราส่วนลดที่ได้รับ',dc+' %'+(auto?'  (ตามประกาศ สคบ. 2565)':'  (กำหนดเอง)')],
+     ['ส่วนลดดอกเบี้ยเป็นเงิน',f2(disc)],['ค่าธรรมเนียม/ค่าดำเนินการ',f2(fee)],
+     ['ยอดปิดบัญชีโดยประมาณ',f2(pay)]],
+    tbl:rows};
+  $('sOut').innerHTML=`
+  <div class="big"><span>ยอดปิดบัญชีโดยประมาณ</span><strong>${f0(pay)} ฿</strong>
+  <small>ผ่อนมาแล้ว ${k} งวด · เหลืออีก ${rem} งวด</small></div>
+  <div class="tier">
+    <div class="${k<=t1?'on':''}">ไม่เกิน 1/3<br>(งวด 1–${t1})<b>60%</b></div>
+    <div class="${k>t1&&k<=t2?'on':''}">เกิน 1/3–2/3<br>(งวด ${t1+1}–${t2})<b>70%</b></div>
+    <div class="${k>t2?'on':''}">เกิน 2/3<br>(งวด ${t2+1}–${n})<b>100%</b></div>
+  </div>
+  <div class="grid" style="margin-top:10px">
+    <div class="box"><span>ยอดหนี้คงเหลือตามสัญญา</span><b>${f0(owed)}</b></div>
+    <div class="box"><span>ดอกเบี้ยที่ยังไม่ถึงกำหนด</span><b>${f0(U)}</b></div>
+    <div class="box"><span>ส่วนลดที่ได้รับ ${dc}%</span><b>${f0(disc)}</b></div>
+    <div class="box"><span>ประหยัดได้</span><b>${f0(disc-fee)}</b></div>
+    <div class="box"><span>ชำระไปแล้ว ${k} งวด</span><b>${f0(pmt*k)}</b></div>
+    <div class="box"><span>รวมจ่ายทั้งสิ้นหากปิดวันนี้</span><b>${f0(pmt*k+pay)}</b></div>
+  </div>
+  <div class="ttl">📅 ยอดปิดบัญชีในแต่ละงวด</div>
+  <div class="scroll"><table>
+    <tr><th>ปิดที่งวด</th><th>เหลือ</th><th>หนี้ตามสัญญา</th><th>ดบ.ยังไม่ถึงกำหนด</th><th>ส่วนลด</th><th>ลดเป็นเงิน</th><th>ยอดปิด</th></tr>${rows}</table></div>
+  <button class="btn pr" onclick="printStl()">🖨 พิมพ์เอกสารปิดบัญชี</button>
+  <div class="note">💡 จุดคุ้มที่สุดคือ <b>งวดที่ ${t2+1} เป็นต้นไป</b> — ผ่อนเกิน 2 ใน 3 ของสัญญาแล้วได้ส่วนลดดอกเบี้ยที่เหลือ <b>100%</b> เท่ากับจ่ายแค่เงินต้นคงเหลือล้วน ๆ
+  · ถ้าตอนนี้ใกล้เส้นแบ่งชั้นส่วนลด รออีก 1–2 งวดแล้วค่อยปิดมักคุ้มกว่า ลองเลื่อนดูในตารางได้ครับ</div>`;
+}
+
+/* ================= PRINT ================= */
+function pHead(sub){
+  const d=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+  const org=$('pOrg').value.trim(),nm=$('pName').value.trim(),no=$('pNo').value.trim();
+  return `<div class="ph">
+    <h2>${esc($('pTitle').value.trim()||'รายละเอียดการผ่อนชำระ')}</h2>
+    ${org?`<div class="org">${esc(org)}</div>`:''}
+    <div class="pmeta"><span><b>ประเภท:</b> ${sub}</span><span><b>วันที่ออกเอกสาร:</b> ${d}</span></div>
+    <div class="pmeta"><span><b>ชื่อผู้กู้ / ลูกค้า:</b> ${nm?esc(nm):'..............................................'}</span>
+    <span><b>เลขที่เอกสาร:</b> ${no?esc(no):'-'}</span></div>
+  </div>`;
+}
+function pFoot(){
+  let h='';
+  if($('pDis').checked)h+=`<div class="pnote"><b>หมายเหตุ:</b> ตัวเลขในเอกสารนี้เป็นการประมาณการเพื่อใช้ประกอบการตัดสินใจเบื้องต้นเท่านั้น
+  มิใช่ข้อเสนอหรือสัญญาให้สินเชื่อ · ค่างวดและดอกเบี้ยจริงขึ้นอยู่กับการอนุมัติ อัตราดอกเบี้ยอ้างอิง (MRR/MLR) ณ ขณะทำสัญญา
+  ค่าธรรมเนียม ค่าประกัน และเงื่อนไขของผู้ให้สินเชื่อแต่ละราย · การเปลี่ยนแปลงอัตราดอกเบี้ยลอยตัวมีผลให้ยอดชำระจริงต่างจากที่แสดง
+  · ผู้กู้ควรศึกษารายละเอียดและเงื่อนไขจากผู้ให้สินเชื่อโดยตรงก่อนลงนาม</div>`;
+  if($('pSign').checked)h+=`<div class="sign">
+    <div><div class="ln"></div>ลงชื่อ ผู้กู้ / ลูกค้า<br>วันที่ ......../......../........</div>
+    <div><div class="ln"></div>ลงชื่อ เจ้าหน้าที่ / ผู้เสนอ<br>วันที่ ......../......../........</div></div>`;
+  h+=`<div class="pfoot"><span>เอกสารจัดทำโดยเครื่องคำนวณการผ่อนชำระ</span><span>พิมพ์เมื่อ ${new Date().toLocaleString('th-TH')}</span></div>`;
+  return h;
+}
+function doPrint(html){$('printArea').innerHTML=html;window.print();}
+function printOne(o){
+  if(!o){alert('ยังไม่มีผลคำนวณ กรุณาคำนวณก่อนครับ');return;}
+  const tn={car:'สินเชื่อเช่าซื้อรถยนต์',home:'สินเชื่อที่อยู่อาศัย',item:'ผ่อนชำระสินค้า / เครื่องใช้ไฟฟ้า'}[o.type];
+  let s=1;
+  let h=`<div class="pg">${pHead(tn+(o.name?' — '+esc(o.name):''))}
+  <div class="psec">${s++}. สรุปรายละเอียดการผ่อนชำระ</div>
+  <table class="pt2"><tbody>${o.det.map(([k,val])=>`<tr><td>${k}</td><td>${val}</td></tr>`).join('')}
+  <tr class="hl"><td>ค่างวดต่อเดือน (บาท)</td><td>${f2(o.pmt)}</td></tr></tbody></table>`;
+  if($('pSch').checked&&o.sch&&o.sch.length){
+    h+=`<div class="psec">${s++}. ตารางผ่อนชำระ (${o.sch.length} รายการ)</div>
+    <table class="pt2"><thead><tr><th>งวด</th><th>อัตราดอกเบี้ย</th><th>ยอดชำระ</th><th>ดอกเบี้ย</th><th>เงินต้น</th><th>ยอดคงเหลือ</th></tr></thead><tbody>
+    ${o.sch.map(rw=>`<tr><td>${rw[0]}</td><td style="text-align:center">${rw[1]}</td><td>${f2(rw[2])}</td><td>${f2(rw[3])}</td><td>${f2(rw[4])}</td><td>${f2(rw[5])}</td></tr>`).join('')}
+    <tr class="hl"><td>รวมทั้งสิ้น</td><td></td><td>${f2(o.loan+o.interest)}</td><td>${f2(o.interest)}</td><td>${f2(o.loan)}</td><td>0.00</td></tr></tbody></table>`;
+  }
+  if($('pCmp').checked&&o.cmp&&o.cmp.length){
+    h+=`<div class="psec">${s++}. ตารางเปรียบเทียบดอกเบี้ยตามสัญญา (Flat) กับดอกเบี้ยจริง (EIR ${o.eir.toFixed(2)}%)</div>
+    <table class="pt2"><thead><tr><th>งวด</th><th>ดอกเบี้ยตามสัญญา</th><th>ดอกเบี้ยจริง</th><th>ส่วนต่าง</th><th>เงินต้นคงเหลือ<br>ตามสัญญา</th><th>เงินต้นคงเหลือ<br>ตามจริง</th><th>ส่วนต่าง</th></tr></thead><tbody>
+    ${o.cmp.map(c=>`<tr><td>งวดที่ ${c[0]}</td><td>${f2(c[1])}</td><td>${f2(c[2])}</td><td>${c[3]>0?'+':''}${f2(c[3])}</td><td>${f2(c[4])}</td><td>${f2(c[5])}</td><td>+${f2(c[6])}</td></tr>`).join('')}
+    <tr class="hl"><td>รวมทั้งสิ้น</td><td>${f2(o.interest)}</td><td>${f2(o.interest)}</td><td>0.00</td><td>-</td><td>-</td><td>-</td></tr></tbody></table>
+    <div class="pnote"><b>คำอธิบาย:</b> ดอกเบี้ยรวมของทั้งสองวิธีเท่ากัน ต่างกันเฉพาะการปันส่วนในแต่ละงวด
+    · ดอกเบี้ยจริงคำนวณจากยอดหนี้คงเหลือในแต่ละงวดด้วยอัตรา EIR ${o.eir.toFixed(2)}% ต่อปี
+    · ตั้งแต่งวดที่ ${o.cross||'-'} เป็นต้นไป ดอกเบี้ยจริงจะต่ำกว่าที่ปันส่วนตามสัญญา
+    · ส่วนต่างเงินต้นคงเหลือสูงสุด ${f2(o.mg)} บาท ที่งวดที่ ${o.mgm}
+    ซึ่งมีผลต่อยอดปิดบัญชีก่อนกำหนด ทั้งนี้เงื่อนไขส่วนลดดอกเบี้ยกรณีปิดก่อนกำหนดเป็นไปตามประกาศของผู้ให้เช่าซื้อ</div>`;
+  }
+  h+=pFoot()+`</div>`;
+  doPrint(h);
+}
+function printStl(){
+  const o=last.stl;if(!o){alert('กรุณาคำนวณก่อนครับ');return;}
+  let h=`<div class="pg">${pHead('ประมาณการยอดปิดบัญชีก่อนกำหนด (สินเชื่อเช่าซื้อ)')}
+  <div class="psec">1. รายละเอียดการคำนวณ</div>
+  <table class="pt2"><tbody>${o.det.slice(0,-1).map(([k,val])=>`<tr><td>${k}</td><td>${val}</td></tr>`).join('')}
+  <tr class="hl"><td>ยอดปิดบัญชีโดยประมาณ (บาท)</td><td>${f2(o.pay)}</td></tr></tbody></table>
+  <div class="psec">2. ตารางยอดปิดบัญชีในแต่ละงวด</div>
+  <table class="pt2"><thead><tr><th>ปิดที่งวด</th><th>งวดคงเหลือ</th><th>หนี้คงเหลือตามสัญญา</th><th>ดอกเบี้ยที่ยังไม่ถึงกำหนด</th><th>อัตราส่วนลด</th><th>ส่วนลดเป็นเงิน</th><th>ยอดปิดบัญชี</th></tr></thead>
+  <tbody>${o.tbl.replace(/class="now"/g,'class="wn"')}</tbody></table>
+  <div class="pnote"><b>ฐานอ้างอิงส่วนลด:</b> ประกาศคณะกรรมการว่าด้วยสัญญา เรื่อง ให้ธุรกิจให้เช่าซื้อรถยนต์และรถจักรยานยนต์เป็นธุรกิจที่ควบคุมสัญญา พ.ศ. 2565
+  กำหนดส่วนลดดอกเบี้ยที่ยังไม่ถึงกำหนดชำระ กรณีผู้เช่าซื้อขอชำระปิดบัญชีก่อนครบกำหนด ดังนี้ ชำระค่างวดมาแล้วไม่เกิน 1 ใน 3 ลดไม่น้อยกว่าร้อยละ 60 ·
+  เกิน 1 ใน 3 แต่ไม่เกิน 2 ใน 3 ลดไม่น้อยกว่าร้อยละ 70 · เกิน 2 ใน 3 ให้ส่วนลดทั้งหมด
+  <br><b>ข้อจำกัด:</b> ตัวเลขข้างต้นเป็นการประมาณการเท่านั้น ยอดปิดบัญชีที่ผูกพันต้องเป็นไปตามใบเสนอยอดปิดบัญชีที่ออกโดยผู้ให้เช่าซื้อ
+  ซึ่งอาจต่างจากนี้จากวิธีปันส่วนดอกเบี้ย ภาษีมูลค่าเพิ่ม ค่าธรรมเนียม ค่าติดตามทวงถาม เบี้ยปรับล่าช้า ค่าโอนทะเบียน หรือค่างวดค้างชำระ</div>`;
+  h+=pFoot()+`</div>`;doPrint(h);
+}
+function renderPrn(){
+  let h='<div class="two">';
+  const map={car:'🚗 ผลคำนวณรถ (ล่าสุด)',home:'🏠 ผลคำนวณบ้าน (ล่าสุด)',item:'📺 ผลคำนวณไฟฟ้า (ล่าสุด)'};
+  Object.keys(map).forEach(k=>{if(last[k])h+=`<button class="btn pr" style="margin-top:0" onclick="printOne(last.${k})">🖨 ${map[k]}</button>`;});
+  h+='</div>';
+  if(last.stl)h+=`<button class="btn pr" onclick="printStl()">🖨 เอกสารปิดบัญชีก่อนกำหนด (ล่าสุด)</button>`;
+  if(offers.length){
+    h+=`<button class="btn pr" onclick="printCmp()">🖨 พิมพ์ตารางเปรียบเทียบทั้งหมด (${offers.length} ข้อเสนอ)</button>
+    <div class="ttl">พิมพ์รายข้อเสนอที่บันทึกไว้</div>`;
+    offers.forEach(o=>{h+=`<button class="btn gh" onclick="printOne(offers.find(x=>x.id===${o.id}))">🖨 ${o.tn} ${esc(o.name)} — ${f0(o.pmt)} ฿/เดือน</button>`;});
+  }else h+='<div class="note">ยังไม่มีข้อเสนอที่บันทึกไว้ · พิมพ์ได้จากผลคำนวณล่าสุดด้านบน</div>';
+  $('prnOut').innerHTML=h;
+}
+function printCmp(){
+  if(!offers.length){alert('ยังไม่มีข้อเสนอที่บันทึกไว้ครับ');return;}
+  let h=`<div class="pg">${pHead('ตารางเปรียบเทียบข้อเสนอสินเชื่อ')}`;
+  [['car','สินเชื่อเช่าซื้อรถยนต์'],['home','สินเชื่อที่อยู่อาศัย'],['item','ผ่อนชำระสินค้า / เครื่องใช้ไฟฟ้า']].forEach(([t,title])=>{
+    const g=offers.filter(o=>o.type===t);if(!g.length)return;
+    const bt=Math.min(...g.map(o=>o.total));
+    h+=`<div class="psec">${title} (${g.length} ข้อเสนอ)</div>
+    <table class="pt2"><thead><tr><th style="text-align:left">ข้อเสนอ</th><th>ยอดกู้/ยอดจัด</th><th>ค่างวด/เดือน</th><th>ระยะเวลา</th><th>ดอกเบี้ยรวม</th><th>ชำระรวมทั้งสิ้น</th><th>${t==='home'?'ดบ.เฉลี่ย 3 ปี':'EIR'}</th></tr></thead><tbody>
+    ${g.map(o=>`<tr class="${o.total===bt&&g.length>1?'wn':''}"><td>${esc(o.name)}${o.total===bt&&g.length>1?' ★ คุ้มที่สุด':''}</td>
+      <td>${f2(o.loan)}</td><td>${f2(o.pmt)}</td><td style="text-align:center">${mth(o.months)}</td>
+      <td>${f2(o.interest)}</td><td>${f2(o.total)}</td><td style="text-align:center">${o.eir.toFixed(2)}%</td></tr>`).join('')}
+    </tbody></table>`;
+    if(g.length>1){const w=g.find(o=>o.total===bt),x=g.reduce((a,b)=>a.total>b.total?a:b);
+      h+=`<div class="pnote"><b>ข้อสรุป:</b> “${esc(w.name)}” มีภาระรวมต่ำที่สุด ประหยัดกว่า “${esc(x.name)}” เป็นเงิน <b>${f2(x.total-w.total)} บาท</b> ตลอดอายุสัญญา</div>`;}
+  });
+  h+=pFoot()+`</div>`;
+  doPrint(h);
+}
+window.onafterprint=()=>{$('printArea').innerHTML='';};
+renderSteps();badge();calcCar();
+</script>
+</body>
+</html>
