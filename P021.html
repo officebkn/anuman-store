@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<!-- saved from url=(0057)file:///C:/Users/anuman999/Downloads/P-TAX-SIMULATOR.html -->
+<html lang="th"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>จำลองยื่นแบบภาษีเงินได้บุคคลธรรมดา ภ.ง.ด. 90/91 - RD Simulator</title>
+<link href="./P021_files/css2" rel="stylesheet">
+<style>
+:root{--blue:#1a56db;--blue-dark:#123da1;--blue-light:#eef4ff;--green:#057a55;--red:#c81e1e;--yellow:#c27803;--bg:#f4f6f9;--card:#ffffff;--border:#d1d5db;--text:#111827;--text2:#6b7280}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);line-height:1.65}
+.topbar{background:linear-gradient(90deg,#0f2e7a,#1a56db);color:#fff;padding:10px 0;font-size:12px}
+.topbar .inner{max-width:1180px;margin:0 auto;padding:0 16px;display:flex;justify-content:space-between}
+.header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
+.header .inner{max-width:1180px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:16px}
+.logo{width:44px;height:44px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:18px}
+.h-title{line-height:1.2}
+.h-title b{font-size:17px;color:var(--blue)}
+.h-title span{display:block;font-size:12px;color:var(--text2)}
+.steps{max-width:1180px;margin:18px auto 0;padding:0 16px;display:flex;gap:8px;overflow:auto}
+.step-tab{flex:1;min-width:140px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:.2s}
+.step-tab.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.step-tab.done{background:#e6f4ea;border-color:#a7d8b5;color:#0d5a2a}
+.step-tab .num{width:26px;height:26px;border-radius:50%;background:#e5e7eb;color:#111;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}
+.step-tab.on .num{background:#fff;color:var(--blue)}
+.step-tab.done .num{background:var(--green);color:#fff}
+.step-tab b{font-size:13px;display:block;line-height:1.2}
+.step-tab small{font-size:11px;opacity:.8}
+.container{max-width:1180px;margin:16px auto;padding:0 16px;display:grid;grid-template-columns:1fr 340px;gap:16px}
+@media(max-width:980px){.container{grid-template-columns:1fr}.side{order:-1}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 18px 14px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.card h2{font-size:15px;font-weight:700;color:var(--blue);margin-bottom:12px;display:flex;align-items:center;gap:8px;border-left:4px solid var(--blue);padding-left:10px}
+.card h3{font-size:13.5px;font-weight:700;color:#1f2937;margin:16px 0 8px;background:#f3f4f6;padding:6px 10px;border-radius:8px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:640px){.row,.row3{grid-template-columns:1fr}}
+label{font-size:12.5px;color:#374151;font-weight:600;margin:8px 0 4px;display:block}
+input,select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:9px;font-family:'Sarabun',sans-serif;font-size:14px;background:#fff}
+input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-light)}
+input:read-only{background:#f9fafb}
+.hint{font-size:11px;color:var(--text2);margin-top:3px}
+.inline{display:flex;gap:8px;align-items:center}
+.chk{display:flex;align-items:center;gap:8px;background:#f9fafb;border:1px solid #e5e7eb;padding:9px 10px;border-radius:9px;margin-top:6px;cursor:pointer}
+.chk input{width:16px;height:16px}
+.btn{padding:11px 18px;border:0;border-radius:10px;font-family:'Sarabun';font-weight:700;cursor:pointer;font-size:14px;transition:.15s}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:var(--blue-dark)}
+.btn-ghost{background:#fff;border:1px solid var(--border);color:#374151}
+.btn-success{background:var(--green);color:#fff}
+.btn-block{width:100%}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700}
+.badge-blue{background:var(--blue-light);color:var(--blue)}
+.badge-green{background:#e6f4ea;color:var(--green)}
+.badge-red{background:#fde8e8;color:var(--red)}
+.badge-yellow{background:#fef3c7;color:#92400e}
+.table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.table th{background:#f3f4f6;padding:8px 10px;text-align:left;font-size:11.5px;color:#4b5563;border:1px solid #e5e7eb}
+.table td{padding:8px 10px;border:1px solid #e5e7eb}
+.table td.r{text-align:right}
+.total-box{background:linear-gradient(135deg,#0f2e7a,#1a56db);color:#fff;border-radius:14px;padding:16px;margin-top:12px}
+.total-box .big{font-size:26px;font-weight:800}
+.side .card{position:sticky;top:88px}
+.kv{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px dashed #e5e7eb}
+.kv:last-child{border:0}
+.kv b{color:#111}
+.kv.r{color:var(--red)} .kv.g{color:var(--green)}
+.progress{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin:8px 0}
+.progress i{display:block;height:100%;background:var(--blue);border-radius:999px;transition:.3s}
+.note{background:#fffbeb;border-left:4px solid #f59e0b;padding:10px 12px;border-radius:8px;font-size:12px;margin:10px 0}
+.warn{background:#fef2f2;border-left:4px solid #ef4444;padding:10px 12px;border-radius:8px;font-size:12px;margin:10px 0}
+.success{background:#ecfdf5;border-left:4px solid #10b981;padding:10px 12px;border-radius:8px;font-size:12px;margin:10px 0}
+.hide{display:none}
+.money{font-family:'Sarabun';font-weight:700}
+.footer{max-width:1180px;margin:24px auto;padding:12px 16px;font-size:11px;color:#9ca3af;text-align:center}
+@media print{body{background:#fff}.header,.steps,.side,.footer,.no-print{display:none!important}.container{grid-template-columns:1fr}.card{break-inside:avoid;border:1px solid #999}}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="inner"><span>🔒 ระบบจำลองยื่นแบบภาษี | ไม่ใช่เว็บไซต์กรมสรรพากรจริง | เพื่อการศึกษาและทดลองกรอกเท่านั้น</span><span>ภ.ง.ด. 90/91 ปีภาษี 2567 (ยื่นปี 2568)</span></div></div>
+
+<div class="header">
+  <div class="inner">
+    <div class="logo">RD</div>
+    <div class="h-title"><b>จำลองยื่นแบบภาษีเงินได้บุคคลธรรมดา</b><span>ภ.ง.ด. 90 / ภ.ง.ด. 91 แบบละเอียดเหมือนสรรพากร | P_TAX_SIMULATOR</span></div>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button class="btn btn-ghost" onclick="saveDraft()">💾 บันทึกร่าง</button>
+      <button class="btn btn-ghost" onclick="loadDraft()">📂 โหลดร่าง</button>
+      <button class="btn btn-ghost no-print" onclick="window.print()">🖨 พิมพ์</button>
+    </div>
+  </div>
+</div>
+
+<div class="steps" id="steps"><div class="step-tab done" onclick="goStep(1)"><div class="num">✓</div><div><b>ข้อมูลส่วนตัว</b><small>แบบ / ผู้เสียภาษี / ครอบครัว</small></div></div><div class="step-tab done" onclick="goStep(2)"><div class="num">✓</div><div><b>เงินได้</b><small>มาตรา 40(1)-(8)</small></div></div><div class="step-tab done" onclick="goStep(3)"><div class="num">✓</div><div><b>ค่าลดหย่อน</b><small>ประกัน / กองทุน / บริจาค</small></div></div><div class="step-tab done" onclick="goStep(4)"><div class="num">✓</div><div><b>คำนวณภาษี</b><small>ขั้นบันได / หัก ณ ที่จ่าย</small></div></div><div class="step-tab on" onclick="goStep(5)"><div class="num">5</div><div><b>สรุปยื่น</b><small>พิมพ์ / จำลองยื่น</small></div></div></div>
+
+<div class="container">
+  <div class="main">
+
+    <!-- STEP 1 -->
+    <div id="panel1" class="panel hide">
+      <div class="card">
+        <h2>📋 ขั้นตอนที่ 1 - ข้อมูลแบบและผู้เสียภาษี</h2>
+        <div class="row">
+          <div><label>แบบที่ยื่น *</label><select id="formType" onchange="recalc()"><option value="91">ภ.ง.ด. 91 - ผู้มีรายได้เงินเดือนอย่างเดียว (มาตรา 40(1) อย่างเดียว)</option><option value="90">ภ.ง.ด. 90 - ผู้มีรายได้หลายประเภท / มีค่าลดหย่อนอื่น / ต้องการขอคืน</option></select></div>
+          <div><label>สถานะการยื่น</label><select id="filingStatus"><option>ยื่นปกติ</option><option>ยื่นเพิ่มเติม</option></select></div>
+        </div>
+        <h3>ข้อมูลผู้มีเงินได้</h3>
+        <div class="row">
+          <div><label>เลขประจำตัวประชาชน 13 หลัก *</label><input id="pid" maxlength="13" placeholder="1101700xxxxxx" oninput="validatePID()"><div class="hint" id="pidHint"><span style="color:green">✓ เลขบัตรถูกต้อง (จำลองตรวจ)</span></div></div>
+          <div><label>คำนำหน้า</label><select id="prefix"><option>นาย</option><option>นาง</option><option>นางสาว</option></select></div>
+        </div>
+        <div class="row">
+          <div><label>ชื่อ *</label><input id="fname" placeholder="สมชาย"></div>
+          <div><label>นามสกุล *</label><input id="lname" placeholder="ใจดี"></div>
+        </div>
+        <div class="row">
+          <div><label>วันเดือนปีเกิด</label><input type="date" id="dob"></div>
+          <div><label>สถานภาพสมรส</label><select id="marital" onchange="toggleSpouse()"><option value="single">โสด</option><option value="married">สมรส</option><option value="divorced">หย่า</option></select></div>
+        </div>
+        <div id="spouseBox" class="">
+          <h3>ข้อมูลคู่สมรส</h3>
+          <div class="row">
+            <div><label>เลขประชาชนคู่สมรส</label><input id="spousePid"></div>
+            <div><label>รายได้คู่สมรส (ต่อปี)</label><input type="number" id="spouseIncome" value="0" oninput="recalc()"></div>
+          </div>
+          <label class="chk"><input type="checkbox" id="spouseNoIncome" onchange="recalc()"><span>คู่สมรสไม่มีเงินได้ (ใช้สิทธิ์ลดหย่อนคู่สมรส 60,000 บาท)</span></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>👨‍👩‍👧‍👦 สถานะครอบครัว (เพื่อค่าลดหย่อน)</h2>
+        <div class="row3">
+          <div><label>จำนวนบุตร (มีชีวิต) ทั้งหมด</label><input type="number" id="childCount" min="0" value="0" oninput="buildChildBox();recalc()"></div>
+          <div><label>บุตรคนที่ 2 เป็นต้นไปที่เกิดปี 2561 เป็นต้นไป</label><input type="number" id="childBorn61" min="0" value="0" oninput="recalc()"><div class="hint">ได้เพิ่มอีกคนละ 30,000 บาท</div></div>
+          <div><label>บิดามารดาที่ดูแล (คน)</label><input type="number" id="parentCount" min="0" max="2" value="0" oninput="recalc()"><div class="hint">คนละ 30,000 บาท ต้องอายุ 60 ปีขึ้นไปและมีรายได้ไม่เกิน 30,000 บาท/ปี</div></div>
+        </div>
+        <div id="childBox"></div>
+        <div class="row3" style="margin-top:12px">
+          <div><label>ผู้พิการ / ทุพพลภาพที่ดูแล (คน)</label><input type="number" id="disabledCount" min="0" value="0" oninput="recalc()"><div class="hint">คนละ 60,000 บาท</div></div>
+          <div><label>เบี้ยประกันสุขภาพบิดามารดา (จ่ายจริง)</label><input type="number" id="parentHealthIns" value="0" oninput="recalc()"><div class="hint">สูงสุด 15,000 บาท</div></div>
+          <div><label>สถานะ</label><select><option>อาศัยอยู่ด้วยกัน</option><option>แยกกันอยู่</option></select></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div id="panel2" class="panel hide">
+      <div class="card">
+        <h2>💰 ขั้นตอนที่ 2 - เงินได้พึงประเมิน (แยกตามมาตรา 40)</h2>
+        <div class="note">กรอกเฉพาะที่มีจริง ระบบจะคำนวณหักค่าใช้จ่ายให้อัตโนมัติ เลือกหักตามจริงได้ในกรณี 40(5)-40(8)</div>
+
+        <h3>มาตรา 40(1) - เงินเดือน ค่าจ้าง เบี้ยเลี้ยง โบนัส</h3>
+        <div class="row">
+          <div><label>40(1) รวมทั้งปี (บาท) *</label><input type="number" id="inc401" value="0" oninput="recalc()"></div>
+          <div><label>ภาษีหัก ณ ที่จ่าย 40(1) (บาท)</label><input type="number" id="wht401" value="0" oninput="recalc()"></div>
+        </div>
+        <div class="row">
+          <div><label>นายจ้าง / เลขผู้จ่าย</label><input placeholder="บริษัท ตัวอย่าง จำกัด - 01055xxxx"></div>
+          <div><label>กองทุนสำรองเลี้ยงชีพ (หักจากเงินได้แล้ว)</label><input type="number" id="provident" value="0" oninput="recalc()"><div class="hint">ส่วนนี้จะไปเป็นค่าลดหย่อนอัตโนมัติ</div></div>
+        </div>
+
+        <h3>มาตรา 40(2) - ค่าธรรมเนียม ค่านายหน้า เบี้ยประชุม</h3>
+        <div class="row"><div><label>40(2) รวมทั้งปี</label><input type="number" id="inc402" value="0" oninput="recalc()"></div><div><label>หัก ณ ที่จ่าย 40(2)</label><input type="number" id="wht402" value="0" oninput="recalc()"></div></div>
+
+        <h3>มาตรา 40(3) - ค่าแห่งกู๊ดวิลล์ ลิขสิทธิ์ สิทธิบัตร</h3>
+        <div class="row"><div><label>40(3) รวมทั้งปี</label><input type="number" id="inc403" value="0" oninput="recalc()"></div><div><label>หัก ณ ที่จ่าย 40(3)</label><input type="number" id="wht403" value="0" oninput="recalc()"></div></div>
+
+        <h3>มาตรา 40(4) - ดอกเบี้ย เงินปันผล ฯลฯ</h3>
+        <div class="row3">
+          <div><label>(ก) ดอกเบี้ยเงินฝาก/หุ้นกู้</label><input type="number" id="inc404a" value="0" oninput="recalc()"></div>
+          <div><label>(ข) เงินปันผล (รวมเครดิตภาษีได้)</label><input type="number" id="inc404b" value="0" oninput="recalc()"></div>
+          <div><label>หัก ณ ที่จ่าย 40(4)</label><input type="number" id="wht404" value="0" oninput="recalc()"></div>
+        </div>
+        <label class="chk"><input type="checkbox" id="divCredit" onchange="recalc()"><span>เลือกใช้เครดิตภาษีเงินปันผล (นำมาคำนวณเป็นรายได้และได้เครดิตคืน)</span></label>
+
+        <h3>มาตรา 40(5) - ค่าเช่า</h3>
+        <div class="row"><div><label>40(5) ค่าเช่าทั้งปี</label><input type="number" id="inc405" value="0" oninput="recalc()"></div><div><label>หักค่าใช้จ่าย <select id="exp405mode" onchange="recalc()"><option value="flat">เหมา 30% บ้าน/ 20% ที่ดิน / 30% อื่นๆ</option><option value="actual">ตามจริง (ต้องมีเอกสาร)</option></select></label><input type="number" id="exp405actual" value="0" placeholder="กรณีตามจริง" oninput="recalc()"></div></div>
+
+        <h3>มาตรา 40(6) - วิชาชีพอิสระ (แพทย์ ทนาย วิศวะ ฯลฯ)</h3>
+        <div class="row"><div><label>40(6) รวมทั้งปี</label><input type="number" id="inc406" value="0" oninput="recalc()"></div><div><label>หักค่าใช้จ่าย <select id="exp406mode"><option>เหมา 30% (แพทย์ 60%)</option><option>ตามจริง</option></select></label><input type="number" id="exp406actual" value="0" oninput="recalc()"></div></div>
+
+        <h3>มาตรา 40(7) - รับเหมาก่อสร้าง</h3>
+        <div class="row"><div><label>40(7) รวมทั้งปี</label><input type="number" id="inc407" value="0" oninput="recalc()"></div><div><label>หักเหมา 60% อัตโนมัติ</label><input disabled="" value="ระบบคำนวณให้ 60%"></div></div>
+
+        <h3>มาตรา 40(8) - อื่นๆ ค้าขาย ออนไลน์ ไรเดอร์ ฯลฯ</h3>
+        <div class="row"><div><label>40(8) รวมทั้งปี</label><input type="number" id="inc408" value="0" oninput="recalc()"></div><div><label>หักค่าใช้จ่าย <select id="exp408mode" onchange="recalc()"><option value="flat60">เหมา 60% (ทั่วไป)</option><option value="actual">ตามจริง (ต้องมีบัญชี)</option></select></label><input type="number" id="exp408actual" value="0" oninput="recalc()"></div></div>
+        <div class="note">💡 ถ้าคุณขายของออนไลน์ ไรเดอร์ ฟรีแลนซ์ ที่ไม่ใช่ 40(1) ให้กรอกใน 40(8) นี้ แล้วเลือกหักเหมา 60% ได้เลย</div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div id="panel3" class="panel hide">
+      <div class="card">
+        <h2>🧾 ขั้นตอนที่ 3 - ค่าลดหย่อน (ละเอียดเหมือนสรรพากร)</h2>
+
+        <h3>กลุ่มที่ 1 - ส่วนตัวและครอบครัว</h3>
+        <table class="table"><tbody><tr><th>รายการ</th><th style="width:160px">จำนวน (บาท)</th><th>เงื่อนไข</th></tr>
+          <tr><td>ค่าลดหย่อนส่วนตัว</td><td class="r">60,000 อัตโนมัติ</td><td>ทุกคนได้</td></tr>
+          <tr><td>คู่สมรสไม่มีรายได้</td><td class="r"><span id="tSpouse60">60,000</span></td><td>จดทะเบียนสมรส และไม่มีรายได้</td></tr>
+          <tr><td>บุตร (30,000 คนแรก + 60,000 คนที่ 2 เกิดปี 61 เป็นต้นไป)</td><td class="r"><span id="tChild">0</span></td><td>อายุไม่เกิน 25 ปี เรียนอยู่</td></tr>
+          <tr><td>ค่าฝากครรภ์และคลอดบุตร</td><td><input type="number" id="deductPregnant" value="0" oninput="recalc()"></td><td>สูงสุด 60,000 บาท</td></tr>
+          <tr><td>เลี้ยงดูบิดามารดา (30,000/คน)</td><td class="r"><span id="tParent">30,000</span></td><td>อายุ 60+ รายได้ไม่เกิน 30,000/ปี</td></tr>
+          <tr><td>เลี้ยงดูผู้พิการ/ทุพพลภาพ (60,000/คน)</td><td class="r"><span id="tDisabled">0</span></td><td>มีบัตรผู้พิการ + มีหนังสือรับรองการเลี้ยงดู</td></tr>
+        </tbody></table>
+
+        <h3>กลุ่มที่ 2 - ประกันและการออม</h3>
+        <table class="table">
+          <tbody><tr><th>รายการ</th><th>จ่ายจริง</th><th>ใช้สิทธิ์ได้สูงสุด</th></tr>
+          <tr><td>ประกันสังคม (มาตรา 33/39/40)</td><td><input type="number" id="deductSocial" value="0" oninput="recalc()"></td><td>9,000 / 5,184 / 3,600 บาท (ตามจริง)</td></tr>
+          <tr><td>เบี้ยประกันชีวิต (ตัวเอง)</td><td><input type="number" id="deductLife" value="0" oninput="recalc()"></td><td>100,000 บาท</td></tr>
+          <tr><td>เบี้ยประกันสุขภาพ (ตัวเอง)</td><td><input type="number" id="deductHealth" value="0" oninput="recalc()"></td><td>25,000 บาท (รวมกับประกันชีวิตไม่เกิน 100,000)</td></tr>
+          <tr><td>เบี้ยประกันชีวิตคู่สมรส (ไม่มีรายได้)</td><td><input type="number" id="deductLifeSpouse" value="0" oninput="recalc()"></td><td>10,000 บาท</td></tr>
+          <tr><td>เบี้ยประกันสุขภาพบิดามารดา</td><td><input type="number" id="deductParentHealth2" value="0" oninput="recalc()"></td><td>15,000 บาท</td></tr>
+          <tr><td>เบี้ยประกันชีวิตแบบบำนาญ</td><td><input type="number" id="deductAnnuity" value="0" oninput="recalc()"></td><td>15% ของรายได้ ไม่เกิน 200,000 บาท</td></tr>
+        </tbody></table>
+
+        <h3>กลุ่มที่ 3 - กองทุนรวมและการเกษียณ</h3>
+        <table class="table">
+          <tbody><tr><th>รายการ</th><th>จ่ายจริง</th><th>เพดาน</th></tr>
+          <tr><td>กองทุนสำรองเลี้ยงชีพ / กบข. / กองทุนสงเคราะห์ครู</td><td><input type="number" id="deductPVD" value="0" oninput="recalc()"></td><td>15% รายได้ ไม่เกิน 500,000 บาท</td></tr>
+          <tr><td>RMF (กองทุนรวมเพื่อการเลี้ยงชีพ)</td><td><input type="number" id="deductRMF" value="0" oninput="recalc()"></td><td>30% รายได้ ไม่เกิน 500,000 บาท</td></tr>
+          <tr><td>SSF (กองทุนรวมเพื่อการออม)</td><td><input type="number" id="deductSSF" value="0" oninput="recalc()"></td><td>30% รายได้ ไม่เกิน 200,000 บาท</td></tr>
+          <tr><td>กอช. (กองทุนการออมแห่งชาติ)</td><td><input type="number" id="deductNSF" value="0" oninput="recalc()"></td><td>ไม่เกิน 30,000 บาท</td></tr>
+          <tr><td>รวมกองทุนเกษียณทั้งหมด</td><td colspan="2"><span id="tRetireTotal">180,000</span> / 500,000 บาท (เพดานรวมตามกฎหมาย)</td></tr>
+        </tbody></table>
+
+        <h3>กลุ่มที่ 4 - กระตุ้นเศรษฐกิจและอื่นๆ</h3>
+        <table class="table">
+          <tbody><tr><th>รายการ</th><th>จ่ายจริง</th><th>เพดาน</th></tr>
+          <tr><td>ดอกเบี้ยกู้ยืมเพื่อซื้อที่อยู่อาศัย</td><td><input type="number" id="deductHomeLoan" value="0" oninput="recalc()"></td><td>100,000 บาท</td></tr>
+          <tr><td>เงินบริจาคทั่วไป (ลดได้ตามจริง ไม่เกิน 10% ของเงินได้สุทธิ)</td><td><input type="number" id="deductDonate" value="0" oninput="recalc()"></td><td>10% ของเงินได้สุทธิหลังหักค่าลดหย่อนอื่น</td></tr>
+          <tr><td>เงินบริจาคเพื่อการศึกษา / กีฬา / โรงพยาบาลรัฐ (ได้ 2 เท่า)</td><td><input type="number" id="deductDonate2x" value="0" oninput="recalc()"></td><td>รวมกันแล้วไม่เกิน 10% ของเงินได้สุทธิ (คำนวณ 2 เท่าให้)</td></tr>
+          <tr><td>Easy E-Receipt / ช้อปดีมีคืน (ถ้ามีปีนั้น)</td><td><input type="number" id="deductShop" value="0" oninput="recalc()"></td><td>ตามประกาศปี 2567 สูงสุด 50,000 บาท</td></tr>
+        </tbody></table>
+
+        <div class="warn">⚠️ ระบบจะคำนวณเพดานรวมกองทุนเกษียณ 500,000 บาท และประกันชีวิต+สุขภาพรวม 100,000 บาท ให้อัตโนมัติ เหมือนโปรแกรมสรรพากร</div>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div id="panel4" class="panel hide">
+      <div class="card">
+        <h2>🧮 ขั้นตอนที่ 4 - คำนวณภาษี (เหมือนสรรพากรเป๊ะ)</h2>
+        <div class="row">
+          <div class="card" style="margin:0">
+            <h2 style="font-size:13px">📊 สรุปเงินได้</h2>
+            <div id="incomeSummary">
+    <div class="kv"><span>เงินได้รวม</span><b>1,200,000 บาท</b></div>
+    <div class="kv r"><span>หักค่าใช้จ่ายรวม</span><b>-100,000 บาท</b></div>
+    <div class="kv"><span>• 40(1) หัก 100,000</span><span>1,200,000</span></div>
+    <div class="kv"><span>• 40(2) หัก 0</span><span>0</span></div>
+    <div class="kv"><span>• 40(5) เช่า หัก 0</span><span>0</span></div>
+    <div class="kv"><span>• 40(7) เหมา หัก 0</span><span>0</span></div>
+    <div class="kv"><span>• 40(8) หัก 0</span><span>0</span></div>
+    <div class="kv" style="font-weight:800"><span>คงเหลือหลังหักค่าใช้จ่าย</span><b>1,100,000 บาท</b></div>
+  </div>
+          </div>
+          <div class="card" style="margin:0">
+            <h2 style="font-size:13px">💸 สรุปค่าลดหย่อน</h2>
+            <div id="deductSummary">
+    <div class="kv"><span>ส่วนตัว 60,000</span><b>60,000</b></div>
+    <div class="kv"><span>คู่สมรส / บุตร / พ่อแม่ / พิการ</span><b>90,000</b></div>
+    <div class="kv"><span>ประกันสังคม</span><b>9,000</b></div>
+    <div class="kv"><span>ประกันชีวิต+สุขภาพ (รวมไม่เกิน 100k)</span><b>35,000</b></div>
+    <div class="kv"><span>กองทุนเกษียณรวม (ไม่เกิน 500k)</span><b>180,000</b></div>
+    <div class="kv"><span>บ้าน / ช้อปดีมีคืน / ฝากครรภ์ / อื่นๆ</span><b>50,000</b></div>
+    <div class="kv"><span>บริจาค (ไม่เกิน 10% ของเงินได้สุทธิหลังลดหย่อนอื่น)</span><b>2,500 / 2,500</b></div>
+    <div class="kv" style="font-weight:800"><span>รวมค่าลดหย่อน</span><b>426,500 บาท</b></div>
+  </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h2>📈 ขั้นบันไดภาษี (อัตราก้าวหน้า 0-35%)</h2>
+          <table class="table" id="taxBracketTable">
+    <thead><tr><th>ช่วงเงินได้สุทธิ</th><th>อัตราภาษี</th><th>เงินได้ในขั้น</th><th>ภาษีในขั้น</th></tr></thead>
+    <tbody><tr><td>0 - 150,000</td><td>ยกเว้น</td><td class="r">150,000</td><td class="r">0</td></tr><tr><td>150,001 - 300,000</td><td>5%</td><td class="r">150,000</td><td class="r">7,500</td></tr><tr><td>300,001 - 500,000</td><td>10%</td><td class="r">200,000</td><td class="r">20,000</td></tr><tr><td>500,001 - 750,000</td><td>15%</td><td class="r">173,500</td><td class="r">26,025</td></tr><tr style="font-weight:800;background:#eff6ff"><td colspan="3">รวมภาษีที่ต้องชำระ</td><td class="r">53,525 บาท</td></tr></tbody>
+  </table>
+        </div>
+
+        <div class="total-box">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+            <div>
+              <div style="font-size:13px;opacity:.9">เงินได้สุทธิ (นำไปคำนวณภาษี)</div>
+              <div class="big" id="netIncomeBig">673,500 บาท</div>
+              <div style="font-size:12px;opacity:.8;margin-top:4px" id="taxDetailText">คำนวณจาก เงินได้พึงประเมิน - ค่าใช้จ่าย - ค่าลดหย่อน</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:13px;opacity:.9">ภาษีที่ต้องชำระทั้งปี</div>
+              <div class="big" id="taxPayBig">53,525 บาท</div>
+              <div style="font-size:12px;opacity:.8" id="taxPaySub">หลังหักเครดิตเงินปันผล</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px">
+            <div style="background:rgba(255,255,255,.15);border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px">หัก ณ ที่จ่ายรวม</div><b id="whtTotal">50,200 บาท</b></div>
+            <div style="background:rgba(255,255,255,.15);border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px">ต้องชำระเพิ่ม / ขอคืน</div><b id="taxDue">ต้องชำระเพิ่ม 3,325 บาท</b></div>
+            <div style="background:#fff;color:#111;border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px">อัตราภาษีเฉลี่ย</div><b id="avgRate">4.46%</b></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h2>💳 ชำระเงิน / ขอคืน</h2>
+          <div id="refundBox"><div class="warn">คุณต้องชำระเพิ่ม <b>3,325 บาท</b> ภายในวันสุดท้ายของการยื่นแบบ (ปกติ 31 มี.ค. ยื่นกระดาษ / 8 เม.ย. ยื่นออนไลน์)</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div id="panel5" class="panel">
+      <div class="card">
+        <h2>✅ ขั้นตอนที่ 5 - สรุปและจำลองยื่น</h2>
+        <div class="success"><b>นี่คือระบบจำลองเท่านั้น</b> ข้อมูลทั้งหมดอยู่ในเครื่องคุณ ไม่ได้ส่งไปสรรพากรจริง คุณสามารถพิมพ์เก็บไว้เพื่อนำไปกรอกในเว็บกรมสรรพากรจริงได้</div>
+        <div id="finalSummary">
+    <div class="card">
+      <h2>📄 ใบสรุปจำลอง ภ.ง.ด. 91</h2>
+      <table class="table">
+        <tbody><tr><th>รายการ</th><th style="text-align:right">จำนวนเงิน (บาท)</th></tr>
+        <tr><td>1. เงินได้พึงประเมินรวม (มาตรา 40(1)-(8))</td><td class="r">1,200,000</td></tr>
+        <tr><td>2. หักค่าใช้จ่ายรวม</td><td class="r">-100,000</td></tr>
+        <tr><td>3. คงเหลือหลังหักค่าใช้จ่าย</td><td class="r">1,100,000</td></tr>
+        <tr><td>4. หักค่าลดหย่อนรวม</td><td class="r">-426,500</td></tr>
+        <tr><td style="font-weight:800">5. เงินได้สุทธิ</td><td class="r" style="font-weight:800">673,500</td></tr>
+        <tr><td style="font-weight:800;background:#eff6ff">6. ภาษีคำนวณได้</td><td class="r" style="font-weight:800;background:#eff6ff">53,525</td></tr>
+        <tr><td>7. หักภาษี ณ ที่จ่ายและเครดิต</td><td class="r">-50,200</td></tr>
+        <tr style="font-weight:800;font-size:15px"><td>8. ภาษีต้องชำระเพิ่ม</td><td class="r">3,325 บาท</td></tr>
+      </tbody></table>
+      <div class="note" style="margin-top:12px">📌 ข้อมูลนี้เป็นเพียงการจำลอง ไม่ได้ส่งให้กรมสรรพากรจริง คุณสามารถนำตัวเลขนี้ไปกรอกในระบบ e-Filing ของกรมสรรพากรที่ www.rd.go.th ได้ทันที</div>
+    </div>
+  </div>
+        <div style="display:flex;gap:8px;margin-top:14px" class="no-print">
+          <button class="btn btn-primary btn-block" onclick="printFinal()">🖨 พิมพ์ใบสรุป ภ.ง.ด. 90/91</button>
+          <button class="btn btn-success btn-block" onclick="alert('ระบบจำลอง: ถ้าเป็นเว็บจริงจะไปหน้า e-Filing ของกรมสรรพากรแล้วครับ')">📤 จำลองกดยื่นจริง</button>
+        </div>
+        <div class="note" style="margin-top:12px">📌 เคล็ดลับ: ถ้าภาษีขอคืนเกิน 20,000 บาท สรรพากรมักขอเอกสารเพิ่ม เตรียมหนังสือรับรองหัก ณ ที่จ่าย (50 ทวิ) ไว้ให้พร้อม</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="side">
+    <div class="card">
+      <h2>📊 สรุปแบบ Real-time</h2>
+      <div class="progress"><i id="progressBar" style="width: 100%;"></i></div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px">ความคืบหน้า <span id="progressText">100%</span></div>
+
+      <div class="kv"><span>เงินได้รวมทั้งปี</span><b id="sideIncome">1,200,000 บาท</b></div>
+      <div class="kv"><span>หักค่าใช้จ่าย</span><b id="sideExpense" class="r">-100,000 บาท</b></div>
+      <div class="kv"><span>ค่าลดหย่อนรวม</span><b id="sideDeduct" class="r">-426,500 บาท</b></div>
+      <div class="kv" style="font-weight:700;border-top:2px solid #111;margin-top:6px;padding-top:8px"><span>เงินได้สุทธิ</span><b id="sideNet">673,500 บาท</b></div>
+      <div class="kv"><span>ภาษีคำนวณ</span><b id="sideTax">53,525 บาท</b></div>
+      <div class="kv"><span>หัก ณ ที่จ่าย</span><b id="sideWHT" class="g">50,200 บาท</b></div>
+      <div class="kv" style="font-size:14px;font-weight:800;background:var(--blue-light);padding:8px 6px;border-radius:8px;margin-top:8px"><span id="sideResultLabel">ต้องชำระเพิ่ม</span><b id="sideResult">ต้องชำระเพิ่ม 3,325 บาท</b></div>
+
+      <div style="margin-top:12px">
+        <label>💡 สถานะ</label>
+        <div id="sideAlert" class="note">ต้องชำระภาษี 53,525 บาท ถูกหัก ณ ที่จ่ายไปแล้ว 50,200 บาท</div>
+      </div>
+
+      <div style="margin-top:12px">
+        <button class="btn btn-ghost btn-block" onclick="fillExample()">🎯 ใส่ข้อมูลตัวอย่าง (มนุษย์เงินเดือน 500k)</button>
+        <button class="btn btn-ghost btn-block" style="margin-top:6px" onclick="clearAll()">🧹 ล้างทั้งหมด</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📚 อัตราภาษี 2567</h2>
+      <table class="table" style="font-size:11.5px">
+        <tbody><tr><th>เงินได้สุทธิ</th><th>อัตรา</th></tr>
+        <tr><td>0 - 150,000</td><td>ยกเว้น</td></tr>
+        <tr><td>150,001 - 300,000</td><td>5%</td></tr>
+        <tr><td>300,001 - 500,000</td><td>10%</td></tr>
+        <tr><td>500,001 - 750,000</td><td>15%</td></tr>
+        <tr><td>750,001 - 1,000,000</td><td>20%</td></tr>
+        <tr><td>1,000,001 - 2,000,000</td><td>25%</td></tr>
+        <tr><td>2,000,001 - 5,000,000</td><td>30%</td></tr>
+        <tr><td>5,000,001 ขึ้นไป</td><td>35%</td></tr>
+      </tbody></table>
+      <div class="hint" style="margin-top:8px">เงินได้สุทธิ = เงินได้พึงประเมิน - ค่าใช้จ่าย - ค่าลดหย่อน (ไม่เกินเพดาน)</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">จัดทำโดย Anuman Store - ระบบจำลองเพื่อการศึกษา | ข้อมูลไม่ออกจากเครื่องคุณ | อ้างอิงอัตราภาษีตามประมวลรัษฎากรปี 2567<br>ไม่ใช่เว็บไซต์ของกรมสรรพากร หากต้องการยื่นจริงไปที่ www.rd.go.th</div>
+
+<script>
+let curStep=1;
+const stepsDef=[
+  {k:'ข้อมูลส่วนตัว',d:'แบบ / ผู้เสียภาษี / ครอบครัว'},
+  {k:'เงินได้',d:'มาตรา 40(1)-(8)'},
+  {k:'ค่าลดหย่อน',d:'ประกัน / กองทุน / บริจาค'},
+  {k:'คำนวณภาษี',d:'ขั้นบันได / หัก ณ ที่จ่าย'},
+  {k:'สรุปยื่น',d:'พิมพ์ / จำลองยื่น'},
+];
+
+function renderSteps(){
+  const el=document.getElementById('steps');
+  el.innerHTML=stepsDef.map((s,i)=>{
+    const idx=i+1;
+    let cls='step-tab';
+    if(idx===curStep) cls+=' on';
+    else if(idx<curStep) cls+=' done';
+    return `<div class="${cls}" onclick="goStep(${idx})"><div class="num">${idx<curStep?'✓':idx}</div><div><b>${s.k}</b><small>${s.d}</small></div></div>`;
+  }).join('');
+}
+
+function goStep(n){
+  curStep=n;
+  document.querySelectorAll('.panel').forEach(p=>p.classList.add('hide'));
+  document.getElementById('panel'+n).classList.remove('hide');
+  renderSteps();
+  document.getElementById('progressBar').style.width=(n*20)+'%';
+  document.getElementById('progressText').innerText=(n*20)+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(n===4) recalc();
+  if(n===5) buildFinal();
+}
+
+function toggleSpouse(){
+  const v=document.getElementById('marital').value;
+  document.getElementById('spouseBox').classList.toggle('hide', v!=='married');
+}
+
+function buildChildBox(){
+  const n=parseInt(document.getElementById('childCount').value)||0;
+  const box=document.getElementById('childBox');
+  let h='';
+  for(let i=0;i<n;i++){
+    h+=`<div class="row" style="margin-top:8px"><div><label>บุตรคนที่ ${i+1} ปีเกิด</label><input type="number" placeholder="เช่น 2565" id="childYear${i}"></div><div><label>สถานะ</label><select><option>ศึกษาอยู่ (ไม่เกิน 25 ปี)</option><option>ยังไม่บรรลุนิติภาวะ</option></select></div></div>`;
+  }
+  box.innerHTML=h;
+}
+
+function validatePID(){
+  const pid=document.getElementById('pid').value;
+  const hint=document.getElementById('pidHint');
+  if(pid.length!==13){hint.innerText='กรอกให้ครบ 13 หลัก';return}
+  let sum=0; for(let i=0;i<12;i++){sum+=parseInt(pid[i])*(13-i)} let chk=(11-sum%11)%10;
+  if(chk===parseInt(pid[12])){hint.innerHTML='<span style="color:green">✓ เลขบัตรถูกต้อง (จำลองตรวจ)</span>'} else {hint.innerHTML='<span style="color:red">เลขตรวจสอบไม่ถูกต้อง</span>'}
+}
+
+function num(id){return parseFloat(document.getElementById(id)?.value)||0}
+
+function recalc(){
+  // Incomes
+  let inc401=num('inc401'), inc402=num('inc402'), inc403=num('inc403'), inc404a=num('inc404a'), inc404b=num('inc404b'), inc405=num('inc405'), inc406=num('inc406'), inc407=num('inc407'), inc408=num('inc408');
+  let gross = inc401+inc402+inc403+inc404a+inc404b+inc405+inc406+inc407+inc408;
+
+  // Expenses
+  let exp401 = Math.min(inc401*0.5,100000); // 50% max 100k
+  if(inc401===0) exp401=0;
+  let exp402 = Math.min(inc402*0.5,100000); // same rule but capped together? simplified: 50% max 100k combined for 40(1)+40(2)
+  let exp401402 = Math.min((inc401+inc402)*0.5,100000);
+  exp401 = inc401>0? Math.min(inc401*0.5, exp401402) : 0;
+  exp402 = inc402>0? exp401402 - exp401 : 0;
+  if(inc401===0&&inc402>0) exp402 = Math.min(inc402*0.5,100000);
+
+  let exp403=0, exp404a=0, exp404b=0;
+  let exp405 = document.getElementById('exp405mode').value==='flat'? inc405*0.3 : num('exp405actual');
+  let exp406 = inc406*0.3; // simplified
+  let exp407 = inc407*0.6;
+  let exp408mode=document.getElementById('exp408mode').value;
+  let exp408 = exp408mode==='flat60'? inc408*0.6 : num('exp408actual');
+
+  let totalExp = exp401+exp402+exp403+exp404a+exp404b+exp405+exp406+exp407+exp408;
+  let netAfterExp = gross - totalExp;
+
+  // Deductions
+  let childCount=num('childCount'), childBorn61=num('childBorn61'), parentCount=num('parentCount'), disabledCount=num('disabledCount');
+  let spouseNoIncome=document.getElementById('spouseNoIncome').checked;
+  let spouseDeduct = spouseNoIncome ? 60000 : 0;
+  let childDeduct = childCount*30000 + childBorn61*30000;
+  let parentDeduct = parentCount*30000;
+  let disabledDeduct = disabledCount*60000;
+
+  document.getElementById('tSpouse60').innerText=spouseDeduct.toLocaleString();
+  document.getElementById('tChild').innerText=childDeduct.toLocaleString();
+  document.getElementById('tParent').innerText=parentDeduct.toLocaleString();
+  document.getElementById('tDisabled').innerText=disabledDeduct.toLocaleString();
+
+  let deductPreg=num('deductPregnant'), deductSocial=num('deductSocial'), deductLife=num('deductLife'), deductHealth=num('deductHealth');
+  let lifeHealthCombined = Math.min(deductLife+deductHealth, 100000);
+  // Actually health max 25k but combined 100k, simplified
+  let deductLifeSpouse=num('deductLifeSpouse'), deductParentHealth2=num('deductParentHealth2'), deductAnnuity=num('deductAnnuity');
+  let deductPVD=num('deductPVD'), deductRMF=num('deductRMF'), deductSSF=num('deductSSF'), deductNSF=num('deductNSF');
+  let retireTotal = deductPVD+deductRMF+deductSSF+deductNSF;
+  let retireCapped = Math.min(retireTotal,500000);
+  document.getElementById('tRetireTotal').innerText=retireCapped.toLocaleString();
+
+  let deductHomeLoan=num('deductHomeLoan'), deductShop=num('deductShop');
+  // caps
+  let socialCapped = Math.min(deductSocial,9000);
+  let lifeCapped = Math.min(deductLife,100000);
+  let healthCapped = Math.min(deductHealth,25000);
+  let lifeHealthCapped = Math.min(lifeCapped+healthCapped,100000);
+  let annuityCapped = Math.min(deductAnnuity,200000);
+  let homeLoanCapped = Math.min(deductHomeLoan,100000);
+  let shopCapped = Math.min(deductShop,50000);
+  let parentHealthCapped = Math.min(num('deductParentHealth2'),15000);
+  let pregnantCapped = Math.min(deductPreg,60000);
+
+  // Base personal 60000
+  let personal=60000;
+
+  let otherDeduct = personal+spouseDeduct+childDeduct+parentDeduct+disabledDeduct+pregnantCapped+socialCapped+lifeHealthCapped+parentHealthCapped+Math.min(deductLifeSpouse,10000)+annuityCapped+retireCapped+homeLoanCapped+shopCapped;
+
+  // Donations - calculate 10% of (netAfterExp - otherDeduct)
+  let incomeForDonateBase = Math.max(0, netAfterExp - otherDeduct);
+  let donate=num('deductDonate'), donate2x=num('deductDonate2x');
+  let donate2xEffective = donate2x*2;
+  let donateTotalClaim = donate + donate2xEffective;
+  let donateCap = incomeForDonateBase*0.1;
+  let donateUsed = Math.min(donateTotalClaim, donateCap);
+
+  let totalDeduct = otherDeduct + donateUsed;
+
+  let netIncome = Math.max(0, netAfterExp - totalDeduct);
+
+  // Tax brackets
+  let tax=calcTax(netIncome);
+  let brackets=breakdownTax(netIncome);
+
+  // WHT
+  let wht = num('wht401')+num('wht402')+num('wht403')+num('wht404')+num('inc404b')*0.1; // simplified dividend wht if credit not used
+  // Actually use input wht
+  let whtInputs = num('wht401')+num('wht402')+num('wht403')+num('wht404');
+  let totalWHT = whtInputs;
+
+  let taxDue = tax - totalWHT;
+
+  // Update UI
+  document.getElementById('incomeSummary').innerHTML=`
+    <div class="kv"><span>เงินได้รวม</span><b>${gross.toLocaleString()} บาท</b></div>
+    <div class="kv r"><span>หักค่าใช้จ่ายรวม</span><b>-${totalExp.toLocaleString()} บาท</b></div>
+    <div class="kv"><span>• 40(1) หัก ${exp401.toLocaleString()}</span><span>${inc401.toLocaleString()}</span></div>
+    <div class="kv"><span>• 40(2) หัก ${exp402.toLocaleString()}</span><span>${inc402.toLocaleString()}</span></div>
+    <div class="kv"><span>• 40(5) เช่า หัก ${exp405.toLocaleString()}</span><span>${inc405.toLocaleString()}</span></div>
+    <div class="kv"><span>• 40(7) เหมา หัก ${exp407.toLocaleString()}</span><span>${inc407.toLocaleString()}</span></div>
+    <div class="kv"><span>• 40(8) หัก ${exp408.toLocaleString()}</span><span>${inc408.toLocaleString()}</span></div>
+    <div class="kv" style="font-weight:800"><span>คงเหลือหลังหักค่าใช้จ่าย</span><b>${netAfterExp.toLocaleString()} บาท</b></div>
+  `;
+
+  document.getElementById('deductSummary').innerHTML=`
+    <div class="kv"><span>ส่วนตัว 60,000</span><b>60,000</b></div>
+    <div class="kv"><span>คู่สมรส / บุตร / พ่อแม่ / พิการ</span><b>${(spouseDeduct+childDeduct+parentDeduct+disabledDeduct).toLocaleString()}</b></div>
+    <div class="kv"><span>ประกันสังคม</span><b>${socialCapped.toLocaleString()}</b></div>
+    <div class="kv"><span>ประกันชีวิต+สุขภาพ (รวมไม่เกิน 100k)</span><b>${lifeHealthCapped.toLocaleString()}</b></div>
+    <div class="kv"><span>กองทุนเกษียณรวม (ไม่เกิน 500k)</span><b>${retireCapped.toLocaleString()}</b></div>
+    <div class="kv"><span>บ้าน / ช้อปดีมีคืน / ฝากครรภ์ / อื่นๆ</span><b>${(homeLoanCapped+shopCapped+pregnantCapped+parentHealthCapped+annuityCapped).toLocaleString()}</b></div>
+    <div class="kv"><span>บริจาค (ไม่เกิน 10% ของเงินได้สุทธิหลังลดหย่อนอื่น)</span><b>${donateUsed.toLocaleString()} / ${donateTotalClaim.toLocaleString()}</b></div>
+    <div class="kv" style="font-weight:800"><span>รวมค่าลดหย่อน</span><b>${totalDeduct.toLocaleString()} บาท</b></div>
+  `;
+
+  document.getElementById('taxBracketTable').innerHTML=`
+    <thead><tr><th>ช่วงเงินได้สุทธิ</th><th>อัตราภาษี</th><th>เงินได้ในขั้น</th><th>ภาษีในขั้น</th></tr></thead>
+    <tbody>${brackets.map(b=>`<tr><td>${b.range}</td><td>${b.rate}</td><td class="r">${b.base.toLocaleString()}</td><td class="r">${b.tax.toLocaleString()}</td></tr>`).join('')}<tr style="font-weight:800;background:#eff6ff"><td colspan="3">รวมภาษีที่ต้องชำระ</td><td class="r">${tax.toLocaleString()} บาท</td></tr></tbody>
+  `;
+
+  document.getElementById('netIncomeBig').innerText=netIncome.toLocaleString()+' บาท';
+  document.getElementById('taxPayBig').innerText=tax.toLocaleString()+' บาท';
+  document.getElementById('whtTotal').innerText=totalWHT.toLocaleString()+' บาท';
+  let dueText = taxDue>0? `ต้องชำระเพิ่ม ${taxDue.toLocaleString()} บาท` : taxDue<0? `ขอคืน ${Math.abs(taxDue).toLocaleString()} บาท` : 'ไม่ต้องชำระเพิ่ม';
+  document.getElementById('taxDue').innerText=dueText;
+  document.getElementById('avgRate').innerText= gross>0? ((tax/gross)*100).toFixed(2)+'%' : '0%';
+
+  // Side
+  document.getElementById('sideIncome').innerText=gross.toLocaleString()+' บาท';
+  document.getElementById('sideExpense').innerText='-'+totalExp.toLocaleString()+' บาท';
+  document.getElementById('sideDeduct').innerText='-'+totalDeduct.toLocaleString()+' บาท';
+  document.getElementById('sideNet').innerText=netIncome.toLocaleString()+' บาท';
+  document.getElementById('sideTax').innerText=tax.toLocaleString()+' บาท';
+  document.getElementById('sideWHT').innerText=totalWHT.toLocaleString()+' บาท';
+  document.getElementById('sideResult').innerText=dueText;
+  document.getElementById('sideResultLabel').innerText= taxDue>0?'ต้องชำระเพิ่ม':'ขอคืน';
+
+  let alertBox=document.getElementById('sideAlert');
+  if(netIncome<=150000){alertBox.className='success'; alertBox.innerHTML='🎉 เงินได้สุทธิไม่เกิน 150,000 บาท ได้รับยกเว้นภาษี ไม่ต้องเสียภาษี';}
+  else if(taxDue<0){alertBox.className='success'; alertBox.innerHTML=`💰 มีสิทธิ์ขอคืนภาษี ${Math.abs(taxDue).toLocaleString()} บาท เตรียมเอกสาร 50 ทวิให้พร้อม`; }
+  else {alertBox.className='note'; alertBox.innerHTML=`ต้องชำระภาษี ${tax.toLocaleString()} บาท ถูกหัก ณ ที่จ่ายไปแล้ว ${totalWHT.toLocaleString()} บาท`; }
+
+  document.getElementById('refundBox').innerHTML= taxDue>0? `<div class="warn">คุณต้องชำระเพิ่ม <b>${taxDue.toLocaleString()} บาท</b> ภายในวันสุดท้ายของการยื่นแบบ (ปกติ 31 มี.ค. ยื่นกระดาษ / 8 เม.ย. ยื่นออนไลน์)</div>` : `<div class="success">คุณมีสิทธิ์ขอคืนภาษี <b>${Math.abs(taxDue).toLocaleString()} บาท</b> ระบบจะโอนคืนผ่านพร้อมเพย์ที่ผูกกับบัตรประชาชน</div>`;
+
+  return {gross,totalExp,netAfterExp,totalDeduct,netIncome,tax,totalWHT,taxDue,brackets,otherDeduct,donateUsed};
+}
+
+function calcTax(net){
+  let brackets=[
+    {limit:150000,rate:0},
+    {limit:300000,rate:0.05},
+    {limit:500000,rate:0.10},
+    {limit:750000,rate:0.15},
+    {limit:1000000,rate:0.20},
+    {limit:2000000,rate:0.25},
+    {limit:5000000,rate:0.30},
+    {limit:Infinity,rate:0.35},
+  ];
+  let tax=0, prev=0;
+  for(let b of brackets){
+    if(net>prev){
+      let taxable=Math.min(net,b.limit)-prev;
+      tax+=taxable*b.rate;
+      prev=b.limit;
+    } else break;
+  }
+  return Math.round(tax);
+}
+
+function breakdownTax(net){
+  let def=[
+    {range:'0 - 150,000',limit:150000,rate:'ยกเว้น'},
+    {range:'150,001 - 300,000',limit:300000,rate:'5%'},
+    {range:'300,001 - 500,000',limit:500000,rate:'10%'},
+    {range:'500,001 - 750,000',limit:750000,rate:'15%'},
+    {range:'750,001 - 1,000,000',limit:1000000,rate:'20%'},
+    {range:'1,000,001 - 2,000,000',limit:2000000,rate:'25%'},
+    {range:'2,000,001 - 5,000,000',limit:5000000,rate:'30%'},
+    {range:'5,000,001 ขึ้นไป',limit:Infinity,rate:'35%'},
+  ];
+  let res=[], prev=0;
+  for(let d of def){
+    if(net>prev){
+      let base=Math.min(net,d.limit)-prev;
+      let rateNum=parseFloat(d.rate)/100||0;
+      let tax=base*rateNum;
+      if(d.rate==='ยกเว้น') tax=0;
+      res.push({range:d.range,rate:d.rate,base:base,tax:Math.round(tax)});
+      prev=d.limit;
+    }
+  }
+  return res;
+}
+
+function buildFinal(){
+  let data=recalc();
+  document.getElementById('finalSummary').innerHTML=`
+    <div class="card">
+      <h2>📄 ใบสรุปจำลอง ภ.ง.ด. ${document.getElementById('formType').value}</h2>
+      <table class="table">
+        <tr><th>รายการ</th><th style="text-align:right">จำนวนเงิน (บาท)</th></tr>
+        <tr><td>1. เงินได้พึงประเมินรวม (มาตรา 40(1)-(8))</td><td class="r">${data.gross.toLocaleString()}</td></tr>
+        <tr><td>2. หักค่าใช้จ่ายรวม</td><td class="r">-${data.totalExp.toLocaleString()}</td></tr>
+        <tr><td>3. คงเหลือหลังหักค่าใช้จ่าย</td><td class="r">${data.netAfterExp.toLocaleString()}</td></tr>
+        <tr><td>4. หักค่าลดหย่อนรวม</td><td class="r">-${data.totalDeduct.toLocaleString()}</td></tr>
+        <tr><td style="font-weight:800">5. เงินได้สุทธิ</td><td class="r" style="font-weight:800">${data.netIncome.toLocaleString()}</td></tr>
+        <tr><td style="font-weight:800;background:#eff6ff">6. ภาษีคำนวณได้</td><td class="r" style="font-weight:800;background:#eff6ff">${data.tax.toLocaleString()}</td></tr>
+        <tr><td>7. หักภาษี ณ ที่จ่ายและเครดิต</td><td class="r">-${data.totalWHT.toLocaleString()}</td></tr>
+        <tr style="font-weight:800;font-size:15px"><td>${data.taxDue>0?'8. ภาษีต้องชำระเพิ่ม':'8. ภาษีขอคืน'}</td><td class="r">${data.taxDue>0?data.taxDue.toLocaleString():Math.abs(data.taxDue).toLocaleString()} บาท</td></tr>
+      </table>
+      <div class="note" style="margin-top:12px">📌 ข้อมูลนี้เป็นเพียงการจำลอง ไม่ได้ส่งให้กรมสรรพากรจริง คุณสามารถนำตัวเลขนี้ไปกรอกในระบบ e-Filing ของกรมสรรพากรที่ www.rd.go.th ได้ทันที</div>
+    </div>
+  `;
+}
+
+function fillExample(){
+  document.getElementById('inc401').value=500000;
+  document.getElementById('wht401').value=15000;
+  document.getElementById('deductSocial').value=9000;
+  document.getElementById('deductLife').value=25000;
+  document.getElementById('deductRMF').value=30000;
+  document.getElementById('childCount').value=1;
+  document.getElementById('parentCount').value=0;
+  document.getElementById('deductDonate').value=5000;
+  buildChildBox();
+  recalc();
+  goStep(2);
+}
+
+function clearAll(){
+  if(!confirm('ล้างข้อมูลทั้งหมด?')) return;
+  document.querySelectorAll('input[type=number]').forEach(i=>i.value=0);
+  document.querySelectorAll('input[type=text]').forEach(i=>{if(i.id!=='formType') i.value='';});
+  buildChildBox();
+  recalc();
+}
+
+function saveDraft(){
+  const data={};
+  document.querySelectorAll('input,select').forEach(el=>{if(el.id) data[el.id]=el.value});
+  data._chk={spouseNoIncome:document.getElementById('spouseNoIncome').checked, divCredit:document.getElementById('divCredit').checked};
+  localStorage.setItem('RD_TAX_DRAFT',JSON.stringify(data));
+  alert('บันทึกร่างเรียบร้อยแล้ว (เก็บในเครื่องนี้)');
+}
+function loadDraft(){
+  const raw=localStorage.getItem('RD_TAX_DRAFT');
+  if(!raw){alert('ไม่มีร่างที่บันทึกไว้');return}
+  const data=JSON.parse(raw);
+  for(let k in data){if(k.startsWith('_')) continue; let el=document.getElementById(k); if(el) el.value=data[k];}
+  if(data._chk){document.getElementById('spouseNoIncome').checked=data._chk.spouseNoIncome; document.getElementById('divCredit').checked=data._chk.divCredit;}
+  buildChildBox(); toggleSpouse(); recalc();
+  alert('โหลดร่างเรียบร้อย');
+}
+
+function printFinal(){ window.print(); }
+
+renderSteps();
+buildChildBox();
+recalc();
+</script>
+
+
+</body></html>
