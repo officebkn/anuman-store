@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P013: ระบบคิวร้านค้า 3 หน้าจอ</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Sarabun',sans-serif;box-sizing:border-box}
+body{margin:0;background:linear-gradient(135deg,#0f172a,#1e3a8a);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:white;border-radius:24px;max-width:900px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.header{background:linear-gradient(135deg,#1e40af,#3b82f6);color:white;padding:40px;text-align:center}
+.header h1{margin:0;font-size:32px;font-weight:700}
+.header p{margin:12px 0 0;opacity:0.9;font-size:16px}
+.body{padding:32px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:20px}
+@media(max-width:768px){.grid{grid-template-columns:1fr}}
+.mode{border:2px solid #e2e8f0;border-radius:16px;padding:24px;text-align:center;transition:all 0.3s;text-decoration:none;display:block;background:white}
+.mode:hover{border-color:#3b82f6;transform:translateY(-4px);box-shadow:0 12px 24px rgba(59,130,246,0.15)}
+.mode .icon{font-size:48px;margin-bottom:12px}
+.mode h3{margin:0 0 8px;color:#0f172a;font-size:18px}
+.mode p{margin:0;color:#64748b;font-size:14px;line-height:1.5}
+.mode.kiosk{border-color:#f59e0b}
+.mode.display{border-color:#10b981}
+.mode.staff{border-color:#8b5cf6}
+.manual{margin-top:32px;text-align:center}
+.manual a{display:inline-flex;align-items:center;gap:8px;background:#fef3c7;border:2px solid #fbbf24;color:#92400e;padding:12px 24px;border-radius:999px;font-weight:700;text-decoration:none;transition:all 0.3s}
+.manual a:hover{background:#fde68a}
+</style>
+</head>
+<body>
+<div class="card">
+<div class="header">
+<h1>P013: ระบบคิวร้านค้า 3 หน้าจอ</h1>
+<p>เลือกโหมดการใช้งาน - Queue Management System</p>
+</div>
+<div class="body">
+<p style="text-align:center;color:#475569;margin:0 0 20px;line-height:1.6">ระบบจัดการคิวร้านค้าครบวงจร แยกการทำงานเป็น 3 หน้าจอ<br>ลูกค้ากดบัตรคิว / จอแสดงคิว / พนักงานเรียกคิว</p>
+<div class="grid">
+<a href="P013_KIOSK.html" class="mode kiosk" target="_blank">
+<div class="icon">🎫</div>
+<h3>KIOSK - ตู้กดบัตรคิว</h3>
+<p>หน้าจอสำหรับลูกค้ากดรับบัตรคิว เลือกประเภทบริการ</p>
+</a>
+<a href="P013_DISPLAY.html" class="mode display" target="_blank">
+<div class="icon">📺</div>
+<h3>DISPLAY - จอแสดงคิว</h3>
+<p>จอใหญ่แสดงคิวปัจจุบัน เสียงเรียกคิว อัตโนมัติ</p>
+</a>
+<a href="P013_STAFF.html" class="mode staff" target="_blank">
+<div class="icon">👨‍💼</div>
+<h3>STAFF - พนักงานเรียกคิว</h3>
+<p>หน้าจอพนักงาน กดเรียกคิวถัดไป ข้ามคิว จบงาน</p>
+</a>
+</div>
+<div class="manual">
+<a href="https://officebkn.github.io/anuman-store/manuals/P013.pdf" target="_blank">📘 ดาวน์โหลดคู่มือ P013 (PDF)</a>
+</div>
+</div>
+</div>
+</body>
+</html>
