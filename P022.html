@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบจัดการปั๊มน้ำมัน</title>
+<style>
+  *{box-sizing:border-box;font-family:'Sarabun','Segoe UI',Tahoma,sans-serif}
+  body{margin:0;background:#f1f5f9;color:#1e293b}
+  header{background:#0f172a;color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
+  header h1{margin:0;font-size:20px}
+  nav{display:flex;flex-wrap:wrap;gap:4px;background:#1e293b;padding:6px 10px}
+  nav button{background:none;border:0;color:#cbd5e1;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:15px}
+  nav button.active,nav button:hover{background:#f59e0b;color:#0f172a;font-weight:bold}
+  main{padding:16px;max-width:1200px;margin:auto}
+  .tab{display:none}.tab.active{display:block}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+  .card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:12px}
+  .kpi small{color:#64748b}.kpi b{display:block;font-size:24px;margin-top:4px}
+  .bar{height:22px;background:#e2e8f0;border-radius:11px;overflow:hidden;margin:8px 0}
+  .bar div{height:100%;transition:width .4s}
+  .tank.low{border:2px solid #ef4444}.warn{color:#dc2626;font-weight:bold;margin-top:6px}
+  .tname{font-weight:bold;font-size:17px}
+  .glabel{font-weight:bold;color:#475569;margin:12px 0 6px;font-size:16px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:middle}
+  th{background:#f8fafc}td.num,th.num{text-align:right}
+  tr.void td{color:#94a3b8;text-decoration:line-through}
+  tr.sub td{background:#f8fafc;font-weight:bold}
+  label{display:block;margin:8px 0;font-size:14px;color:#475569}
+  input,select{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;margin-top:4px}
+  input[type=color]{height:44px;padding:2px}
+  .btn{background:#f59e0b;border:0;padding:12px 18px;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:8px}
+  .btn:hover{filter:brightness(.95)}.btn.gray{background:#e2e8f0}.btn.red{background:#ef4444;color:#fff}.btn.green{background:#16a34a;color:#fff}
+  .btn.sm{padding:4px 10px;font-size:13px;margin:2px 0}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
+  .chip{border:2px solid var(--c,#94a3b8);background:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:15px;min-width:90px}
+  .chip.on{background:var(--c,#0f172a);color:#fff}
+  .preview{background:#0f172a;color:#facc15;border-radius:12px;padding:16px;font-size:22px;text-align:center;margin:12px 0}
+  .row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1;min-width:150px}
+  .fuelrow{align-items:end;border-bottom:1px dashed #e2e8f0;padding-bottom:4px}
+  .fuelrow .narrow{flex:0 0 90px;min-width:80px}
+  .pos{color:#16a34a;font-weight:bold}.neg{color:#dc2626;font-weight:bold}
+  .tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;background:#e2e8f0;text-decoration:none}
+  .tag.red{background:#fee2e2;color:#b91c1c}.tag.blue{background:#dbeafe;color:#1d4ed8}
+  .info{background:#eff6ff;border-radius:8px;padding:10px;margin:8px 0;font-size:14px}
+  .small{font-size:13px;color:#64748b}
+  .mini{height:10px;margin:0 0 2px;min-width:80px}
+  .sig{display:flex;justify-content:space-around;margin-top:50px;text-align:center}
+  #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#16a34a;color:#fff;padding:12px 24px;border-radius:30px;display:none;z-index:9}
+  h2{margin-top:0}h3{margin:0 0 8px}
+  /* ใบเสร็จ */
+  #receipt{display:none}
+  .rc-c{text-align:center}.rc-line{border-top:1px dashed #000;margin:5px 0}
+  .rc-row{display:flex;justify-content:space-between;gap:6px}
+  .rc-big{font-size:1.4em;font-weight:bold}
+  @media print{
+    @page{margin:0}
+    body>*:not(#receipt){display:none!important}
+    #receipt{display:block;color:#000;padding:2mm 3mm 10mm;font-family:Tahoma,sans-serif}
+    #receipt.w58{width:58mm;font-size:11px}
+    #receipt.w80{width:80mm;font-size:12px}
+    #receipt.a4{width:auto;font-size:13px;padding:12mm}
+    #receipt.a4 th,#receipt.a4 td{border:1px solid #999;padding:4px 6px}
+  }
+</style>
+</head>
+<body>
+<header><h1 id="stationTitle">⛽ ปั๊มน้ำมัน</h1><span id="clock"></span></header>
+<nav>
+  <button data-tab="dashboard" class="active">📊 แดชบอร์ด</button>
+  <button data-tab="pos">🛢️ ขายหน้าลาน</button>
+  <button data-tab="credit">💳 ลูกค้าเงินเชื่อ</button>
+  <button data-tab="stock">🏭 สต็อกถัง</button>
+  <button data-tab="shift">👷 กะ/เงินสด</button>
+  <button data-tab="report">📑 รายงาน</button>
+  <button data-tab="settings">⚙️ ตั้งค่า</button>
+</nav>
+
+<main>
+  <!-- ===== แดชบอร์ด ===== -->
+  <section id="dashboard" class="tab active">
+    <div class="grid" id="kpi"></div>
+    <h2>ระดับน้ำมันในถัง</h2>
+    <div id="tanks"></div>
+    <div class="card"><h3>ยอดขายวันนี้แยกชนิด</h3><div id="todayByFuel"></div></div>
+  </section>
+
+  <!-- ===== ขายหน้าลาน ===== -->
+  <section id="pos" class="tab">
+    <div class="card">
+      <div id="shiftWarn"></div>
+      <h3>เลือกหัวจ่าย</h3><div class="chips" id="pumpBtns"></div>
+      <h3>เลือกชนิดน้ำมัน</h3><div id="fuelBtns"></div>
+      <div class="row">
+        <label>เติมแบบ
+          <select id="posMode" onchange="calcPreview()">
+            <option value="baht">ตามจำนวนเงิน (บาท)</option>
+            <option value="liter">ตามจำนวนลิตร</option>
+          </select></label>
+        <label>จำนวน<input id="posVal" type="number" min="0" step="0.01" oninput="calcPreview()" placeholder="0"></label>
+        <label>ชำระโดย
+          <select id="posPay" onchange="calcPreview()">
+            <option value="cash">เงินสด</option><option value="transfer">โอน/QR</option>
+            <option value="card">บัตรเครดิต</option><option value="credit">เงินเชื่อ (ลูกค้าประจำ)</option>
+          </select></label>
+        <label>ทะเบียนรถ (ไม่บังคับ)<input id="posPlate" list="plateList" placeholder="เช่น กข 1234" oninput="plateLookup()"></label>
+      </div>
+      <datalist id="plateList"></datalist>
+
+      <div id="creditBox" class="info" style="display:none">
+        <label>ลูกค้าเงินเชื่อ<select id="posCust" onchange="custPicked()"></select></label>
+        <div id="custInfo"></div>
+      </div>
+
+      <label id="cashBox">รับเงินมา (บาท) — ไม่บังคับ ใช้คำนวณเงินทอน<input id="posCash" type="number" oninput="calcPreview()"></label>
+      <label style="display:flex;gap:8px;align-items:center">
+        <input type="checkbox" id="posFull" style="width:auto" onchange="$('#fullBox').style.display=this.checked?'flex':'none'"> ขอใบกำกับภาษีเต็มรูป
+      </label>
+      <div id="fullBox" class="row" style="display:none">
+        <label>ชื่อลูกค้า/บริษัท<input id="cusName"></label>
+        <label>เลขผู้เสียภาษี (13 หลัก)<input id="cusTax" maxlength="13"></label>
+        <label>สาขา<input id="cusBranch" placeholder="สำนักงานใหญ่"></label>
+        <label>ที่อยู่<input id="cusAddr"></label>
+      </div>
+      <div class="chips">
+        <button class="chip" onclick="quick(100)">฿100</button><button class="chip" onclick="quick(200)">฿200</button>
+        <button class="chip" onclick="quick(300)">฿300</button><button class="chip" onclick="quick(500)">฿500</button>
+        <button class="chip" onclick="quick(1000)">฿1,000</button>
+      </div>
+      <div class="preview" id="preview">-</div>
+      <button class="btn" style="width:100%;font-size:20px" onclick="addSale()">✅ บันทึกการขาย</button>
+    </div>
+    <div class="card"><h3>รายการล่าสุด</h3><div id="recent"></div></div>
+  </section>
+
+  <!-- ===== ลูกค้าเงินเชื่อ ===== -->
+  <section id="credit" class="tab">
+    <div class="grid" id="crKpi"></div>
+    <div class="row">
+      <div class="card">
+        <h3 id="cuTitle">➕ เพิ่มลูกค้าเงินเชื่อ</h3>
+        <input type="hidden" id="cuId">
+        <label>ชื่อลูกค้า/บริษัท<input id="cuName"></label>
+        <div class="row">
+          <label>เลขผู้เสียภาษี (13 หลัก)<input id="cuTax" maxlength="13"></label>
+          <label>สาขา<input id="cuBranch" placeholder="สำนักงานใหญ่"></label>
+        </div>
+        <label>ที่อยู่<input id="cuAddr"></label>
+        <div class="row">
+          <label>เบอร์โทร<input id="cuPhone"></label>
+          <label>วงเงิน (บาท, 0 = ไม่จำกัด)<input id="cuLimit" type="number"></label>
+          <label>เครดิตเทอม (วัน)<input id="cuTerm" type="number" value="30"></label>
+        </div>
+        <label>ทะเบียนรถ (คั่นด้วยเครื่องหมาย ,)<input id="cuPlates" placeholder="กข 1234, 70-5678"></label>
+        <button class="btn" onclick="saveCustomer()">บันทึกลูกค้า</button>
+        <button class="btn gray" onclick="clearCustForm()">ล้างฟอร์ม</button>
+      </div>
+      <div class="card">
+        <h3>💵 รับชำระหนี้</h3>
+        <label>ลูกค้า<select id="payCust" class="custSelect" onchange="showPayBal()"></select></label>
+        <div id="payBal"></div>
+        <label>จำนวนเงิน (บาท)<input id="payAmt" type="number" step="0.01"></label>
+        <label>ช่องทาง<select id="payMethod"><option>เงินสด</option><option>โอนเงิน</option><option>เช็ค</option></select></label>
+        <label>หมายเหตุ / เลขที่อ้างอิง<input id="payNote"></label>
+        <button class="btn green" onclick="receivePayment()">บันทึกรับชำระ</button>
+        <p class="small">ถ้ารับเป็นเงินสดระหว่างกะ ระบบจะรวมยอดนี้ในเงินสดที่ควรมีในลิ้นชักให้</p>
+      </div>
+    </div>
+    <div class="card"><h3>รายชื่อลูกค้าเงินเชื่อ</h3><div id="custList"></div></div>
+    <div class="card">
+      <h3>🧾 ใบแจ้งหนี้ / ใบวางบิล</h3>
+      <div class="row" style="align-items:end">
+        <label>ลูกค้า<select id="stCust" class="custSelect" onchange="renderStatement()"></select></label>
+        <label>ประจำเดือน<input type="month" id="stMonth" onchange="renderStatement()"></label>
+        <button class="btn" onclick="printStatement()">🖨️ พิมพ์ใบแจ้งหนี้ (A4)</button>
+      </div>
+      <div id="stmtView"></div>
+    </div>
+    <div class="card"><h3>ประวัติรับชำระ</h3><div id="payHist"></div></div>
+  </section>
+
+  <!-- ===== สต็อก ===== -->
+  <section id="stock" class="tab">
+    <div class="row">
+      <div class="card">
+        <h3>🚚 รับน้ำมันเข้าถัง</h3>
+        <label>ชนิดน้ำมัน<select id="rcvFuel" class="fuelSelect"></select></label>
+        <label>จำนวน (ลิตร)<input id="rcvLiters" type="number"></label>
+        <label>ต้นทุน/ลิตร (บาท)<input id="rcvCost" type="number" step="0.01"></label>
+        <label>เลขที่ใบส่งของ<input id="rcvInv"></label>
+        <button class="btn" onclick="receive()">บันทึกรับน้ำมัน</button>
+      </div>
+      <div class="card">
+        <h3>📏 ปรับยอดตามวัดถังจริง</h3>
+        <label>ชนิดน้ำมัน<select id="dipFuel" class="fuelSelect"></select></label>
+        <label>ปริมาณที่วัดได้จริง (ลิตร)<input id="dipLiters" type="number"></label>
+        <button class="btn" onclick="dip()">บันทึกการวัด</button>
+        <p class="small">ระบบจะคำนวณส่วนต่าง (ขาด/เกิน) จากยอดในระบบให้อัตโนมัติ</p>
+      </div>
+    </div>
+    <div class="card"><h3>ประวัติรับน้ำมัน</h3><div id="rcvHist"></div></div>
+    <div class="card"><h3>ประวัติวัดถัง</h3><div id="dipHist"></div></div>
+  </section>
+
+  <!-- ===== กะ ===== -->
+  <section id="shift" class="tab">
+    <div id="shiftBox"></div>
+    <div class="card"><h3>ประวัติการปิดกะ</h3><div id="shiftHist"></div></div>
+  </section>
+
+  <!-- ===== รายงาน ===== -->
+  <section id="report" class="tab">
+    <div class="card row" style="align-items:end">
+      <label>เลือกวันที่<input type="date" id="repDate" onchange="renderReport()"></label>
+      <button class="btn" onclick="exportCSV()">⬇️ ส่งออก CSV (Excel)</button>
+    </div>
+    <div class="grid" id="repKpi"></div>
+    <div class="row">
+      <div class="card" style="flex:2"><h3>แยกตามชนิดน้ำมัน</h3><div id="repFuel"></div></div>
+      <div class="card"><h3>แยกตามการชำระเงิน</h3><div id="repPay"></div></div>
+    </div>
+    <div class="card"><h3>รายการทั้งหมด</h3><div id="repList"></div></div>
+  </section>
+
+  <!-- ===== ตั้งค่า ===== -->
+  <section id="settings" class="tab">
+    <div class="card">
+      <h3>💰 ชนิดน้ำมัน ราคา และขนาดถัง</h3>
+      <p class="small">ตั้ง "ขาย = ปิด" สำหรับน้ำมันที่ปั๊มไม่ได้จำหน่าย • ราคาควรตรวจสอบกับประกาศของแบรนด์ทุกวัน</p>
+      <div id="priceForm"></div>
+      <button class="btn" onclick="savePrices()">บันทึกราคา / ชนิดน้ำมัน</button>
+      <h3 style="margin-top:20px">➕ เพิ่มชนิดน้ำมันใหม่</h3>
+      <div class="row" style="align-items:end">
+        <label style="flex:2">ชื่อน้ำมัน<input id="nfName" placeholder="เช่น แก๊สโซฮอล์ 99 พรีเมียม"></label>
+        <label>กลุ่ม<select id="nfGroup"><option value="gas">แก๊สโซฮอล์/เบนซิน</option><option value="diesel">ดีเซล</option></select></label>
+        <label>ราคา/ลิตร<input id="nfPrice" type="number" step="0.01"></label>
+        <label>ความจุถัง (ลิตร)<input id="nfCap" type="number" value="10000"></label>
+        <div style="flex:0 0 auto;min-width:0"><button class="btn gray" onclick="addFuel()">เพิ่ม</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>ตั้งค่าทั่วไป</h3>
+      <div class="row">
+        <label>ชื่อปั๊ม<input id="setName"></label>
+        <label>จำนวนหัวจ่าย<input id="setPumps" type="number" min="1"></label>
+        <label>แจ้งเตือนเมื่อถังต่ำกว่า (%)<input id="setLow" type="number"></label>
+      </div>
+      <button class="btn" onclick="saveSettings()">บันทึกตั้งค่า</button>
+    </div>
+    <div class="card">
+      <h3>💬 แจ้งเตือนผ่าน LINE</h3>
+      <label>Web App URL (จาก Google Apps Script)<input id="lnUrl" placeholder="https://script.google.com/macros/s/.../exec"></label>
+      <div class="row">
+        <label>รหัสลับ (ต้องตรงกับในสคริปต์)<input id="lnSecret"></label>
+        <label>แจ้งสรุปเมื่อปิดกะ<select id="lnShift"><option value="1">เปิด</option><option value="0">ปิด</option></select></label>
+        <label>แจ้งเมื่อลูกค้าเกินวงเงิน<select id="lnCredit"><option value="1">เปิด</option><option value="0">ปิด</option></select></label>
+      </div>
+      <p class="small">แจ้งเตือนน้ำมันใกล้หมดจะส่งอัตโนมัติครั้งเดียวต่อรอบ และเริ่มนับใหม่เมื่อรับน้ำมันเข้าถังแล้ว</p>
+      <div id="lnQueue"></div>
+      <button class="btn" onclick="saveLine()">บันทึก</button>
+      <button class="btn gray" onclick="testLine()">📨 ทดสอบส่ง</button>
+      <button class="btn gray" onclick="sendStockSummary()">⛽ ส่งสรุปสต็อกตอนนี้</button>
+    </div>
+    <div class="card">
+      <h3>🧾 ตั้งค่าใบเสร็จ</h3>
+      <div class="row">
+        <label>ชื่อบริษัท (ผู้ประกอบการ)<input id="rcCompany"></label>
+        <label>เลขประจำตัวผู้เสียภาษี<input id="rcTax" maxlength="13"></label>
+        <label>สาขา<input id="rcBranch"></label>
+      </div>
+      <div class="row">
+        <label>ที่อยู่<input id="rcAddr"></label>
+        <label>เบอร์โทร<input id="rcPhone"></label>
+        <label>POS ID (ถ้ามี)<input id="rcPos"></label>
+      </div>
+      <div class="row">
+        <label>ขนาดกระดาษ<select id="rcWidth"><option value="80">80 มม.</option><option value="58">58 มม.</option></select></label>
+        <label>ข้อความท้ายบิล<input id="rcFooter"></label>
+        <label>พิมพ์อัตโนมัติหลังขาย<select id="rcAuto"><option value="1">เปิด</option><option value="0">ปิด</option></select></label>
+      </div>
+      <button class="btn" onclick="saveReceiptSettings()">บันทึก</button>
+      <button class="btn gray" onclick="testPrint()">🖨️ ทดลองพิมพ์</button>
+    </div>
+    <div class="card">
+      <h3>💾 สำรองข้อมูล</h3>
+      <button class="btn gray" onclick="backup()">ดาวน์โหลดไฟล์สำรอง</button>
+      <label>กู้คืนจากไฟล์<input type="file" accept=".json" onchange="restore(this)"></label>
+      <button class="btn red" onclick="resetAll()">ล้างข้อมูลทั้งหมด</button>
+    </div>
+  </section>
+</main>
+<div id="receipt"></div>
+<div id="toast"></div>
+
+<script>
+/* ================= ข้อมูลพื้นฐาน ================= */
+const KEY = 'gasStationDB_v1';
+const PAY = {cash:'เงินสด', transfer:'โอน/QR', card:'บัตรเครดิต', credit:'เงินเชื่อ'};
+const GROUPS = {gas:'⛽ กลุ่มแก๊สโซฮอล์และเบนซิน', diesel:'🚛 กลุ่มดีเซล'};
+const GSHORT = {gas:'กลุ่มแก๊สโซฮอล์/เบนซิน', diesel:'กลุ่มดีเซล'};
+// ราคาตั้งต้นอ้างอิงราคาขายปลีก ปตท. 6 พ.ย. 2569 — แก้ได้ในเมนูตั้งค่า
+const FUEL_CATALOG = [
+  {id:'g95',   group:'gas',    name:'แก๊สโซฮอล์ 95',              price:39.84, capacity:20000, stock:12000, color:'#ea580c'},
+  {id:'g91',   group:'gas',    name:'แก๊สโซฮอล์ 91',              price:39.47, capacity:20000, stock:9000,  color:'#16a34a'},
+  {id:'e20',   group:'gas',    name:'แก๊สโซฮอล์ E20',             price:31.80, capacity:15000, stock:2500,  color:'#9333ea'},
+  {id:'e85',   group:'gas',    name:'แก๊สโซฮอล์ E85',             price:30.63, capacity:10000, stock:6000,  color:'#db2777'},
+  {id:'g95p',  group:'gas',    name:'แก๊สโซฮอล์ 95 พรีเมียม',      price:47.05, capacity:10000, stock:5000,  color:'#dc2626'},
+  {id:'ben95', group:'gas',    name:'เบนซิน 95',                  price:49.33, capacity:10000, stock:4000,  color:'#ca8a04'},
+  {id:'b7',    group:'diesel', name:'ดีเซล (มาตรฐาน B7)',          price:41.79, capacity:30000, stock:18000, color:'#2563eb'},
+  {id:'b20',   group:'diesel', name:'ดีเซล B20',                  price:33.50, capacity:15000, stock:8000,  color:'#0891b2'},
+  {id:'dp',    group:'diesel', name:'ดีเซลพรีเมียม (ซุปเปอร์พาวเวอร์)', price:49.05, capacity:10000, stock:5000,  color:'#1e3a8a'}
+];
+const defaults = () => ({
+  stationName:'ปั๊มน้ำมันของเรา', pumps:6, lowPct:20, fuelVer:2,
+  fuels: FUEL_CATALOG.map(f => ({...f, active:true})),
+  sales:[], deliveries:[], adjustments:[], shifts:[], shift:null, customers:[], payments:[]
+});
+let db = JSON.parse(localStorage.getItem(KEY) || 'null') || defaults();
+
+function sortFuels(){
+  const idx = id => { const i = FUEL_CATALOG.findIndex(c => c.id === id); return i < 0 ? 99 : i; };
+  db.fuels.sort((a, b) => (a.group === b.group ? 0 : (a.group === 'gas' ? -1 : 1)) || idx(a.id) - idx(b.id));
+}
+function migrate(){
+  ['sales','deliveries','adjustments','shifts','customers','payments','fuels'].forEach(k => { if (!Array.isArray(db[k])) db[k] = []; });
+  if ((db.fuelVer || 0) < 2) { // อัปเกรดรายการน้ำมันจากเวอร์ชันเก่า: เก็บสต็อกเดิม เพิ่มชนิดใหม่ (สต็อก 0)
+    const oldNames = {b7:'ดีเซล B7', e20:'E20'};
+    FUEL_CATALOG.forEach(c => {
+      const f = db.fuels.find(x => x.id === c.id);
+      if (!f) db.fuels.push({...c, stock:0, active:true});
+      else { f.group = c.group; if (oldNames[c.id] === f.name) f.name = c.name; }
+    });
+    db.fuelVer = 2;
+  }
+  db.fuels.forEach(f => { if (f.active === undefined) f.active = true; if (!f.group) f.group = 'gas'; if (!f.color) f.color = '#64748b'; });
+  sortFuels();
+  db.receipt = Object.assign({company:'', taxId:'', branch:'สำนักงานใหญ่', address:'', phone:'', posId:'',
+    width:'80', footer:'ขอบคุณที่ใช้บริการ ขับขี่ปลอดภัย', auto:'1'}, db.receipt || {});
+  db.line = Object.assign({url:'', secret:'', onShift:'1', onCredit:'1'}, db.line || {});
+  db.lowAlerted = db.lowAlerted || {};
+  db.lineQueue = db.lineQueue || [];
+}
+migrate();
+
+const save = () => localStorage.setItem(KEY, JSON.stringify(db));
+const $ = s => document.querySelector(s);
+const fmt = (n, d=2) => Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:d, maximumFractionDigits:d});
+const fuel = id => db.fuels.find(f => f.id === id);
+const activeFuels = () => db.fuels.filter(f => f.active);
+const byGroup = list => Object.keys(GROUPS).map(g => ({g, label:GROUPS[g], items:list.filter(f => f.group === g)})).filter(x => x.items.length);
+const cust = id => db.customers.find(c => c.id === id);
+const live = () => db.sales.filter(s => !s.void);
+const dkey = t => { const d=new Date(t); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const today = () => dkey(Date.now());
+const tTime = t => new Date(t).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+const tFull = t => new Date(t).toLocaleString('th-TH');
+const tDate = t => new Date(t).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'});
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s||'').replace(/[\s-]/g,'').toLowerCase();
+const sum = arr => arr.reduce((a,x) => a + x.amount, 0);
+const toast = (msg, color='#16a34a') => { const el=$('#toast'); el.textContent=msg; el.style.background=color; el.style.display='block'; setTimeout(()=>el.style.display='none',2200); };
+const table = (heads, rows, cls=[]) => rows.length
+  ? `<table><tr>${heads.map(h=>`<th class="${h.n?'num':''}">${h.t}</th>`).join('')}</tr>${rows.map((r,j)=>`<tr class="${cls[j]||''}">${r.map((c,i)=>`<td class="${heads[i].n?'num':''}">${c}</td>`).join('')}</tr>`).join('')}</table>`
+  : '<p style="color:#94a3b8">ยังไม่มีข้อมูล</p>';
+const payLabel = s => s.pay === 'credit' ? `<span class="tag blue">เชื่อ: ${esc(s.custName)}</span>` : PAY[s.pay];
+const groupOf = s => (fuel(s.fuelId) || {}).group || 'gas';
+
+function summarize(sales){
+  sales = sales.filter(s => !s.void);
+  const byFuel = {}, byPay = {}, byGrp = {gas:{liters:0, amount:0}, diesel:{liters:0, amount:0}};
+  sales.forEach(s => {
+    const g = groupOf(s);
+    byFuel[s.fuelName] = byFuel[s.fuelName] || {liters:0, amount:0, count:0, group:g};
+    byFuel[s.fuelName].liters += s.liters; byFuel[s.fuelName].amount += s.amount; byFuel[s.fuelName].count++;
+    byPay[s.pay] = (byPay[s.pay] || 0) + s.amount;
+    byGrp[g].liters += s.liters; byGrp[g].amount += s.amount;
+  });
+  return {total:sum(sales), liters:sales.reduce((a,s)=>a+s.liters,0), count:sales.length, byFuel, byPay, byGrp};
+}
+function fuelTable(byFuel){
+  const rows = [], cls = [];
+  Object.keys(GROUPS).forEach(g => {
+    const ent = Object.entries(byFuel).filter(([,v]) => v.group === g);
+    if (!ent.length) return;
+    let c = 0, l = 0, a = 0;
+    ent.forEach(([k,v]) => { rows.push([esc(k), v.count, fmt(v.liters), fmt(v.amount)]); cls.push(''); c += v.count; l += v.liters; a += v.amount; });
+    rows.push(['รวม' + GSHORT[g], c, fmt(l), fmt(a)]); cls.push('sub');
+  });
+  return table([{t:'ชนิด'},{t:'จำนวนครั้ง',n:1},{t:'ลิตร',n:1},{t:'ยอดเงิน (บาท)',n:1}], rows, cls);
+}
+function avgDaily(id){
+  const since = Date.now() - 7*864e5;
+  return live().filter(s => s.fuelId === id && s.time >= since).reduce((a,s) => a + s.liters, 0) / 7;
+}
+function custBalance(id){
+  return sum(live().filter(s => s.pay === 'credit' && s.custId === id)) - sum(db.payments.filter(p => p.custId === id));
+}
+
+/* ================= แท็บ ================= */
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('active', x===b));
+  document.querySelectorAll('.tab').forEach(s => s.classList.toggle('active', s.id===b.dataset.tab));
+  render();
+});
+
+/* ================= แดชบอร์ด ================= */
+function renderDashboard(){
+  const sm = summarize(db.sales.filter(s => dkey(s.time) === today()));
+  const ar = db.customers.reduce((a,c) => a + custBalance(c.id), 0);
+  $('#kpi').innerHTML = `
+    <div class="card kpi"><small>ยอดขายวันนี้</small><b>฿${fmt(sm.total)}</b></div>
+    <div class="card kpi"><small>ปริมาณขายวันนี้</small><b>${fmt(sm.liters)} ล.</b></div>
+    <div class="card kpi"><small>⛽ แก๊สโซฮอล์/เบนซิน</small><b>${fmt(sm.byGrp.gas.liters)} ล.</b></div>
+    <div class="card kpi"><small>🚛 ดีเซล</small><b>${fmt(sm.byGrp.diesel.liters)} ล.</b></div>
+    <div class="card kpi"><small>จำนวนรถที่เติม</small><b>${sm.count} คัน</b></div>
+    <div class="card kpi"><small>ขายเชื่อวันนี้</small><b>฿${fmt(sm.byPay.credit||0)}</b></div>
+    <div class="card kpi"><small>ลูกหนี้คงค้างทั้งหมด</small><b>฿${fmt(ar)}</b></div>
+    <div class="card kpi"><small>กะปัจจุบัน</small><b style="font-size:19px">${db.shift ? '🟢 '+esc(db.shift.staff) : '🔴 ยังไม่เปิดกะ'}</b></div>`;
+  $('#tanks').innerHTML = byGroup(activeFuels()).map(x => `<div class="glabel">${x.label}</div><div class="grid">` + x.items.map(f => {
+    const p = Math.max(0, f.stock / f.capacity * 100), low = p < db.lowPct, avg = avgDaily(f.id);
+    return `<div class="card tank ${low?'low':''}">
+      <div class="tname">${esc(f.name)} <small style="color:#64748b">฿${fmt(f.price)}/ลิตร</small></div>
+      <div class="bar"><div style="width:${Math.min(p,100)}%;background:${f.color}"></div></div>
+      <div>${fmt(f.stock,0)} / ${fmt(f.capacity,0)} ลิตร (${p.toFixed(0)}%)</div>
+      ${avg > 0 ? `<div class="small">ขายเฉลี่ย ${fmt(avg,0)} ล./วัน • พอขายอีก ~${(f.stock/avg).toFixed(1)} วัน</div>` : ''}
+      ${low ? '<div class="warn">⚠️ น้ำมันใกล้หมด ควรสั่งเพิ่ม</div>' : ''}</div>`;
+  }).join('') + '</div>').join('');
+  $('#todayByFuel').innerHTML = fuelTable(sm.byFuel);
+}
+
+/* ================= ขายหน้าลาน ================= */
+let pos = {pump:1, fuel:activeFuels()[0]?.id};
+function renderPOS(){
+  if (!fuel(pos.fuel)?.active) pos.fuel = activeFuels()[0]?.id;
+  $('#shiftWarn').innerHTML = db.shift ? '' : '<p class="warn">⚠️ ยังไม่ได้เปิดกะ — ไปที่เมนู "กะ/เงินสด" ก่อนเริ่มขาย</p>';
+  $('#pumpBtns').innerHTML = Array.from({length:db.pumps}, (_,i) =>
+    `<button class="chip ${pos.pump===i+1?'on':''}" onclick="pos.pump=${i+1};renderPOS()">หัวจ่าย ${i+1}</button>`).join('');
+  $('#fuelBtns').innerHTML = byGroup(activeFuels()).map(x => `<div class="glabel">${x.label}</div><div class="chips">` +
+    x.items.map(f => `<button class="chip ${pos.fuel===f.id?'on':''}" style="--c:${f.color}" onclick="pos.fuel='${f.id}';renderPOS()">${esc(f.name)}<br><small>฿${fmt(f.price)}/ล.</small></button>`).join('') +
+    '</div>').join('') || '<p class="warn">ยังไม่มีน้ำมันที่เปิดขาย — ไปที่เมนูตั้งค่า</p>';
+  const sel = $('#posCust'), v = sel.value;
+  sel.innerHTML = '<option value="">-- เลือกลูกค้า --</option>' + db.customers.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  sel.value = v;
+  $('#plateList').innerHTML = db.customers.flatMap(c => c.plates.map(p => `<option value="${esc(p)}">${esc(c.name)}</option>`)).join('');
+  calcPreview();
+  const list = db.sales.slice(-10).reverse();
+  $('#recent').innerHTML = table(
+    [{t:'เวลา'},{t:'หัวจ่าย'},{t:'ชนิด'},{t:'ลิตร',n:1},{t:'บาท',n:1},{t:'ชำระ'},{t:''}],
+    list.map(s => [tTime(s.time), s.pump, esc(s.fuelName), fmt(s.liters), fmt(s.amount), payLabel(s),
+      s.void ? '<span class="tag red">ยกเลิกแล้ว</span>'
+             : `<button class="btn sm gray" onclick="reprint(${s.id})">🧾</button> <button class="btn sm red" onclick="voidSale(${s.id})">ยกเลิก</button>`]),
+    list.map(s => s.void ? 'void' : ''));
+}
+function calcPreview(){
+  const f = fuel(pos.fuel), v = +$('#posVal').value || 0;
+  if (!f) { $('#preview').textContent = 'ยังไม่มีชนิดน้ำมันที่เปิดขาย'; return {f:null, liters:0, amount:0}; }
+  let liters, amount;
+  if ($('#posMode').value === 'baht') { amount = v; liters = v / f.price; } else { liters = v; amount = v * f.price; }
+  const pay = $('#posPay').value;
+  $('#cashBox').style.display = pay === 'cash' ? 'block' : 'none';
+  $('#creditBox').style.display = pay === 'credit' ? 'block' : 'none';
+  let extra = '';
+  if (pay === 'cash') { const cash = +$('#posCash').value || 0; if (cash >= amount && amount > 0) extra = ` • ทอน <span style="color:#4ade80">฿${fmt(cash-amount)}</span>`; }
+  if (pay === 'credit') renderCustInfo(amount);
+  $('#preview').innerHTML = `${esc(f.name)} • ${fmt(liters,3)} ลิตร • <b>฿${fmt(amount)}</b>${extra}`;
+  return {f, liters, amount};
+}
+function renderCustInfo(amount){
+  const c = cust($('#posCust').value);
+  if (!c) { $('#custInfo').innerHTML = '<span class="warn">กรุณาเลือกลูกค้า</span>'; return; }
+  const bal = custBalance(c.id), over = c.limit > 0 && bal + amount > c.limit;
+  $('#custInfo').innerHTML = `ยอดค้าง <b>฿${fmt(bal)}</b> • วงเงิน ${c.limit > 0 ? '฿'+fmt(c.limit)+' • คงเหลือ <b>฿'+fmt(c.limit-bal)+'</b>' : 'ไม่จำกัด'}
+    ${over ? '<div class="warn">⚠️ บิลนี้จะทำให้เกินวงเงิน</div>' : ''}`;
+}
+function custPicked(){
+  const c = cust($('#posCust').value);
+  if (c) {
+    $('#cusName').value = c.name; $('#cusTax').value = c.taxId; $('#cusBranch').value = c.branch; $('#cusAddr').value = c.addr;
+    if (c.plates.length === 1 && !$('#posPlate').value) $('#posPlate').value = c.plates[0];
+  }
+  calcPreview();
+}
+function plateLookup(){
+  const p = norm($('#posPlate').value); if (!p) return;
+  const c = db.customers.find(c => c.plates.some(x => norm(x) === p));
+  if (c && $('#posCust').value !== c.id) {
+    $('#posPay').value = 'credit'; $('#posCust').value = c.id; custPicked();
+    toast(`รถของลูกค้าเงินเชื่อ: ${c.name}`, '#2563eb');
+  }
+}
+function quick(b){ $('#posMode').value = 'baht'; $('#posVal').value = b; calcPreview(); }
+function addSale(){
+  if (!db.shift) return alert('กรุณาเปิดกะก่อนขาย');
+  const {f, liters, amount} = calcPreview();
+  if (!f) return alert('ยังไม่มีชนิดน้ำมันที่เปิดขาย');
+  if (amount <= 0) return alert('กรุณากรอกจำนวน');
+  if (liters > f.stock) return alert(`น้ำมัน ${f.name} ในถังไม่พอ (เหลือ ${fmt(f.stock)} ลิตร)`);
+  const pay = $('#posPay').value, cash = pay === 'cash' ? (+$('#posCash').value || 0) : 0;
+  if (cash && cash < amount) return alert('รับเงินมาไม่พอ');
+  let c = null;
+  if (pay === 'credit') {
+    c = cust($('#posCust').value);
+    if (!c) return alert('กรุณาเลือกลูกค้าเงินเชื่อ');
+    const bal = custBalance(c.id);
+    if (c.limit > 0 && bal + amount > c.limit) {
+      if (!confirm(`⚠️ ${c.name} จะเกินวงเงิน\nยอดค้าง ฿${fmt(bal)} + บิลนี้ ฿${fmt(amount)} = ฿${fmt(bal+amount)}\nวงเงิน ฿${fmt(c.limit)}\n\nยืนยันขายต่อ? (ระบบจะแจ้งผู้จัดการทาง LINE)`)) return;
+      if (db.line.onCredit === '1') sendLine(`💳 ลูกค้าเงินเชื่อเกินวงเงิน\nลูกค้า: ${c.name}\nยอดค้างหลังบิลนี้: ฿${fmt(bal+amount)}\nวงเงิน: ฿${fmt(c.limit)}\nพนักงาน: ${db.shift.staff}`);
+    }
+  }
+  let customer = null;
+  if ($('#posFull').checked) {
+    customer = {name:$('#cusName').value.trim(), tax:$('#cusTax').value.trim(),
+                branch:$('#cusBranch').value.trim() || 'สำนักงานใหญ่', addr:$('#cusAddr').value.trim()};
+    if (!customer.name || !/^\d{13}$/.test(customer.tax)) return alert('ใบกำกับเต็มรูปต้องมีชื่อลูกค้า และเลขผู้เสียภาษี 13 หลัก');
+  }
+  f.stock -= liters;
+  const sale = {id:Date.now(), time:Date.now(), pump:pos.pump, fuelId:f.id, fuelName:f.name, price:f.price,
+    liters:+liters.toFixed(3), amount:+amount.toFixed(2), pay, cash, customer,
+    custId:c ? c.id : null, custName:c ? c.name : '',
+    plate:$('#posPlate').value.trim(), staff:db.shift.staff, shiftId:db.shift.id, receiptNo:nextReceiptNo()};
+  db.sales.push(sale); save();
+  ['#posVal','#posPlate','#posCash','#cusName','#cusTax','#cusBranch','#cusAddr'].forEach(s => $(s).value = '');
+  $('#posFull').checked = false; $('#fullBox').style.display = 'none';
+  $('#posPay').value = 'cash'; $('#posCust').value = '';
+  render(); toast(`บันทึกแล้ว ฿${fmt(amount)}`);
+  checkLowStock();
+  if (db.receipt.auto === '1') printReceipt(sale);
+}
+function voidSale(id){
+  const s = db.sales.find(x => x.id === id); if (!s || s.void) return;
+  const reason = prompt('ระบุเหตุผลการยกเลิก (น้ำมันจะคืนเข้าถัง)');
+  if (reason === null) return;
+  if (!reason.trim()) return alert('กรุณาระบุเหตุผล');
+  s.void = true; s.voidReason = reason.trim(); s.voidTime = Date.now(); s.voidBy = db.shift ? db.shift.staff : '-';
+  const f = fuel(s.fuelId); if (f) f.stock += s.liters;
+  save(); checkLowStock(); render(); toast('ยกเลิกรายการแล้ว', '#ef4444');
+}
+
+/* ================= ลูกค้าเงินเชื่อ ================= */
+function renderCredit(){
+  const opts = '<option value="">-- เลือกลูกค้า --</option>' + db.customers.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  document.querySelectorAll('.custSelect').forEach(sel => { const v = sel.value; sel.innerHTML = opts; sel.value = v; });
+  const month = today().slice(0,7);
+  const ar = db.customers.reduce((a,c) => a + custBalance(c.id), 0);
+  const overCnt = db.customers.filter(c => c.limit > 0 && custBalance(c.id) > c.limit).length;
+  const monthCredit = sum(live().filter(s => s.pay === 'credit' && dkey(s.time).startsWith(month)));
+  $('#crKpi').innerHTML = `
+    <div class="card kpi"><small>จำนวนลูกค้า</small><b>${db.customers.length} ราย</b></div>
+    <div class="card kpi"><small>ลูกหนี้คงค้างรวม</small><b>฿${fmt(ar)}</b></div>
+    <div class="card kpi"><small>ขายเชื่อเดือนนี้</small><b>฿${fmt(monthCredit)}</b></div>
+    <div class="card kpi"><small>เกินวงเงิน</small><b class="${overCnt?'neg':''}">${overCnt} ราย</b></div>`;
+  $('#custList').innerHTML = table(
+    [{t:'ลูกค้า'},{t:'ทะเบียนรถ'},{t:'โทร'},{t:'วงเงิน',n:1},{t:'ยอดค้าง',n:1},{t:'ใช้วงเงิน'},{t:''}],
+    db.customers.map(c => {
+      const bal = custBalance(c.id), p = c.limit > 0 ? bal / c.limit * 100 : 0;
+      const color = p >= 100 ? '#ef4444' : p >= 80 ? '#f59e0b' : '#16a34a';
+      return [`<b>${esc(c.name)}</b><br><span class="small">เทอม ${c.term} วัน</span>`, esc(c.plates.join(', ')) || '-', esc(c.phone) || '-',
+        c.limit > 0 ? fmt(c.limit) : 'ไม่จำกัด', `<b class="${bal > 0 ? 'neg' : ''}">${fmt(bal)}</b>`,
+        c.limit > 0 ? `<div class="bar mini"><div style="width:${Math.min(p,100)}%;background:${color}"></div></div>${p.toFixed(0)}%` : '-',
+        `<button class="btn sm green" onclick="quickPay('${c.id}')">รับชำระ</button>
+         <button class="btn sm" onclick="quickStmt('${c.id}')">ใบแจ้งหนี้</button>
+         <button class="btn sm gray" onclick="editCustomer('${c.id}')">แก้ไข</button>
+         <button class="btn sm red" onclick="deleteCustomer('${c.id}')">ลบ</button>`];
+    }));
+  showPayBal();
+  $('#payHist').innerHTML = table(
+    [{t:'วันเวลา'},{t:'ลูกค้า'},{t:'ช่องทาง'},{t:'หมายเหตุ'},{t:'ผู้รับ'},{t:'จำนวน',n:1},{t:''}],
+    db.payments.slice(-30).reverse().map(p => [tFull(p.time), esc(p.custName), esc(p.method), esc(p.note) || '-', esc(p.staff), fmt(p.amount),
+      `<button class="btn sm red" onclick="deletePayment(${p.id})">ลบ</button>`]));
+  if (!$('#stMonth').value) $('#stMonth').value = month;
+  renderStatement();
+}
+function saveCustomer(){
+  const name = $('#cuName').value.trim(); if (!name) return alert('กรุณากรอกชื่อลูกค้า');
+  const tax = $('#cuTax').value.trim(); if (tax && !/^\d{13}$/.test(tax)) return alert('เลขผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก');
+  const data = {name, taxId:tax, branch:$('#cuBranch').value.trim() || 'สำนักงานใหญ่', addr:$('#cuAddr').value.trim(),
+    phone:$('#cuPhone').value.trim(), limit:+$('#cuLimit').value || 0, term:+$('#cuTerm').value || 30,
+    plates:$('#cuPlates').value.split(',').map(s => s.trim()).filter(Boolean)};
+  const id = $('#cuId').value;
+  if (id) Object.assign(cust(id), data); else db.customers.push({id:'c'+Date.now(), ...data});
+  save(); clearCustForm(); render(); toast('บันทึกลูกค้าแล้ว');
+}
+function editCustomer(id){
+  const c = cust(id); if (!c) return;
+  $('#cuId').value = c.id; $('#cuName').value = c.name; $('#cuTax').value = c.taxId; $('#cuBranch').value = c.branch;
+  $('#cuAddr').value = c.addr; $('#cuPhone').value = c.phone; $('#cuLimit').value = c.limit; $('#cuTerm').value = c.term;
+  $('#cuPlates').value = c.plates.join(', '); $('#cuTitle').textContent = '✏️ แก้ไขลูกค้า';
+  $('#cuName').scrollIntoView({behavior:'smooth', block:'center'});
+}
+function clearCustForm(){
+  ['#cuId','#cuName','#cuTax','#cuBranch','#cuAddr','#cuPhone','#cuLimit','#cuPlates'].forEach(s => $(s).value = '');
+  $('#cuTerm').value = 30; $('#cuTitle').textContent = '➕ เพิ่มลูกค้าเงินเชื่อ';
+}
+function deleteCustomer(id){
+  const c = cust(id);
+  if (Math.abs(custBalance(id)) > 0.009) return alert('ลูกค้ายังมียอดค้างชำระ ลบไม่ได้');
+  if (!confirm(`ลบลูกค้า ${c.name}? (ประวัติการขายยังเก็บไว้)`)) return;
+  db.customers = db.customers.filter(x => x.id !== id); save(); render(); toast('ลบลูกค้าแล้ว', '#ef4444');
+}
+function showPayBal(){
+  const c = cust($('#payCust').value);
+  $('#payBal').innerHTML = c ? `<div class="info">ยอดค้างชำระปัจจุบัน: <b>฿${fmt(custBalance(c.id))}</b></div>` : '';
+}
+function quickPay(id){ $('#payCust').value = id; showPayBal(); $('#payAmt').focus(); $('#payAmt').scrollIntoView({behavior:'smooth', block:'center'}); }
+function quickStmt(id){ $('#stCust').value = id; renderStatement(); $('#stmtView').scrollIntoView({behavior:'smooth'}); }
+function receivePayment(){
+  const c = cust($('#payCust').value); if (!c) return alert('กรุณาเลือกลูกค้า');
+  const amt = +$('#payAmt').value; if (!(amt > 0)) return alert('กรุณากรอกจำนวนเงิน');
+  const bal = custBalance(c.id);
+  if (amt > bal + 0.009 && !confirm(`ยอดรับชำระ (฿${fmt(amt)}) มากกว่ายอดค้าง (฿${fmt(bal)}) ยืนยันบันทึก?`)) return;
+  const method = $('#payMethod').value;
+  db.payments.push({id:Date.now(), time:Date.now(), custId:c.id, custName:c.name, amount:+amt.toFixed(2), method,
+    note:$('#payNote').value.trim(), staff:db.shift ? db.shift.staff : 'ผู้จัดการ',
+    shiftId:(method === 'เงินสด' && db.shift) ? db.shift.id : null});
+  save(); $('#payAmt').value = ''; $('#payNote').value = '';
+  render(); toast(`รับชำระจาก ${c.name} ฿${fmt(amt)} แล้ว`);
+}
+function deletePayment(id){
+  if (!confirm('ลบรายการรับชำระนี้? ยอดหนี้ของลูกค้าจะกลับไปเท่าเดิม')) return;
+  db.payments = db.payments.filter(p => p.id !== id); save(); render(); toast('ลบแล้ว', '#ef4444');
+}
+function buildStatement(id, month){
+  const c = cust(id); if (!c || !month) return '';
+  const [y, m] = month.split('-').map(Number);
+  const start = new Date(y, m-1, 1).getTime(), end = new Date(y, m, 1).getTime();
+  const cs = live().filter(s => s.pay === 'credit' && s.custId === id), ps = db.payments.filter(p => p.custId === id);
+  const opening = sum(cs.filter(s => s.time < start)) - sum(ps.filter(p => p.time < start));
+  const items = cs.filter(s => s.time >= start && s.time < end), pays = ps.filter(p => p.time >= start && p.time < end);
+  const charges = sum(items), paid = sum(pays), closing = opening + charges - paid;
+  const due = new Date(y, m, 0).getTime() + c.term * 864e5;
+  const r = db.receipt, monthName = new Date(y, m-1, 1).toLocaleDateString('th-TH', {month:'long', year:'numeric'});
+  return `
+    <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:10px">
+      <div><b style="font-size:1.3em">${esc(r.company || db.stationName)}</b><br>${esc(r.address)}<br>
+        ${r.taxId ? `เลขผู้เสียภาษี ${esc(r.taxId)} (${esc(r.branch)})<br>` : ''}${r.phone ? 'โทร ' + esc(r.phone) : ''}</div>
+      <div style="text-align:right"><b style="font-size:1.3em">ใบแจ้งหนี้ / ใบวางบิล</b><br>
+        เลขที่ INV-${month.replace('-','')}-${c.id.slice(-4)}<br>วันที่ออก ${tDate(Date.now())}<br>
+        <b>ครบกำหนดชำระ ${tDate(due)}</b></div>
+    </div>
+    <div style="margin:12px 0;padding:8px;border:1px solid #cbd5e1;border-radius:6px">
+      <b>ลูกค้า:</b> ${esc(c.name)}${c.taxId ? ` • เลขผู้เสียภาษี ${esc(c.taxId)} (${esc(c.branch)})` : ''}<br>
+      ${c.addr ? '<b>ที่อยู่:</b> ' + esc(c.addr) + '<br>' : ''}${c.phone ? '<b>โทร:</b> ' + esc(c.phone) + '<br>' : ''}
+      <b>ประจำเดือน:</b> ${monthName}
+    </div>
+    <b>รายการขายเชื่อ</b>
+    ${table([{t:'วันที่'},{t:'เลขที่ใบเสร็จ'},{t:'ทะเบียน'},{t:'ชนิดน้ำมัน'},{t:'ลิตร',n:1},{t:'ราคา/ลิตร',n:1},{t:'จำนวนเงิน',n:1}],
+      items.map(s => [tDate(s.time), s.receiptNo || '-', esc(s.plate) || '-', esc(s.fuelName), fmt(s.liters,3), fmt(s.price), fmt(s.amount)]))}
+    ${pays.length ? '<br><b>รายการรับชำระ</b>' + table([{t:'วันที่'},{t:'ช่องทาง'},{t:'หมายเหตุ'},{t:'จำนวนเงิน',n:1}],
+      pays.map(p => [tDate(p.time), esc(p.method), esc(p.note) || '-', fmt(p.amount)])) : ''}
+    <br>
+    <table style="max-width:420px;margin-left:auto">
+      <tr><td>ยอดยกมา</td><td class="num">${fmt(opening)}</td></tr>
+      <tr><td>ขายเชื่อเดือนนี้ (${items.length} รายการ)</td><td class="num">${fmt(charges)}</td></tr>
+      <tr><td>หัก รับชำระเดือนนี้</td><td class="num">-${fmt(paid)}</td></tr>
+      <tr><td><b>ยอดค้างชำระรวม</b></td><td class="num"><b>${fmt(closing)}</b></td></tr>
+    </table>
+    <p class="small">ราคารวมภาษีมูลค่าเพิ่มแล้ว</p>
+    <div class="sig">
+      <div>.................................<br>ผู้วางบิล<br>วันที่ ......../......../........</div>
+      <div>.................................<br>ผู้รับวางบิล<br>วันที่ ......../......../........</div>
+    </div>`;
+}
+function renderStatement(){
+  const html = buildStatement($('#stCust').value, $('#stMonth').value);
+  $('#stmtView').innerHTML = html || '<p class="small">เลือกลูกค้าเพื่อดูใบแจ้งหนี้</p>';
+}
+function printStatement(){
+  const html = buildStatement($('#stCust').value, $('#stMonth').value);
+  if (!html) return alert('กรุณาเลือกลูกค้าและเดือน');
+  printHTML(html, 'a4');
+}
+
+/* ================= สต็อก ================= */
+function renderStock(){
+  const opts = byGroup(activeFuels()).map(x => `<optgroup label="${GSHORT[x.g]}">` +
+    x.items.map(f => `<option value="${f.id}">${esc(f.name)} (คงเหลือ ${fmt(f.stock,0)} ล.)</option>`).join('') + '</optgroup>').join('');
+  document.querySelectorAll('.fuelSelect').forEach(sel => {
+    const v = sel.value; sel.innerHTML = opts;
+    if (v && fuel(v)?.active) sel.value = v;
+  });
+  $('#rcvHist').innerHTML = table(
+    [{t:'วันเวลา'},{t:'ชนิด'},{t:'ลิตร',n:1},{t:'ต้นทุน/ลิตร',n:1},{t:'มูลค่า',n:1},{t:'ใบส่งของ'}],
+    db.deliveries.slice(-20).reverse().map(d => [tFull(d.time), esc(d.fuelName), fmt(d.liters,0), fmt(d.cost), fmt(d.cost*d.liters), esc(d.invoice) || '-']));
+  $('#dipHist').innerHTML = table(
+    [{t:'วันเวลา'},{t:'ชนิด'},{t:'ในระบบ',n:1},{t:'วัดจริง',n:1},{t:'ส่วนต่าง',n:1}],
+    db.adjustments.slice(-20).reverse().map(a => [tFull(a.time), esc(a.fuelName), fmt(a.system), fmt(a.measured),
+      `<span class="${a.diff<0?'neg':'pos'}">${a.diff>0?'+':''}${fmt(a.diff)}</span>`]));
+}
+function receive(){
+  const f = fuel($('#rcvFuel').value), l = +$('#rcvLiters').value;
+  if (!f) return alert('กรุณาเลือกชนิดน้ำมัน');
+  if (!(l > 0)) return alert('กรุณากรอกจำนวนลิตร');
+  if (f.stock + l > f.capacity && !confirm('ปริมาณเกินความจุถัง ยืนยันบันทึก?')) return;
+  f.stock += l;
+  db.deliveries.push({time:Date.now(), fuelId:f.id, fuelName:f.name, liters:l, cost:+$('#rcvCost').value || 0, invoice:$('#rcvInv').value});
+  save(); ['#rcvLiters','#rcvCost','#rcvInv'].forEach(s => $(s).value = '');
+  checkLowStock(); render(); toast(`รับ ${f.name} ${fmt(l,0)} ลิตรแล้ว`);
+}
+function dip(){
+  const f = fuel($('#dipFuel').value), m = parseFloat($('#dipLiters').value);
+  if (!f) return alert('กรุณาเลือกชนิดน้ำมัน');
+  if (isNaN(m) || m < 0) return alert('กรุณากรอกปริมาณที่วัดได้');
+  const diff = m - f.stock;
+  db.adjustments.push({time:Date.now(), fuelId:f.id, fuelName:f.name, system:f.stock, measured:m, diff});
+  f.stock = m; save(); $('#dipLiters').value = '';
+  checkLowStock(); render(); toast(`ปรับยอดแล้ว ส่วนต่าง ${fmt(diff)} ลิตร`, diff < 0 ? '#ef4444' : '#16a34a');
+}
+function checkLowStock(){
+  const low = [];
+  db.fuels.forEach(f => {
+    const p = f.stock / f.capacity * 100;
+    if (f.active && p < db.lowPct) {
+      if (!db.lowAlerted[f.id]) {
+        db.lowAlerted[f.id] = true;
+        const avg = avgDaily(f.id);
+        low.push(`• ${f.name}: เหลือ ${fmt(f.stock,0)} ลิตร (${p.toFixed(0)}%)` + (avg > 0 ? `\n   พอขายอีกประมาณ ${(f.stock/avg).toFixed(1)} วัน` : ''));
+      }
+    } else delete db.lowAlerted[f.id];
+  });
+  save();
+  if (low.length) sendLine(`⛽ น้ำมันใกล้หมด! (ต่ำกว่า ${db.lowPct}%)\n${low.join('\n')}\nกรุณาสั่งน้ำมันเพิ่ม`);
+}
+
+/* ================= กะ / เงินสด ================= */
+function shiftCalc(id){
+  const sm = summarize(db.sales.filter(s => s.shiftId === id));
+  const debtCash = sum(db.payments.filter(p => p.shiftId === id));
+  return {sm, debtCash, expect: db.shift.float + (sm.byPay.cash || 0) + debtCash};
+}
+function renderShift(){
+  if (!db.shift) {
+    $('#shiftBox').innerHTML = `<div class="card"><h3>🟢 เปิดกะ</h3>
+      <label>ชื่อพนักงาน<input id="shStaff"></label>
+      <label>เงินทอนตั้งต้น (บาท)<input id="shFloat" type="number" value="2000"></label>
+      <button class="btn" onclick="openShift()">เปิดกะ</button></div>`;
+  } else {
+    const {sm, debtCash, expect} = shiftCalc(db.shift.id);
+    $('#shiftBox').innerHTML = `<div class="card"><h3>กะปัจจุบัน: ${esc(db.shift.staff)}</h3>
+      <p>เริ่มกะ ${tFull(db.shift.start)} • เงินทอนตั้งต้น ฿${fmt(db.shift.float)}</p>
+      <div class="grid">
+        <div class="card kpi"><small>ยอดขายรวม</small><b>฿${fmt(sm.total)}</b></div>
+        <div class="card kpi"><small>ลิตรรวม</small><b>${fmt(sm.liters)}</b></div>
+        <div class="card kpi"><small>⛽ แก๊สโซฮอล์/เบนซิน</small><b>${fmt(sm.byGrp.gas.liters)} ล.</b></div>
+        <div class="card kpi"><small>🚛 ดีเซล</small><b>${fmt(sm.byGrp.diesel.liters)} ล.</b></div>
+        ${Object.keys(PAY).map(k => `<div class="card kpi"><small>${PAY[k]}</small><b>฿${fmt(sm.byPay[k]||0)}</b></div>`).join('')}
+        <div class="card kpi"><small>รับชำระหนี้ (เงินสด)</small><b>฿${fmt(debtCash)}</b></div>
+        <div class="card kpi" style="background:#fef3c7"><small>เงินสดที่ควรมีในลิ้นชัก</small><b>฿${fmt(expect)}</b></div>
+      </div>
+      <label>นับเงินสดจริงได้ (บาท)<input id="shCount" type="number"></label>
+      <button class="btn red" onclick="closeShift()">🔒 ปิดกะ</button></div>`;
+  }
+  $('#shiftHist').innerHTML = table(
+    [{t:'พนักงาน'},{t:'เริ่ม'},{t:'สิ้นสุด'},{t:'ยอดขาย',n:1},{t:'เงินสดควรมี',n:1},{t:'นับได้',n:1},{t:'ขาด/เกิน',n:1}],
+    db.shifts.slice(-20).reverse().map(s => [esc(s.staff), tFull(s.start), tFull(s.end), fmt(s.total), fmt(s.expect), fmt(s.counted),
+      `<span class="${s.diff<0?'neg':'pos'}">${s.diff>0?'+':''}${fmt(s.diff)}</span>`]));
+}
+function openShift(){
+  const staff = $('#shStaff').value.trim();
+  if (!staff) return alert('กรุณากรอกชื่อพนักงาน');
+  db.shift = {id:Date.now(), staff, start:Date.now(), float:+$('#shFloat').value || 0};
+  save(); render(); toast('เปิดกะเรียบร้อย');
+}
+function closeShift(){
+  const counted = parseFloat($('#shCount').value);
+  if (isNaN(counted)) return alert('กรุณากรอกยอดเงินสดที่นับได้');
+  const {sm, debtCash, expect} = shiftCalc(db.shift.id), diff = counted - expect;
+  if (!confirm(`เงินสดควรมี ฿${fmt(expect)}\nนับได้ ฿${fmt(counted)}\nส่วนต่าง ${fmt(diff)} บาท\n\nยืนยันปิดกะ?`)) return;
+  const rec = {...db.shift, end:Date.now(), total:sm.total, liters:sm.liters, debtCash, expect, counted, diff};
+  db.shifts.push(rec); db.shift = null; save(); render(); toast('ปิดกะเรียบร้อย');
+  if (db.line.onShift === '1') {
+    sendLine(`👷 สรุปปิดกะ: ${rec.staff}\n${tFull(rec.start)} - ${tTime(rec.end)}\n` +
+      `ยอดขาย ฿${fmt(rec.total)} (${fmt(rec.liters)} ลิตร, ${sm.count} คัน)\n` +
+      `⛽ แก๊สโซฮอล์/เบนซิน: ${fmt(sm.byGrp.gas.liters)} ล. (฿${fmt(sm.byGrp.gas.amount)})\n` +
+      `🚛 ดีเซล: ${fmt(sm.byGrp.diesel.liters)} ล. (฿${fmt(sm.byGrp.diesel.amount)})\n` +
+      Object.keys(PAY).map(k => `• ${PAY[k]}: ฿${fmt(sm.byPay[k]||0)}`).join('\n') +
+      `\nรับชำระหนี้เงินสด: ฿${fmt(debtCash)}\nเงินสดควรมี ฿${fmt(expect)} / นับได้ ฿${fmt(counted)}\n` +
+      (Math.abs(diff) < 0.01 ? '✅ เงินสดตรง' : (diff < 0 ? `❌ เงินขาด ฿${fmt(-diff)}` : `⚠️ เงินเกิน ฿${fmt(diff)}`)));
+  }
+}
+
+/* ================= รายงาน ================= */
+function renderReport(){
+  if (!$('#repDate').value) $('#repDate').value = today();
+  const list = db.sales.filter(s => dkey(s.time) === $('#repDate').value), sm = summarize(list);
+  const voidCnt = list.filter(s => s.void).length;
+  $('#repKpi').innerHTML = `
+    <div class="card kpi"><small>ยอดขาย</small><b>฿${fmt(sm.total)}</b></div>
+    <div class="card kpi"><small>ลิตรรวม</small><b>${fmt(sm.liters)}</b></div>
+    <div class="card kpi"><small>⛽ แก๊สโซฮอล์/เบนซิน</small><b>฿${fmt(sm.byGrp.gas.amount)}</b><span class="small">${fmt(sm.byGrp.gas.liters)} ล.</span></div>
+    <div class="card kpi"><small>🚛 ดีเซล</small><b>฿${fmt(sm.byGrp.diesel.amount)}</b><span class="small">${fmt(sm.byGrp.diesel.liters)} ล.</span></div>
+    <div class="card kpi"><small>จำนวนรายการ</small><b>${sm.count}${voidCnt ? ` <small class="neg">(ยกเลิก ${voidCnt})</small>` : ''}</b></div>
+    <div class="card kpi"><small>เฉลี่ย/คัน</small><b>฿${fmt(sm.count ? sm.total/sm.count : 0)}</b></div>`;
+  $('#repFuel').innerHTML = fuelTable(sm.byFuel);
+  $('#repPay').innerHTML = table([{t:'วิธีชำระ'},{t:'บาท',n:1}],
+    Object.entries(sm.byPay).map(([k,v]) => [PAY[k], fmt(v)]));
+  const rev = list.slice().reverse();
+  $('#repList').innerHTML = table(
+    [{t:'เวลา'},{t:'เลขที่'},{t:'หัวจ่าย'},{t:'ชนิด'},{t:'ลิตร',n:1},{t:'บาท',n:1},{t:'ชำระ'},{t:'ทะเบียน'},{t:'พนักงาน'}],
+    rev.map(s => [tTime(s.time), (s.receiptNo || '-') + (s.void ? `<br><span class="tag red">ยกเลิก: ${esc(s.voidReason)}</span>` : ''),
+      s.pump, esc(s.fuelName), fmt(s.liters), fmt(s.amount), payLabel(s), esc(s.plate) || '-', esc(s.staff)]),
+    rev.map(s => s.void ? 'void' : ''));
+}
+function exportCSV(){
+  const d = $('#repDate').value;
+  const rows = [['เวลา','เลขที่ใบเสร็จ','สถานะ','หัวจ่าย','กลุ่ม','ชนิด','ราคา/ลิตร','ลิตร','จำนวนเงิน','ชำระ','ลูกค้าเงินเชื่อ','ทะเบียน','พนักงาน']]
+    .concat(db.sales.filter(s => dkey(s.time) === d).map(s => [tTime(s.time), s.receiptNo || '', s.void ? 'ยกเลิก: ' + s.voidReason : 'ปกติ',
+      s.pump, GSHORT[groupOf(s)], s.fuelName, s.price, s.liters, s.amount, PAY[s.pay], s.custName || '', s.plate || '', s.staff]));
+  const csv = '\uFEFF' + rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  download(new Blob([csv], {type:'text/csv'}), `ยอดขาย_${d}.csv`);
+}
+function download(blob, name){ const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); }
+
+/* ================= ใบเสร็จ ================= */
+function nextReceiptNo(){
+  const d = today().replace(/-/g, '');
+  if (!db.receiptSeq || db.receiptSeq.d !== d) db.receiptSeq = {d, n:0};
+  db.receiptSeq.n++;
+  return `${d}-${String(db.receiptSeq.n).padStart(4, '0')}`;
+}
+function printHTML(html, cls){
+  const el = $('#receipt'); el.className = cls; el.innerHTML = html;
+  setTimeout(() => window.print(), 100);
+}
+function printReceipt(s, copy=false){
+  const r = db.receipt, c = s.customer;
+  const vat = s.amount * 7 / 107, base = s.amount - vat;
+  const row = (a, b) => `<div class="rc-row"><span>${a}</span><span>${b}</span></div>`;
+  printHTML(`
+    <div class="rc-c"><b style="font-size:1.25em">${esc(db.stationName)}</b><br>
+      ${r.company ? esc(r.company) + '<br>' : ''}${r.address ? esc(r.address) + '<br>' : ''}
+      ${r.taxId ? `เลขผู้เสียภาษี ${esc(r.taxId)} (${esc(r.branch)})<br>` : ''}
+      ${r.phone ? 'โทร ' + esc(r.phone) + '<br>' : ''}${r.posId ? 'POS ID: ' + esc(r.posId) : ''}</div>
+    <div class="rc-line"></div>
+    <div class="rc-c"><b>${c ? 'ใบกำกับภาษี/ใบเสร็จรับเงิน' : 'ใบกำกับภาษีอย่างย่อ/ใบเสร็จรับเงิน'}</b>
+      ${copy ? '<br>** สำเนา **' : ''}${s.void ? '<br><b>*** ยกเลิก ***</b>' : ''}</div>
+    ${row('เลขที่', s.receiptNo || '-')}${row('วันที่', tFull(s.time))}
+    ${row('หัวจ่าย', s.pump)}${row('พนักงาน', esc(s.staff))}${s.plate ? row('ทะเบียนรถ', esc(s.plate)) : ''}
+    ${c ? `<div class="rc-line"></div><div>ลูกค้า: ${esc(c.name)}<br>เลขผู้เสียภาษี: ${esc(c.tax)} (${esc(c.branch)})<br>ที่อยู่: ${esc(c.addr)}</div>` : ''}
+    <div class="rc-line"></div>
+    <b>${esc(s.fuelName)}</b>
+    ${row(`${fmt(s.liters,3)} ล. × ${fmt(s.price)}`, fmt(s.amount))}
+    <div class="rc-line"></div>
+    ${row('มูลค่าก่อนภาษี', fmt(base))}${row('ภาษีมูลค่าเพิ่ม 7%', fmt(vat))}
+    <div class="rc-row rc-big"><span>รวมทั้งสิ้น</span><span>${fmt(s.amount)}</span></div>
+    ${row('ชำระโดย', PAY[s.pay])}
+    ${s.pay === 'credit' ? row('ลูกค้าเงินเชื่อ', esc(s.custName)) : ''}
+    ${s.cash ? row('รับเงิน', fmt(s.cash)) + row('เงินทอน', fmt(s.cash - s.amount)) : ''}
+    ${s.pay === 'credit' ? '<br><br><div class="rc-c">.................................<br>ลงชื่อผู้รับน้ำมัน</div>' : ''}
+    <div class="rc-line"></div>
+    <div class="rc-c">ราคารวมภาษีมูลค่าเพิ่มแล้ว<br>${esc(r.footer)}</div>`, 'w' + r.width);
+}
+function reprint(id){
+  const s = db.sales.find(x => x.id === id); if (!s) return;
+  if (!s.receiptNo) { s.receiptNo = nextReceiptNo(); save(); printReceipt(s); } else printReceipt(s, true);
+}
+function saveReceiptSettings(){
+  const m = {company:'#rcCompany', taxId:'#rcTax', branch:'#rcBranch', address:'#rcAddr', phone:'#rcPhone',
+             posId:'#rcPos', width:'#rcWidth', footer:'#rcFooter', auto:'#rcAuto'};
+  Object.entries(m).forEach(([k, sel]) => db.receipt[k] = $(sel).value.trim());
+  save(); toast('บันทึกตั้งค่าใบเสร็จแล้ว');
+}
+function testPrint(){
+  const f = activeFuels()[0] || FUEL_CATALOG[0];
+  printReceipt({receiptNo:'TEST-0001', time:Date.now(), pump:1, staff:'ทดสอบ', fuelName:f.name,
+                price:f.price, liters:+(100/f.price).toFixed(3), amount:100, pay:'cash', cash:500});
+}
+
+/* ================= LINE ================= */
+let lineBusy = false;
+function sendLine(msg){
+  if (!db.line.url) return;
+  db.lineQueue.push(`[${db.stationName}] ${tFull(Date.now())}\n${msg}`);
+  save(); flushLine();
+}
+async function flushLine(){
+  if (lineBusy || !db.line.url) return;
+  lineBusy = true;
+  try {
+    while (db.lineQueue.length && navigator.onLine) {
+      await fetch(db.line.url, {method:'POST', mode:'no-cors',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({secret:db.line.secret, message:db.lineQueue[0]})});
+      db.lineQueue.shift(); save();
+    }
+  } catch(e) { console.warn('ส่ง LINE ไม่สำเร็จ จะลองใหม่อัตโนมัติ', e); }
+  lineBusy = false; renderLineQueue();
+}
+function renderLineQueue(){
+  $('#lnQueue').innerHTML = db.lineQueue.length
+    ? `<p class="warn">มีข้อความรอส่ง ${db.lineQueue.length} รายการ (จะส่งเองเมื่อมีอินเทอร์เน็ต)</p>` : '';
+}
+function saveLine(){
+  db.line.url = $('#lnUrl').value.trim(); db.line.secret = $('#lnSecret').value.trim();
+  db.line.onShift = $('#lnShift').value; db.line.onCredit = $('#lnCredit').value;
+  save(); flushLine(); toast('บันทึกตั้งค่า LINE แล้ว');
+}
+function testLine(){
+  if (!db.line.url) return alert('กรุณาใส่ Web App URL แล้วกดบันทึกก่อน');
+  sendLine('✅ ทดสอบการแจ้งเตือนจากระบบปั๊มน้ำมัน');
+  toast('ส่งแล้ว ลองเปิดดูใน LINE');
+}
+function sendStockSummary(){
+  if (!db.line.url) return alert('กรุณาตั้งค่า LINE ก่อน');
+  sendLine('⛽ สรุปน้ำมันคงเหลือ\n' + byGroup(activeFuels()).map(x => `\n${GSHORT[x.g]}\n` + x.items.map(f => {
+    const p = f.stock / f.capacity * 100, avg = avgDaily(f.id);
+    return `${p < db.lowPct ? '🔴' : '🟢'} ${f.name}: ${fmt(f.stock,0)} ล. (${p.toFixed(0)}%)` + (avg > 0 ? ` ~${(f.stock/avg).toFixed(1)} วัน` : '');
+  }).join('\n')).join('\n'));
+  toast('ส่งสรุปสต็อกแล้ว');
+}
+window.addEventListener('online', flushLine);
+setInterval(flushLine, 60000);
+
+/* ================= ตั้งค่า ================= */
+function renderSettings(){
+  $('#priceForm').innerHTML = byGroup(db.fuels).map(x => `<div class="glabel">${x.label}</div>` + x.items.map(f => `
+    <div class="row fuelrow">
+      <label class="narrow">ขาย<select id="ac_${f.id}"><option value="1" ${f.active?'selected':''}>เปิด</option><option value="0" ${f.active?'':'selected'}>ปิด</option></select></label>
+      <label style="flex:2">ชื่อน้ำมัน<input id="nm_${f.id}" value="${esc(f.name)}"></label>
+      <label>ราคา/ลิตร (บาท)<input type="number" step="0.01" id="pr_${f.id}" value="${f.price}"></label>
+      <label>ความจุถัง (ลิตร)<input type="number" id="cap_${f.id}" value="${f.capacity}"></label>
+      <label class="narrow">สี<input type="color" id="co_${f.id}" value="${f.color}"></label>
+    </div>`).join('')).join('');
+  $('#setName').value = db.stationName; $('#setPumps').value = db.pumps; $('#setLow').value = db.lowPct;
+  const r = db.receipt;
+  $('#rcCompany').value = r.company; $('#rcTax').value = r.taxId; $('#rcBranch').value = r.branch;
+  $('#rcAddr').value = r.address; $('#rcPhone').value = r.phone; $('#rcPos').value = r.posId;
+  $('#rcWidth').value = r.width; $('#rcFooter').value = r.footer; $('#rcAuto').value = r.auto;
+  const L = db.line;
+  $('#lnUrl').value = L.url; $('#lnSecret').value = L.secret; $('#lnShift').value = L.onShift; $('#lnCredit').value = L.onCredit;
+  renderLineQueue();
+}
+function savePrices(){
+  if (!db.fuels.some(f => $('#ac_'+f.id).value === '1')) return alert('ต้องเปิดขายน้ำมันอย่างน้อย 1 ชนิด');
+  db.fuels.forEach(f => {
+    f.active = $('#ac_'+f.id).value === '1';
+    f.name = $('#nm_'+f.id).value.trim() || f.name;
+    f.price = +$('#pr_'+f.id).value || f.price;
+    f.capacity = +$('#cap_'+f.id).value || f.capacity;
+    f.color = $('#co_'+f.id).value || f.color;
+  });
+  save(); checkLowStock(); render(); toast('อัปเดตราคาและชนิดน้ำมันแล้ว');
+}
+function addFuel(){
+  const name = $('#nfName').value.trim(), price = +$('#nfPrice').value, cap = +$('#nfCap').value;
+  if (!name) return alert('กรุณากรอกชื่อน้ำมัน');
+  if (!(price > 0)) return alert('กรุณากรอกราคา');
+  if (db.fuels.some(f => f.name === name)) return alert('มีชื่อน้ำมันนี้อยู่แล้ว');
+  db.fuels.push({id:'f'+Date.now(), group:$('#nfGroup').value, name, price, capacity:cap > 0 ? cap : 10000,
+                 stock:0, color:'#64748b', active:true});
+  sortFuels(); save();
+  ['#nfName','#nfPrice'].forEach(s => $(s).value = '');
+  render(); toast(`เพิ่ม ${name} แล้ว — อย่าลืมบันทึกรับน้ำมันเข้าถัง`);
+}
+function saveSettings(){
+  db.stationName = $('#setName').value || db.stationName;
+  db.pumps = Math.max(1, +$('#setPumps').value || 1);
+  db.lowPct = +$('#setLow').value || 20;
+  save(); checkLowStock(); render(); toast('บันทึกตั้งค่าแล้ว');
+}
+function backup(){ download(new Blob([JSON.stringify(db, null, 2)], {type:'application/json'}), `backup_ปั๊ม_${today()}.json`); }
+function restore(input){
+  const fr = new FileReader();
+  fr.onload = () => {
+    try { db = JSON.parse(fr.result); migrate(); pos.fuel = activeFuels()[0]?.id; save(); render(); toast('กู้คืนข้อมูลสำเร็จ'); }
+    catch(e) { alert('ไฟล์ไม่ถูกต้อง'); }
+  };
+  fr.readAsText(input.files[0]);
+}
+function resetAll(){
+  if (prompt('พิมพ์คำว่า ล้างข้อมูล เพื่อยืนยัน') === 'ล้างข้อมูล') {
+    db = defaults(); migrate(); pos.fuel = activeFuels()[0]?.id; save(); render(); toast('ล้างข้อมูลแล้ว', '#ef4444');
+  }
+}
+
+/* ================= เริ่มต้น ================= */
+function render(){
+  $('#stationTitle').textContent = '⛽ ' + db.stationName;
+  renderDashboard(); renderPOS(); renderCredit(); renderStock(); renderShift(); renderReport(); renderSettings();
+}
+setInterval(() => $('#clock').textContent = new Date().toLocaleString('th-TH'), 1000);
+save();
+render();
+flushLine();
+</script>
+</body>
+</html>
