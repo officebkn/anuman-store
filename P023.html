@@ -1,0 +1,1748 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIM &amp; IT Hub — ร้านจำหน่ายซิมการ์ดมือถือและอุปกรณ์ไอที</title>
+  <!-- โหลดไลบรารี SheetJS สำหรับจัดการไฟล์ Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #f59e0b;
+      --surface: #ffffff;
+      --surface-subtle: #e2e8f0;
+      --border: #c3d0e0;
+      --ink: #0b1220;
+      --muted: #475569;
+      --brand: #1d4ed8;
+      --brand-hover: #1e40af;
+      --brand-soft: #dbeafe;
+      --brand-ink: #ffffff;
+      --accent: #0e7490;
+      --accent-soft: #cffafe;
+      --amber: #b45309;
+      --amber-soft: #fde68a;
+      --danger: #b91c1c;
+      --danger-soft: #fee2e2;
+      --success: #15803d;
+      --success-soft: #bbf7d0;
+      --radius-sm: 8px;
+      --radius: 12px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 3px rgba(11, 18, 32, 0.12);
+      --shadow: 0 10px 24px rgba(11, 18, 32, 0.16);
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", Prompt, Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--ink);
+      background: linear-gradient(180deg, #92400e 0%, #d97706 28%, #f59e0b 60%, #fbbf24 100%);
+      line-height: 1.5;
+    }
+
+    /* Header */
+    .site-header {
+      background: linear-gradient(90deg, #0b1e4b 0%, #1d4ed8 55%, #0e7490 100%);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: var(--space-4) var(--space-6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #1e40af, #06b6d4);
+      box-shadow: 0 4px 14px rgba(29,78,216,.45);
+      color: var(--brand-ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: #bfdbfe;
+      margin: 0;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: var(--space-6);
+    }
+
+    .view-hidden {
+      display: none !important;
+    }
+
+    /* === STOREFRONT VIEW === */
+    .shop-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-6);
+      align-items: start;
+    }
+
+    @media (min-width: 960px) {
+      .shop-layout {
+        grid-template-columns: 1fr 360px;
+      }
+    }
+
+    /* Controls Bar */
+    .controls-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: var(--space-4);
+      margin-bottom: var(--space-6);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    @media (min-width: 640px) {
+      .controls-card {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .category-tabs {
+      display: flex;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .tab-btn:hover { background: var(--surface-subtle); }
+    .tab-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+    .tab-btn.active { background: linear-gradient(135deg, #1d4ed8, #0e7490); color: var(--brand-ink); border-color: #1d4ed8; box-shadow: 0 4px 12px rgba(29,78,216,.35); }
+
+    .search-box { position: relative; flex: 1; max-width: 320px; }
+    .search-input {
+      width: 100%; font: inherit; font-size: 14px;
+      padding: 9px 12px 9px 36px; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); background: var(--surface); color: var(--ink);
+    }
+    .search-input:focus { outline: 2px solid var(--brand); outline-offset: 1px; border-color: var(--brand); }
+    .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; width: 16px; height: 16px; }
+
+    /* Product Grid */
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: var(--space-4); }
+    .product-card {
+      background: linear-gradient(180deg, #1d3457 0%, #16263f 100%); border: 1px solid #2e4468;
+      border-radius: var(--radius); padding: var(--space-4);
+      box-shadow: var(--shadow-sm); display: flex; flex-direction: column;
+      justify-content: space-between; gap: var(--space-4); transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .product-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+
+    .product-top { display: flex; flex-direction: column; gap: var(--space-2); }
+    .product-meta { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+    .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.02em; }
+    .tag-sim { background: #1e40af; color: #dbeafe; }
+    .tag-it { background: #155e75; color: #cffafe; }
+    .tag-mobile { background: #9d174d; color: #fce7f3; }
+    .status-badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 999px; }
+    .status-available { background: var(--success-soft); color: var(--success); }
+    .status-sold { background: var(--danger-soft); color: var(--danger); }
+
+    .product-visual {
+      height: 96px; border-radius: var(--radius-sm); background: #0f1d33;
+      border: 1px dashed #3a5178; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: var(--space-3); text-align: center;
+    }
+    .sim-number { font-size: 18px; font-weight: 700; color: #93c5fd; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+    .sim-sub { font-size: 12px; color: #cbd5e1; margin-top: 2px; }
+    .it-spec-badge { font-size: 14px; font-weight: 700; color: #67e8f9; }
+
+    .product-name { font-size: 16px; font-weight: 700; margin: var(--space-1) 0 0; color: #ffffff; }
+    .product-desc { font-size: 13px; color: #cbd5e1; margin: 0; }
+    .product-footer { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding-top: var(--space-3); border-top: 1px solid #2e4468; }
+    .price { font-size: 18px; font-weight: 700; color: #ffffff; font-variant-numeric: tabular-nums; }
+    .price-unit { font-size: 12px; font-weight: 400; color: #cbd5e1; }
+
+    /* Buttons */
+    .btn {
+      font: inherit; font-size: 14px; font-weight: 600; padding: 8px 14px;
+      border-radius: var(--radius-sm); border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      transition: background 0.15s, border-color 0.15s, transform 0.05s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+    .btn-primary { background: var(--brand); color: var(--brand-ink); }
+    .btn-primary:hover { background: var(--brand-hover); }
+    .btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--border); }
+    .btn-secondary:hover { background: var(--surface-subtle); }
+    .btn-danger { background: var(--surface); color: var(--danger); border-color: var(--border); }
+    .btn-danger:hover { background: #fef2f2; border-color: var(--danger); }
+    .btn-block { width: 100%; padding: 11px 16px; }
+
+    /* Cart Panel */
+    .cart-panel { background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #d97706; border-radius: var(--radius); padding: var(--space-6); box-shadow: var(--shadow-sm); position: sticky; top: 88px; }
+    .cart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4); padding-bottom: var(--space-3); border-bottom: 1px solid var(--border); }
+    .cart-title { font-size: 18px; font-weight: 700; margin: 0; }
+    .cart-list { display: flex; flex-direction: column; gap: var(--space-3); max-height: 340px; overflow-y: auto; margin-bottom: var(--space-4); }
+    .cart-item { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-sm); background: #fde68a; border: 1px solid #f59e0b; }
+    .cart-item-info { min-width: 0; flex: 1; }
+    .cart-item-title { font-size: 14px; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cart-item-price { font-size: 12px; color: var(--muted); margin: 2px 0 0; font-variant-numeric: tabular-nums; }
+    .qty-controls { display: flex; align-items: center; gap: 6px; }
+    .qty-btn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+    .qty-btn:hover { background: var(--border); }
+    .qty-value { font-size: 13px; font-weight: 600; min-width: 20px; text-align: center; font-variant-numeric: tabular-nums; }
+    .cart-summary { border-top: 1px solid var(--border); padding-top: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
+    .summary-row { display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .empty-state { text-align: center; padding: var(--space-6) var(--space-4); color: var(--muted); font-size: 14px; }
+
+    /* Checkout Form */
+    .checkout-form { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: var(--space-3); }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-row { display: grid; grid-template-columns: 1fr; gap: var(--space-3); }
+    @media (min-width: 640px) {
+      .form-row { grid-template-columns: 1fr 1fr; }
+    }
+    .form-label { font-size: 13px; font-weight: 600; color: var(--ink); }
+    .form-input, .form-textarea, .form-select { font: inherit; font-size: 14px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); width: 100%; }
+    .form-input:focus, .form-textarea:focus, .form-select:focus { outline: 2px solid var(--brand); outline-offset: 1px; border-color: var(--brand); }
+    .form-error { font-size: 12px; color: var(--danger); display: none; }
+
+    .order-confirm-box { background: var(--success-soft); border: 1px solid #86efac; color: var(--success); padding: var(--space-4); border-radius: var(--radius-sm); font-size: 14px; display: none; margin-top: var(--space-4); }
+    .order-confirm-title { font-weight: 700; margin: 0 0 4px; }
+
+    /* === DASHBOARD / ADMIN VIEW === */
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-6);
+      align-items: start;
+    }
+    @media (min-width: 768px) {
+      .dashboard-layout {
+        grid-template-columns: 240px 1fr;
+      }
+    }
+    .admin-nav {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: var(--space-3);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+    .admin-nav-item {
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s;
+    }
+    .admin-nav-item:hover {
+      background: var(--surface-subtle);
+      color: var(--ink);
+    }
+    .admin-nav-item.active {
+      background: var(--brand-soft);
+      color: var(--brand-hover);
+    }
+    .admin-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: var(--space-6);
+      box-shadow: var(--shadow-sm);
+    }
+    .admin-panel-header {
+      margin-top: 0;
+      margin-bottom: var(--space-4);
+      font-size: 20px;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: var(--space-3);
+    }
+
+    /* Stock Filter Toolbar */
+    .stock-toolbar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: var(--space-4);
+      margin-bottom: var(--space-4);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      align-items: center;
+    }
+    .stock-search-wrap {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      flex: 1;
+      min-width: 240px;
+    }
+    .stock-filter-wrap {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+    }
+
+    /* Admin Table */
+    .table-responsive {
+      overflow-x: auto;
+    }
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .admin-table th, .admin-table td {
+      padding: 11px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .admin-table th {
+      font-weight: 600;
+      color: var(--muted);
+      background: var(--surface-subtle);
+      white-space: nowrap;
+    }
+    .admin-table tr:hover {
+      background: var(--surface-subtle);
+    }
+    .text-right {
+      text-align: right;
+    }
+    .text-center {
+      text-align: center;
+    }
+
+    /* Report Summary Cards */
+    .report-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+    .kpi-card {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: var(--space-4);
+    }
+    .kpi-label {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0 0 4px;
+      font-weight: 600;
+    }
+    .kpi-value {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: var(--space-6);
+      right: var(--space-6);
+      background: var(--success);
+      color: white;
+      padding: 12px 20px;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow);
+      font-weight: 600;
+      font-size: 14px;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      z-index: 50;
+    }
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* === PRINT CONTAINERS (Hidden on normal screen) === */
+    .print-only-container {
+      display: none;
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-family: "Sarabun", "Noto Sans Thai", Arial, sans-serif;
+        font-size: 14px;
+      }
+      .site-header, #storefrontView, #dashboardView, .toast {
+        display: none !important;
+      }
+      body[data-print-mode="receipt"] #receiptContainer,
+      body[data-print-mode="stock"] #stockPrintContainer,
+      body[data-print-mode="report"] #reportPrintContainer {
+        display: block !important;
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .receipt-header {
+        text-align: center;
+        border-bottom: 2px solid #000;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+      }
+      .receipt-header h1 {
+        margin: 0 0 5px 0;
+        font-size: 26px;
+      }
+      .receipt-header h2 {
+        margin: 0 0 8px 0;
+        font-size: 18px;
+        color: #333;
+      }
+      .receipt-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+      .receipt-customer p, .receipt-meta p {
+        margin: 4px 0;
+      }
+      .receipt-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+      .receipt-table th, .receipt-table td {
+        border: 1px solid #000;
+        padding: 8px 10px;
+        text-align: left;
+      }
+      .receipt-table th {
+        background: #f0f0f0;
+      }
+      .receipt-total {
+        text-align: right;
+        font-size: 18px;
+        font-weight: bold;
+        margin-top: 16px;
+        border-top: 2px solid #000;
+        padding-top: 10px;
+      }
+      .receipt-footer {
+        text-align: center;
+        margin-top: 36px;
+        font-size: 13px;
+        color: #555;
+      }
+      .receipt-signature {
+        margin-top: 48px;
+        display: flex;
+        justify-content: flex-end;
+      }
+      .signature-block {
+        text-align: center;
+        min-width: 220px;
+      }
+      .signature-line {
+        margin-bottom: 6px;
+        letter-spacing: 2px;
+      }
+      .signature-label {
+        font-size: 16px;
+        font-weight: 600;
+      }
+    }
+  </style>
+</head>
+<body data-print-mode="receipt">
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">S+</div>
+        <div>
+          <h1 class="brand-title" id="displayStoreName">SIM &amp; IT Hub</h1>
+          <p class="brand-subtitle">ระบบหน้าร้านจำหน่ายซิมการ์ด มือถือ และอุปกรณ์ไอที</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" id="toggleViewBtn" class="btn btn-secondary">
+          <span id="toggleViewText">⚙️ จัดการร้าน (Admin)</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= STOREFRONT VIEW ================= -->
+  <main class="container" id="storefrontView">
+    <div class="shop-layout">
+      <!-- Left Column: Product Catalog -->
+      <section aria-label="รายการสินค้า">
+        <div class="controls-card">
+          <div class="category-tabs" role="tablist" aria-label="หมวดหมู่สินค้า">
+            <button type="button" class="tab-btn active" data-category="all" role="tab" aria-selected="true">ทั้งหมด</button>
+            <button type="button" class="tab-btn" data-category="mobile" role="tab" aria-selected="false">โทรศัพท์มือถือ</button>
+            <button type="button" class="tab-btn" data-category="sim" role="tab" aria-selected="false">ซิมมือถือ</button>
+            <button type="button" class="tab-btn" data-category="it" role="tab" aria-selected="false">อุปกรณ์ไอที</button>
+          </div>
+          <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="search" id="searchInput" class="search-input" placeholder="ค้นหามือถือ ซิม หรืออุปกรณ์..." aria-label="ค้นหาสินค้า">
+          </div>
+        </div>
+
+        <div id="productGrid" class="product-grid"></div>
+      </section>
+
+      <!-- Right Column: Shopping Cart & Checkout -->
+      <aside class="cart-panel" aria-label="ตะกร้าสินค้าและการสั่งซื้อ">
+        <div class="cart-header">
+          <h2 class="cart-title">ตะกร้าสั่งซื้อ</h2>
+          <button type="button" id="clearCartBtn" class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px; display: none;">ล้างตะกร้า</button>
+        </div>
+
+        <div id="cartList" class="cart-list">
+          <div class="empty-state">ยังไม่มีสินค้าในตะกร้า<br>เลือกสินค้าจากรายการด้านซ้าย</div>
+        </div>
+
+        <div id="cartSummary" class="cart-summary" style="display: none;">
+          <div class="summary-row">
+            <span>ยอดรวมทั้งสิ้น</span>
+            <span id="cartTotalPrice">฿0</span>
+          </div>
+
+          <form id="checkoutForm" class="checkout-form" novalidate>
+            <div class="form-group">
+              <label class="form-label" for="customerName">ชื่อ-นามสกุล ผู้รับสินค้า *</label>
+              <input type="text" id="customerName" class="form-input" placeholder="ระบุชื่อ-นามสกุล" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="customerPhone">เบอร์โทรศัพท์ติดต่อ *</label>
+              <input type="tel" id="customerPhone" class="form-input" placeholder="เช่น 08X-XXX-XXXX" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="customerAddress">ที่อยู่จัดส่ง *</label>
+              <textarea id="customerAddress" class="form-textarea" rows="2" placeholder="บ้านเลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด รหัสไปรษณีย์" required></textarea>
+            </div>
+            <p id="formError" class="form-error">กรุณากรอกชื่อ เบอร์โทรศัพท์ และที่อยู่จัดส่งให้ครบถ้วน</p>
+            <button type="submit" class="btn btn-primary btn-block">ยืนยันการสั่งซื้อ</button>
+          </form>
+        </div>
+
+        <div id="orderConfirmBox" class="order-confirm-box" role="status">
+          <p class="order-confirm-title">บันทึกคำสั่งซื้อเรียบร้อยแล้ว</p>
+          <p id="orderConfirmDetail" style="margin: 0 0 12px;"></p>
+          <button type="button" id="printReceiptBtn" class="btn btn-secondary btn-block" style="font-size: 13px;">🖨️ พิมพ์ใบเสร็จสมบูรณ์</button>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- ================= DASHBOARD / ADMIN VIEW ================= -->
+  <main class="container view-hidden" id="dashboardView">
+    <div class="dashboard-layout">
+      <!-- Admin Navigation -->
+      <nav class="admin-nav" aria-label="เมนูจัดการร้าน">
+        <button class="admin-nav-item active" data-target="adminStock">📦 สต๊อกสินค้า</button>
+        <button class="admin-nav-item" data-target="adminAddProduct">➕ เพิ่มสินค้าใหม่</button>
+        <button class="admin-nav-item" data-target="adminReports">📊 รายงาน (Reports)</button>
+        <button class="admin-nav-item" data-target="adminSettings">⚙️ ตั้งค่าร้าน / นำเข้า &amp; ส่งออก</button>
+      </nav>
+
+      <!-- Admin Content Panels -->
+      <div class="admin-content">
+
+        <!-- Panel 1: Stock -->
+        <section id="adminStock">
+          <div class="stock-toolbar">
+            <div class="stock-search-wrap">
+              <label for="stockSearchInput" class="form-label" style="white-space: nowrap;">ค้นหา</label>
+              <input type="search" id="stockSearchInput" class="form-input" placeholder="สามารถค้นหาได้ทุกคอลัมน์ (รหัส, หมวดหมู่, ชื่อ, ราคา, วันที่รับ-ขาย)...">
+            </div>
+            <div class="stock-filter-wrap">
+              <label for="stockStatusFilter" class="form-label" style="white-space: nowrap;">สถานะ:</label>
+              <select id="stockStatusFilter" class="form-select" style="width: auto; min-width: 150px;">
+                <option value="all">ทั้งหมด</option>
+                <option value="unsold">ยังไม่ได้ขาย</option>
+                <option value="sold">ขายแล้ว</option>
+              </select>
+              <button type="button" id="printStockBtn" class="btn btn-secondary">🖨️ พิมพ์จากการค้นหา</button>
+            </div>
+          </div>
+
+          <div class="admin-panel">
+            <h2 class="admin-panel-header">สต๊อกสินค้า (Stock)</h2>
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>รหัส</th>
+                    <th>หมวดหมู่</th>
+                    <th>ชื่อสินค้า</th>
+                    <th class="text-center">จำนวน</th>
+                    <th class="text-right">ราคา</th>
+                    <th class="text-center">สถานะ</th>
+                    <th>วันที่รับ</th>
+                    <th>วันที่ขาย</th>
+                    <th class="text-right">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="adminStockTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Panel 2: Add Product -->
+        <section id="adminAddProduct" class="admin-panel view-hidden">
+          <h2 class="admin-panel-header">เพิ่มสินค้าใหม่</h2>
+          <form id="addProductForm" class="checkout-form" style="border:none; padding:0; margin:0;">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="addCategory">หมวดหมู่สินค้า *</label>
+                <select id="addCategory" class="form-select" required>
+                  <option value="mobile">โทรศัพท์มือถือ</option>
+                  <option value="sim">ซิมมือถือ</option>
+                  <option value="it">อุปกรณ์ไอที</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="addReceivedDate">วันที่รับสินค้า *</label>
+                <input type="date" id="addReceivedDate" class="form-input" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="addProductCode">รหัสสินค้า *</label>
+                <input type="text" id="addProductCode" class="form-input" placeholder="เช่น mobile-03, sim-99 หรือเว้นว่างให้ระบบสร้างให้อัตโนมัติ">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="addQty">จำนวน (ชิ้น) *</label>
+                <input type="number" id="addQty" class="form-input" min="1" value="1" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="addName">ชื่อสินค้า *</label>
+              <input type="text" id="addName" class="form-input" placeholder="เช่น สมาร์ทโฟน 5G หรือ ซิมเน็ตรายปี" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="addPreviewMain">ข้อความเด่น (ตัวใหญ่) *</label>
+              <input type="text" id="addPreviewMain" class="form-input" placeholder="เช่น หน้าจอ 6.5 นิ้ว หรือ 089-999-9999" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="addPreviewSub">ข้อความรอง (ตัวเล็ก)</label>
+              <input type="text" id="addPreviewSub" class="form-input" placeholder="เช่น RAM 8GB หรือ เน็ต 5G ไม่อั้น">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="addDesc">รายละเอียดสินค้า</label>
+              <textarea id="addDesc" class="form-textarea" rows="2" placeholder="คำอธิบายเพิ่มเติมเกี่ยวกับตัวสินค้า..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="addPrice">ราคา (บาท) *</label>
+              <input type="number" id="addPrice" class="form-input" min="0" placeholder="0" required>
+            </div>
+            <div style="margin-top: 16px;">
+              <button type="submit" class="btn btn-primary">บันทึกสินค้าลงสต๊อก</button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Panel 3: Reports -->
+        <section id="adminReports" class="admin-panel view-hidden">
+          <h2 class="admin-panel-header">รายงานรับสินค้าและขายออก (ประจำวัน / ประจำเดือน)</h2>
+
+          <div class="stock-toolbar" style="background: var(--surface-subtle); margin-bottom: var(--space-6);">
+            <div class="stock-filter-wrap">
+              <label class="form-label" for="reportTypeSelect">ประเภทรายงาน:</label>
+              <select id="reportTypeSelect" class="form-select" style="width: auto;">
+                <option value="all">ทั้งหมด (รับสินค้า + ขายออก)</option>
+                <option value="in">รายงานรับสินค้าเข้า</option>
+                <option value="out">รายงานขายออก</option>
+              </select>
+            </div>
+
+            <div class="stock-filter-wrap">
+              <label class="form-label" for="reportPeriodSelect">ช่วงเวลา:</label>
+              <select id="reportPeriodSelect" class="form-select" style="width: auto;">
+                <option value="daily">ประจำวัน</option>
+                <option value="monthly">ประจำเดือน</option>
+              </select>
+            </div>
+
+            <div class="stock-filter-wrap" id="reportDateWrap">
+              <label class="form-label" for="reportDateInput">เลือกวันที่:</label>
+              <input type="date" id="reportDateInput" class="form-input" style="width: auto;">
+            </div>
+
+            <div class="stock-filter-wrap view-hidden" id="reportMonthWrap">
+              <label class="form-label" for="reportMonthInput">เลือกเดือน:</label>
+              <input type="month" id="reportMonthInput" class="form-input" style="width: auto;">
+            </div>
+
+            <button type="button" id="printReportBtn" class="btn btn-secondary" style="margin-left: auto;">🖨️ พิมพ์รายงาน</button>
+          </div>
+
+          <div class="report-kpi-grid">
+            <div class="kpi-card">
+              <p class="kpi-label">รับสินค้าเข้า (ชิ้น)</p>
+              <p class="kpi-value" id="kpiInCount">0 ชิ้น</p>
+            </div>
+            <div class="kpi-card">
+              <p class="kpi-label">มูลค่ารับสินค้าเข้ารวม</p>
+              <p class="kpi-value" id="kpiInValue">฿0</p>
+            </div>
+            <div class="kpi-card">
+              <p class="kpi-label">ขายออก (ชิ้น)</p>
+              <p class="kpi-value" id="kpiOutCount">0 ชิ้น</p>
+            </div>
+            <div class="kpi-card">
+              <p class="kpi-label">ยอดขายออกรวม</p>
+              <p class="kpi-value" id="kpiOutValue" style="color: var(--success);">฿0</p>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>วันที่</th>
+                  <th>ประเภทรายการ</th>
+                  <th>รหัสสินค้า</th>
+                  <th>หมวดหมู่</th>
+                  <th>ชื่อสินค้า</th>
+                  <th class="text-center">จำนวน</th>
+                  <th class="text-right">มูลค่า (บาท)</th>
+                </tr>
+              </thead>
+              <tbody id="reportTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Panel 4: Settings & Backup -->
+        <section id="adminSettings" class="admin-panel view-hidden">
+          <h2 class="admin-panel-header">ตั้งค่าร้านค้า / นำเข้า &amp; ส่งออก</h2>
+
+          <form id="settingsForm" class="checkout-form" style="border:none; padding:0; margin:0;">
+            <div class="form-group">
+              <label class="form-label" for="settingStoreName">ชื่อร้านค้า (แสดงบน Header และใบเสร็จ)</label>
+              <input type="text" id="settingStoreName" class="form-input" value="SIM & IT Hub" required>
+            </div>
+            <div style="margin-top: 8px; margin-bottom: 24px;">
+              <button type="submit" class="btn btn-primary">บันทึกชื่อร้าน</button>
+            </div>
+          </form>
+
+          <hr style="border: 0; border-top: 1px solid var(--border); margin: 24px 0;">
+
+          <div>
+            <h3 style="font-size: 16px; margin-top: 0; margin-bottom: 8px;">สำรองและนำเข้าข้อมูลสินค้า (Backup &amp; Import)</h3>
+            <p style="font-size: 13px; color: var(--muted); margin-top: 0; margin-bottom: 16px;">
+              คุณสามารถส่งออกข้อมูลสต๊อกเป็นไฟล์ JSON หรือ Excel (.xlsx) เพื่อเก็บไว้ และสามารถนำเข้าไฟล์กลับมาได้
+            </p>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" id="exportJsonBtn" class="btn btn-secondary">⬇️ ส่งออก JSON</button>
+              <button type="button" id="exportExcelBtn" class="btn btn-secondary">⬇️ ส่งออก Excel</button>
+              <button type="button" id="importJsonBtn" class="btn btn-secondary">⬆️ นำเข้า JSON</button>
+              <button type="button" id="importExcelBtn" class="btn btn-secondary">⬆️ นำเข้า Excel</button>
+            </div>
+
+            <input type="file" id="fileInputJson" accept=".json" style="display: none;">
+            <input type="file" id="fileInputExcel" accept=".xlsx, .xls, .csv" style="display: none;">
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= 1. RECEIPT PRINT LAYOUT ================= -->
+  <div id="receiptContainer" class="print-only-container">
+    <div class="receipt-header">
+      <h1 id="receiptStoreName">SIM &amp; IT Hub</h1>
+      <h2>ใบเสร็จรับเงิน / Receipt</h2>
+    </div>
+
+    <div class="receipt-info">
+      <div class="receipt-customer">
+        <p><strong>ชื่อลูกค้า:</strong> <span id="r_name"></span></p>
+        <p><strong>เบอร์ติดต่อ:</strong> <span id="r_phone"></span></p>
+        <p><strong>ที่อยู่จัดส่ง:</strong> <span id="r_address"></span></p>
+      </div>
+      <div class="receipt-meta" style="text-align: right;">
+        <p><strong>วันที่สั่งซื้อ:</strong> <span id="r_date"></span></p>
+      </div>
+    </div>
+
+    <table class="receipt-table">
+      <thead>
+        <tr>
+          <th>รายการสินค้า</th>
+          <th style="text-align: center; width: 100px;">จำนวน</th>
+          <th style="text-align: right; width: 150px;">ราคาต่อหน่วย</th>
+          <th style="text-align: right; width: 150px;">จำนวนเงิน</th>
+        </tr>
+      </thead>
+      <tbody id="receiptTableBody"></tbody>
+    </table>
+
+    <div class="receipt-total">
+      ยอดรวมทั้งสิ้น (Total): <span id="r_total">฿0</span>
+    </div>
+
+    <div class="receipt-footer">
+      <p>ขอขอบพระคุณที่ไว้วางใจใช้บริการ</p>
+      <p>Thank you for shopping with us.</p>
+    </div>
+
+    <!-- ช่องผู้รับเงินสำหรับเซ็นรับ -->
+    <div class="receipt-signature">
+      <div class="signature-block">
+        <div class="signature-line">........................................</div>
+        <div class="signature-label">ผู้รับเงิน</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 2. STOCK SEARCH PRINT LAYOUT ================= -->
+  <div id="stockPrintContainer" class="print-only-container">
+    <div class="receipt-header">
+      <h1 id="stockPrintStoreName">SIM &amp; IT Hub</h1>
+      <h2>เอกสารรายการสต๊อกสินค้า (อ้างอิงจากการค้นหา)</h2>
+      <p id="stockPrintSubtitle" style="margin: 4px 0 0; font-size: 13px;"></p>
+    </div>
+    <table class="receipt-table">
+      <thead>
+        <tr>
+          <th>รหัส</th>
+          <th>หมวดหมู่</th>
+          <th>ชื่อสินค้า</th>
+          <th style="text-align: center;">จำนวน</th>
+          <th style="text-align: right;">ราคา</th>
+          <th style="text-align: center;">สถานะ</th>
+          <th>วันที่รับ</th>
+          <th>วันที่ขาย</th>
+        </tr>
+      </thead>
+      <tbody id="stockPrintTableBody"></tbody>
+    </table>
+    <div class="receipt-total" id="stockPrintSummary"></div>
+  </div>
+
+  <!-- ================= 3. REPORT PRINT LAYOUT ================= -->
+  <div id="reportPrintContainer" class="print-only-container">
+    <div class="receipt-header">
+      <h1 id="reportPrintStoreName">SIM &amp; IT Hub</h1>
+      <h2 id="reportPrintTitle">รายงานรับสินค้าและขายออก</h2>
+      <p id="reportPrintSubtitle" style="margin: 4px 0 0; font-size: 13px;"></p>
+    </div>
+    <table class="receipt-table">
+      <thead>
+        <tr>
+          <th>วันที่</th>
+          <th>ประเภท</th>
+          <th>รหัสสินค้า</th>
+          <th>หมวดหมู่</th>
+          <th>ชื่อสินค้า</th>
+          <th style="text-align: center;">จำนวน</th>
+          <th style="text-align: right;">มูลค่า (บาท)</th>
+        </tr>
+      </thead>
+      <tbody id="reportPrintTableBody"></tbody>
+    </table>
+    <div class="receipt-total" id="reportPrintSummary"></div>
+  </div>
+
+  <div id="toastMessage" class="toast">บันทึกข้อมูลเรียบร้อย</div>
+
+  <script>
+    let currentStoreName = "SIM & IT Hub";
+
+    function getTodayISO() {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    const todayStr = getTodayISO();
+    const currentMonthStr = todayStr.slice(0, 7);
+
+    let appProducts = [
+      { id: 'mobile-01', category: 'mobile', categoryLabel: 'โทรศัพท์มือถือ', name: 'สมาร์ทโฟน X 5G', previewMain: 'หน้าจอ 6.5" 120Hz', previewSub: 'RAM 8GB / ROM 256GB', description: 'มือถือ 5G สเปคคุ้มค่า แบตเตอรี่อึด 5000mAh พร้อมชาร์จไว', price: 7990, qty: 1, status: 'unsold', receivedDate: todayStr, soldDate: '' },
+      { id: 'mobile-02', category: 'mobile', categoryLabel: 'โทรศัพท์มือถือ', name: 'สมาร์ทโฟน Pro Max', previewMain: 'ชิปเรือธง ตัวท็อป', previewSub: 'กล้องโปร 108MP / ชาร์จ 120W', description: 'สมาร์ทโฟนระดับไฮเอนด์ ถ่ายรูปสวยคมชัด เล่นเกมลื่นไหลไม่มีสะดุด', price: 25900, qty: 1, status: 'unsold', receivedDate: todayStr, soldDate: '' },
+      { id: 'sim-01', category: 'sim', categoryLabel: 'ซิมมือถือ', name: 'ซิมเน็ตไม่อั้น 30 Mbps (รายปี)', previewMain: '089-998-8899', previewSub: '5G/4G Unlimited • โทรฟรีในเครือข่าย', description: 'ซิมเทพเน็ตรายปี ความเร็วสูงสุด 30 Mbps ไม่ลดสปีด นาน 12 เดือน', price: 1590, qty: 1, status: 'unsold', receivedDate: todayStr, soldDate: '' },
+      { id: 'sim-02', category: 'sim', categoryLabel: 'ซิมมือถือ', name: 'ซิมเบอร์มงคล เกรด A+', previewMain: '095-656-9595', previewSub: 'ผลรวมมงคล • เน็ต 5G 80 GB', description: 'ซิมเบอร์สวยคัดพิเศษ เหมาะสำหรับค้าขายและธุรกิจ พร้อมแพ็กเกจ 5G', price: 2990, qty: 1, status: 'unsold', receivedDate: todayStr, soldDate: '' },
+      { id: 'it-01', category: 'it', categoryLabel: 'อุปกรณ์ไอที', name: '4G/5G Pocket Wi-Fi Router พกพา', previewMain: 'Wi-Fi 6 • 5000 mAh', previewSub: 'รองรับซิมทุกเครือข่าย', description: 'เราเตอร์ใส่ซิมแบบพกพา แบตเตอรี่ใช้งานต่อเนื่องสูงสุด 12 ชั่วโมง', price: 2490, qty: 1, status: 'unsold', receivedDate: todayStr, soldDate: '' }
+    ];
+
+    let activeCategory = 'all';
+    let searchQuery = '';
+    let stockSearchQuery = '';
+    let stockStatusFilterValue = 'all';
+    const cart = new Map();
+
+    const storefrontView = document.getElementById('storefrontView');
+    const productGrid = document.getElementById('productGrid');
+    const searchInput = document.getElementById('searchInput');
+    const categoryTabs = document.querySelectorAll('.tab-btn');
+    const cartList = document.getElementById('cartList');
+    const cartSummary = document.getElementById('cartSummary');
+    const cartTotalPrice = document.getElementById('cartTotalPrice');
+    const clearCartBtn = document.getElementById('clearCartBtn');
+    const checkoutForm = document.getElementById('checkoutForm');
+    const formError = document.getElementById('formError');
+    const orderConfirmBox = document.getElementById('orderConfirmBox');
+    const orderConfirmDetail = document.getElementById('orderConfirmDetail');
+    const printReceiptBtn = document.getElementById('printReceiptBtn');
+    const displayStoreName = document.getElementById('displayStoreName');
+
+    const dashboardView = document.getElementById('dashboardView');
+    const toggleViewBtn = document.getElementById('toggleViewBtn');
+    const toggleViewText = document.getElementById('toggleViewText');
+    const adminNavItems = document.querySelectorAll('.admin-nav-item');
+    const adminSections = ['adminStock', 'adminAddProduct', 'adminReports', 'adminSettings'];
+    const adminStockTableBody = document.getElementById('adminStockTableBody');
+    const stockSearchInput = document.getElementById('stockSearchInput');
+    const stockStatusFilter = document.getElementById('stockStatusFilter');
+    const printStockBtn = document.getElementById('printStockBtn');
+
+    const addProductForm = document.getElementById('addProductForm');
+    const addReceivedDate = document.getElementById('addReceivedDate');
+    const settingsForm = document.getElementById('settingsForm');
+    const settingStoreName = document.getElementById('settingStoreName');
+
+    const reportTypeSelect = document.getElementById('reportTypeSelect');
+    const reportPeriodSelect = document.getElementById('reportPeriodSelect');
+    const reportDateWrap = document.getElementById('reportDateWrap');
+    const reportMonthWrap = document.getElementById('reportMonthWrap');
+    const reportDateInput = document.getElementById('reportDateInput');
+    const reportMonthInput = document.getElementById('reportMonthInput');
+    const reportTableBody = document.getElementById('reportTableBody');
+    const printReportBtn = document.getElementById('printReportBtn');
+    const kpiInCount = document.getElementById('kpiInCount');
+    const kpiInValue = document.getElementById('kpiInValue');
+    const kpiOutCount = document.getElementById('kpiOutCount');
+    const kpiOutValue = document.getElementById('kpiOutValue');
+
+    const receiptStoreName = document.getElementById('receiptStoreName');
+    const rName = document.getElementById('r_name');
+    const rPhone = document.getElementById('r_phone');
+    const rAddress = document.getElementById('r_address');
+    const rDate = document.getElementById('r_date');
+    const rTotal = document.getElementById('r_total');
+    const receiptTableBody = document.getElementById('receiptTableBody');
+
+    const exportJsonBtn = document.getElementById('exportJsonBtn');
+    const exportExcelBtn = document.getElementById('exportExcelBtn');
+    const importJsonBtn = document.getElementById('importJsonBtn');
+    const importExcelBtn = document.getElementById('importExcelBtn');
+    const fileInputJson = document.getElementById('fileInputJson');
+    const fileInputExcel = document.getElementById('fileInputExcel');
+    const toastMessage = document.getElementById('toastMessage');
+
+    let isAdminView = false;
+
+    addReceivedDate.value = todayStr;
+    reportDateInput.value = todayStr;
+    reportMonthInput.value = currentMonthStr;
+
+    function formatCurrency(amount) {
+      return '฿' + Number(amount || 0).toLocaleString('th-TH');
+    }
+
+    function formatThaiDate(isoDate) {
+      if (!isoDate) return '-';
+      const parts = String(isoDate).split('-');
+      if (parts.length !== 3) return isoDate;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    function getStatusText(status) {
+      return status === 'sold' ? 'ขายแล้ว' : 'ยังไม่ได้ขาย';
+    }
+
+    function generateId(prefix) {
+      return prefix + '-' + Math.random().toString(36).substr(2, 6);
+    }
+
+    function showToast(message) {
+      toastMessage.textContent = message;
+      toastMessage.classList.add('show');
+      setTimeout(() => {
+        toastMessage.classList.remove('show');
+      }, 3000);
+    }
+
+    function renderProducts() {
+      const q = searchQuery.trim().toLowerCase();
+      const filtered = appProducts.filter(item => {
+        if (item.status === 'sold') return false;
+        const matchCategory = activeCategory === 'all' || item.category === activeCategory;
+        const matchQuery = !q ||
+          String(item.id).toLowerCase().includes(q) ||
+          item.name.toLowerCase().includes(q) ||
+          item.previewMain.toLowerCase().includes(q) ||
+          (item.description && item.description.toLowerCase().includes(q));
+        return matchCategory && matchQuery;
+      });
+
+      if (filtered.length === 0) {
+        productGrid.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);">ไม่พบสินค้าที่พร้อมจำหน่ายในหมวดหมู่นี้</div>';
+        return;
+      }
+
+      productGrid.innerHTML = filtered.map(item => {
+        let tagClass = 'tag-it';
+        if (item.category === 'sim') tagClass = 'tag-sim';
+        if (item.category === 'mobile') tagClass = 'tag-mobile';
+
+        let visualClass = 'it-spec-badge';
+        if (item.category === 'sim') visualClass = 'sim-number';
+
+        return `
+          <article class="product-card">
+            <div class="product-top">
+              <div class="product-meta">
+                <span class="tag ${tagClass}">${item.categoryLabel}</span>
+                <span style="font-size: 11px; color: var(--muted);">รหัส: ${item.id}</span>
+              </div>
+              <div class="product-visual">
+                <div class="${visualClass}">${item.previewMain}</div>
+                <div class="sim-sub">${item.previewSub || ''}</div>
+              </div>
+              <h3 class="product-name">${item.name}</h3>
+              <p class="product-desc">${item.description || ''}</p>
+            </div>
+            <div class="product-footer">
+              <div class="price">${formatCurrency(item.price)} <span class="price-unit">/ ชิ้น</span></div>
+              <button type="button" class="btn btn-primary" data-add-id="${item.id}">
+                + เพิ่มลงตะกร้า
+              </button>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderCart() {
+      if (cart.size === 0) {
+        cartList.innerHTML = '<div class="empty-state">ยังไม่มีสินค้าในตะกร้า<br>เลือกสินค้าจากรายการด้านซ้าย</div>';
+        cartSummary.style.display = 'none';
+        clearCartBtn.style.display = 'none';
+        return;
+      }
+
+      clearCartBtn.style.display = 'inline-flex';
+      cartSummary.style.display = 'flex';
+
+      let total = 0;
+      const rows = [];
+
+      cart.forEach((qty, id) => {
+        const product = appProducts.find(p => p.id === id && p.status !== 'sold');
+        if (!product) {
+          cart.delete(id);
+          return;
+        }
+        const lineTotal = product.price * qty;
+        total += lineTotal;
+
+        rows.push(`
+          <div class="cart-item">
+            <div class="cart-item-info">
+              <p class="cart-item-title">${product.name}</p>
+              <p class="cart-item-price">${formatCurrency(product.price)} × ${qty} = <strong>${formatCurrency(lineTotal)}</strong></p>
+            </div>
+            <div class="qty-controls">
+              <button type="button" class="qty-btn" data-qty-id="${product.id}" data-delta="-1" aria-label="ลดจำนวน">−</button>
+              <span class="qty-value">${qty}</span>
+              <button type="button" class="qty-btn" data-qty-id="${product.id}" data-delta="1" aria-label="เพิ่มจำนวน">+</button>
+            </div>
+          </div>
+        `);
+      });
+
+      cartList.innerHTML = rows.join('');
+      cartTotalPrice.textContent = formatCurrency(total);
+    }
+
+    function getFilteredStock() {
+      const q = stockSearchQuery.trim().toLowerCase();
+      return appProducts.filter(p => {
+        const matchStatus =
+          stockStatusFilterValue === 'all' ||
+          (stockStatusFilterValue === 'sold' && p.status === 'sold') ||
+          (stockStatusFilterValue === 'unsold' && p.status !== 'sold');
+
+        if (!matchStatus) return false;
+        if (!q) return true;
+
+        const statusLabel = getStatusText(p.status);
+        const searchableText = [
+          p.id,
+          p.categoryLabel,
+          p.name,
+          p.previewMain,
+          p.previewSub,
+          p.description,
+          String(p.qty || 1),
+          String(p.price),
+          statusLabel,
+          p.receivedDate || '',
+          formatThaiDate(p.receivedDate),
+          p.soldDate || '',
+          formatThaiDate(p.soldDate)
+        ].join(' ').toLowerCase();
+
+        return searchableText.includes(q);
+      });
+    }
+
+    function renderAdminStock() {
+      const filtered = getFilteredStock();
+
+      if (filtered.length === 0) {
+        adminStockTableBody.innerHTML = '<tr><td colspan="9" class="empty-state">ไม่พบรายการสินค้าในสต๊อกที่ตรงกับเงื่อนไข</td></tr>';
+        return;
+      }
+
+      adminStockTableBody.innerHTML = filtered.map(p => {
+        let tagClass = 'tag-it';
+        if (p.category === 'sim') tagClass = 'tag-sim';
+        if (p.category === 'mobile') tagClass = 'tag-mobile';
+
+        const isSold = p.status === 'sold';
+        const statusBadge = isSold
+          ? '<span class="status-badge status-sold">ขายแล้ว</span>'
+          : '<span class="status-badge status-available">ยังไม่ได้ขาย</span>';
+
+        return `
+          <tr>
+            <td><code style="font-size:12px; color:var(--ink); font-weight:600;">${p.id}</code></td>
+            <td><span class="tag ${tagClass}">${p.categoryLabel}</span></td>
+            <td><strong>${p.name}</strong></td>
+            <td class="text-center">${p.qty || 1}</td>
+            <td class="text-right">${formatCurrency(p.price)}</td>
+            <td class="text-center">${statusBadge}</td>
+            <td>${formatThaiDate(p.receivedDate)}</td>
+            <td>${p.soldDate ? formatThaiDate(p.soldDate) : '-'}</td>
+            <td class="text-right" style="white-space: nowrap;">
+              <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" data-toggle-status-id="${p.id}">
+                ${isSold ? 'คืนสต๊อก' : 'ทำเครื่องหมายว่าขายแล้ว'}
+              </button>
+              <button type="button" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" data-delete-id="${p.id}">ลบ</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function getReportEntries() {
+      const rType = reportTypeSelect.value;
+      const period = reportPeriodSelect.value;
+      const targetDate = reportDateInput.value;
+      const targetMonth = reportMonthInput.value;
+
+      const entries = [];
+
+      appProducts.forEach(p => {
+        const qty = Number(p.qty) || 1;
+        const totalVal = (Number(p.price) || 0) * qty;
+
+        if (rType === 'all' || rType === 'in') {
+          const recDate = p.receivedDate || '';
+          const matchIn = period === 'daily'
+            ? recDate === targetDate
+            : recDate.startsWith(targetMonth);
+
+          if (matchIn) {
+            entries.push({
+              date: recDate,
+              type: 'in',
+              typeLabel: 'รับสินค้าเข้า',
+              id: p.id,
+              categoryLabel: p.categoryLabel,
+              name: p.name,
+              qty: qty,
+              amount: totalVal
+            });
+          }
+        }
+
+        if ((rType === 'all' || rType === 'out') && p.status === 'sold' && p.soldDate) {
+          const sDate = p.soldDate || '';
+          const matchOut = period === 'daily'
+            ? sDate === targetDate
+            : sDate.startsWith(targetMonth);
+
+          if (matchOut) {
+            entries.push({
+              date: sDate,
+              type: 'out',
+              typeLabel: 'ขายออก',
+              id: p.id,
+              categoryLabel: p.categoryLabel,
+              name: p.name,
+              qty: qty,
+              amount: totalVal
+            });
+          }
+        }
+      });
+
+      return entries;
+    }
+
+    function renderReports() {
+      const entries = getReportEntries();
+
+      let inCount = 0;
+      let inVal = 0;
+      let outCount = 0;
+      let outVal = 0;
+
+      entries.forEach(e => {
+        if (e.type === 'in') {
+          inCount += e.qty;
+          inVal += e.amount;
+        } else {
+          outCount += e.qty;
+          outVal += e.amount;
+        }
+      });
+
+      kpiInCount.textContent = `${inCount} ชิ้น`;
+      kpiInValue.textContent = formatCurrency(inVal);
+      kpiOutCount.textContent = `${outCount} ชิ้น`;
+      kpiOutValue.textContent = formatCurrency(outVal);
+
+      if (entries.length === 0) {
+        reportTableBody.innerHTML = '<tr><td colspan="7" class="empty-state">ไม่มีรายการรับสินค้าหรือขายออกในช่วงเวลาที่เลือก</td></tr>';
+        return;
+      }
+
+      reportTableBody.innerHTML = entries.map(e => `
+        <tr>
+          <td>${formatThaiDate(e.date)}</td>
+          <td>
+            <span class="status-badge ${e.type === 'in' ? 'status-available' : 'status-sold'}">
+              ${e.typeLabel}
+            </span>
+          </td>
+          <td><code style="font-size:12px;">${e.id}</code></td>
+          <td>${e.categoryLabel}</td>
+          <td><strong>${e.name}</strong></td>
+          <td class="text-center">${e.qty}</td>
+          <td class="text-right">${formatCurrency(e.amount)}</td>
+        </tr>
+      `).join('');
+    }
+
+    categoryTabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        categoryTabs.forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        activeCategory = btn.getAttribute('data-category');
+        renderProducts();
+      });
+    });
+
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      renderProducts();
+    });
+
+    productGrid.addEventListener('click', (e) => {
+      const addBtn = e.target.closest('[data-add-id]');
+      if (!addBtn) return;
+      const id = addBtn.getAttribute('data-add-id');
+      orderConfirmBox.style.display = 'none';
+      cart.set(id, (cart.get(id) || 0) + 1);
+      renderCart();
+    });
+
+    cartList.addEventListener('click', (e) => {
+      const qtyBtn = e.target.closest('[data-qty-id]');
+      if (!qtyBtn) return;
+      const id = qtyBtn.getAttribute('data-qty-id');
+      const delta = parseInt(qtyBtn.getAttribute('data-delta'), 10);
+      const nextQty = (cart.get(id) || 0) + delta;
+      if (nextQty <= 0) {
+        cart.delete(id);
+      } else {
+        cart.set(id, nextQty);
+      }
+      renderCart();
+    });
+
+    clearCartBtn.addEventListener('click', () => {
+      cart.clear();
+      formError.style.display = 'none';
+      renderCart();
+    });
+
+    checkoutForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('customerName').value.trim();
+      const phone = document.getElementById('customerPhone').value.trim();
+      const address = document.getElementById('customerAddress').value.trim();
+
+      if (!name || !phone || !address || cart.size === 0) {
+        formError.style.display = 'block';
+        return;
+      }
+
+      formError.style.display = 'none';
+      const totalText = cartTotalPrice.textContent;
+      const saleDateISO = getTodayISO();
+
+      orderConfirmDetail.textContent = `คุณ ${name} (${phone}) • ยอดสั่งซื้อรวม ${totalText} • จัดส่งที่: ${address}`;
+      orderConfirmBox.style.display = 'block';
+
+      receiptStoreName.textContent = currentStoreName;
+      rName.textContent = name;
+      rPhone.textContent = phone;
+      rAddress.textContent = address;
+
+      const now = new Date();
+      rDate.textContent = now.toLocaleDateString('th-TH') + ' ' + now.toLocaleTimeString('th-TH');
+      rTotal.textContent = totalText;
+
+      let receiptItemsHTML = '';
+      cart.forEach((qty, id) => {
+        const product = appProducts.find(p => p.id === id);
+        if (product) {
+          const lineTotal = product.price * qty;
+          receiptItemsHTML += `
+            <tr>
+              <td>${product.name} (${product.id})</td>
+              <td style="text-align: center;">${qty}</td>
+              <td style="text-align: right;">${formatCurrency(product.price)}</td>
+              <td style="text-align: right;">${formatCurrency(lineTotal)}</td>
+            </tr>
+          `;
+          product.status = 'sold';
+          product.soldDate = saleDateISO;
+        }
+      });
+      receiptTableBody.innerHTML = receiptItemsHTML;
+
+      cart.clear();
+      checkoutForm.reset();
+      renderProducts();
+      renderCart();
+    });
+
+    printReceiptBtn.addEventListener('click', () => {
+      document.body.setAttribute('data-print-mode', 'receipt');
+      window.print();
+    });
+
+    toggleViewBtn.addEventListener('click', () => {
+      isAdminView = !isAdminView;
+      if (isAdminView) {
+        storefrontView.classList.add('view-hidden');
+        dashboardView.classList.remove('view-hidden');
+        toggleViewText.textContent = '🏠 กลับหน้าร้านค้า';
+        renderAdminStock();
+        renderReports();
+      } else {
+        dashboardView.classList.add('view-hidden');
+        storefrontView.classList.remove('view-hidden');
+        toggleViewText.textContent = '⚙️ จัดการร้าน (Admin)';
+        renderProducts();
+        renderCart();
+      }
+    });
+
+    adminNavItems.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-target');
+        adminNavItems.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        adminSections.forEach(secId => {
+          const el = document.getElementById(secId);
+          if (secId === targetId) {
+            el.classList.remove('view-hidden');
+          } else {
+            el.classList.add('view-hidden');
+          }
+        });
+        if (targetId === 'adminStock') renderAdminStock();
+        if (targetId === 'adminReports') renderReports();
+      });
+    });
+
+    stockSearchInput.addEventListener('input', (e) => {
+      stockSearchQuery = e.target.value;
+      renderAdminStock();
+    });
+
+    stockStatusFilter.addEventListener('change', (e) => {
+      stockStatusFilterValue = e.target.value;
+      renderAdminStock();
+    });
+
+    printStockBtn.addEventListener('click', () => {
+      const filtered = getFilteredStock();
+      document.getElementById('stockPrintStoreName').textContent = currentStoreName;
+      const statusTextMap = { all: 'ทั้งหมด', unsold: 'ยังไม่ได้ขาย', sold: 'ขายแล้ว' };
+      document.getElementById('stockPrintSubtitle').textContent =
+        `คำค้นหา: "${stockSearchQuery || 'ทั้งหมด'}" | สถานะ: ${statusTextMap[stockStatusFilterValue]} | วันที่พิมพ์: ${new Date().toLocaleDateString('th-TH')}`;
+
+      let totalSum = 0;
+      document.getElementById('stockPrintTableBody').innerHTML = filtered.map(p => {
+        const lineVal = (Number(p.price) || 0) * (Number(p.qty) || 1);
+        totalSum += lineVal;
+        return `
+          <tr>
+            <td>${p.id}</td>
+            <td>${p.categoryLabel}</td>
+            <td>${p.name}</td>
+            <td style="text-align: center;">${p.qty || 1}</td>
+            <td style="text-align: right;">${formatCurrency(p.price)}</td>
+            <td style="text-align: center;">${getStatusText(p.status)}</td>
+            <td>${formatThaiDate(p.receivedDate)}</td>
+            <td>${p.soldDate ? formatThaiDate(p.soldDate) : '-'}</td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('stockPrintSummary').textContent =
+        `รวมจำนวน ${filtered.length} รายการ | มูลค่ารวมทั้งสิ้น ${formatCurrency(totalSum)}`;
+
+      document.body.setAttribute('data-print-mode', 'stock');
+      window.print();
+    });
+
+    adminStockTableBody.addEventListener('click', (e) => {
+      const toggleBtn = e.target.closest('[data-toggle-status-id]');
+      if (toggleBtn) {
+        const id = toggleBtn.getAttribute('data-toggle-status-id');
+        const item = appProducts.find(p => p.id === id);
+        if (item) {
+          if (item.status === 'sold') {
+            item.status = 'unsold';
+            item.soldDate = '';
+            showToast('เปลี่ยนสถานะเป็น "ยังไม่ได้ขาย" แล้ว');
+          } else {
+            item.status = 'sold';
+            item.soldDate = getTodayISO();
+            showToast('บันทึกสถานะ "ขายแล้ว" พร้อมวันที่ขายเรียบร้อย');
+          }
+          renderAdminStock();
+          renderReports();
+        }
+        return;
+      }
+
+      const delBtn = e.target.closest('[data-delete-id]');
+      if (delBtn) {
+        const id = delBtn.getAttribute('data-delete-id');
+        appProducts = appProducts.filter(p => p.id !== id);
+        renderAdminStock();
+        renderReports();
+        showToast('ลบสินค้าออกจากสต๊อกแล้ว');
+      }
+    });
+
+    addProductForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const catVal = document.getElementById('addCategory').value;
+      let catLabel = 'อุปกรณ์ไอที';
+      if (catVal === 'sim') catLabel = 'ซิมมือถือ';
+      else if (catVal === 'mobile') catLabel = 'โทรศัพท์มือถือ';
+
+      const customCode = document.getElementById('addProductCode').value.trim();
+      const recDate = document.getElementById('addReceivedDate').value || getTodayISO();
+      const qtyVal = Math.max(1, parseInt(document.getElementById('addQty').value, 10) || 1);
+
+      const newProduct = {
+        id: customCode || generateId(catVal),
+        category: catVal,
+        categoryLabel: catLabel,
+        name: document.getElementById('addName').value.trim(),
+        previewMain: document.getElementById('addPreviewMain').value.trim(),
+        previewSub: document.getElementById('addPreviewSub').value.trim(),
+        description: document.getElementById('addDesc').value.trim(),
+        price: parseInt(document.getElementById('addPrice').value, 10) || 0,
+        qty: qtyVal,
+        status: 'unsold',
+        receivedDate: recDate,
+        soldDate: ''
+      };
+
+      appProducts.push(newProduct);
+      addProductForm.reset();
+      addReceivedDate.value = getTodayISO();
+      document.getElementById('addQty').value = 1;
+      showToast('เพิ่มสินค้าใหม่ลงสต๊อกเรียบร้อยแล้ว!');
+      document.querySelector('[data-target="adminStock"]').click();
+    });
+
+    reportTypeSelect.addEventListener('change', renderReports);
+    reportPeriodSelect.addEventListener('change', () => {
+      const isDaily = reportPeriodSelect.value === 'daily';
+      reportDateWrap.classList.toggle('view-hidden', !isDaily);
+      reportMonthWrap.classList.toggle('view-hidden', isDaily);
+      renderReports();
+    });
+    reportDateInput.addEventListener('change', renderReports);
+    reportMonthInput.addEventListener('change', renderReports);
+
+    printReportBtn.addEventListener('click', () => {
+      const entries = getReportEntries();
+      const isDaily = reportPeriodSelect.value === 'daily';
+      const periodText = isDaily
+        ? `ประจำวันที่ ${formatThaiDate(reportDateInput.value)}`
+        : `ประจำเดือน ${reportMonthInput.value}`;
+
+      document.getElementById('reportPrintStoreName').textContent = currentStoreName;
+      document.getElementById('reportPrintTitle').textContent =
+        `${reportTypeSelect.options[reportTypeSelect.selectedIndex].text} (${periodText})`;
+      document.getElementById('reportPrintSubtitle').textContent =
+        `วันที่พิมพ์รายงาน: ${new Date().toLocaleDateString('th-TH')}`;
+
+      document.getElementById('reportPrintTableBody').innerHTML = entries.map(e => `
+        <tr>
+          <td>${formatThaiDate(e.date)}</td>
+          <td>${e.typeLabel}</td>
+          <td>${e.id}</td>
+          <td>${e.categoryLabel}</td>
+          <td>${e.name}</td>
+          <td style="text-align: center;">${e.qty}</td>
+          <td style="text-align: right;">${formatCurrency(e.amount)}</td>
+        </tr>
+      `).join('');
+
+      document.getElementById('reportPrintSummary').textContent =
+        `รับเข้า: ${kpiInCount.textContent} (${kpiInValue.textContent}) | ขายออก: ${kpiOutCount.textContent} (${kpiOutValue.textContent})`;
+
+      document.body.setAttribute('data-print-mode', 'report');
+      window.print();
+    });
+
+    settingsForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const newName = settingStoreName.value.trim();
+      if (newName) {
+        currentStoreName = newName;
+        displayStoreName.textContent = currentStoreName;
+        document.title = `${currentStoreName} — ร้านจำหน่ายซิมการ์ดมือถือและอุปกรณ์ไอที`;
+        showToast('บันทึกชื่อร้านเรียบร้อยแล้ว');
+      }
+    });
+
+    exportJsonBtn.addEventListener('click', () => {
+      const backupData = {
+        storeName: currentStoreName,
+        exportDate: new Date().toISOString(),
+        products: appProducts
+      };
+      const jsonStr = JSON.stringify(backupData, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_sim_it_hub_${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('ส่งออกไฟล์ JSON แล้ว');
+    });
+
+    exportExcelBtn.addEventListener('click', () => {
+      if (typeof XLSX === 'undefined') {
+        showToast('กำลังโหลดไลบรารี โปรดรอสักครู่...');
+        return;
+      }
+      const ws = XLSX.utils.json_to_sheet(appProducts);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Products");
+      XLSX.writeFile(wb, `backup_sim_it_hub_${Date.now()}.xlsx`);
+      showToast('ส่งออกไฟล์ Excel แล้ว');
+    });
+
+    importJsonBtn.addEventListener('click', () => { fileInputJson.click(); });
+    importExcelBtn.addEventListener('click', () => { fileInputExcel.click(); });
+
+    fileInputJson.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+          const importedProducts = data.products || data;
+          if (Array.isArray(importedProducts)) {
+            appProducts = importedProducts.map(p => ({
+              ...p,
+              qty: Number(p.qty) || 1,
+              status: p.status || 'unsold',
+              receivedDate: p.receivedDate || getTodayISO(),
+              soldDate: p.soldDate || ''
+            }));
+            if (data.storeName) {
+              currentStoreName = data.storeName;
+              displayStoreName.textContent = currentStoreName;
+              settingStoreName.value = currentStoreName;
+              document.title = `${currentStoreName} — ร้านจำหน่ายซิมการ์ดมือถือและอุปกรณ์ไอที`;
+            }
+            renderAdminStock();
+            renderReports();
+            showToast('นำเข้าข้อมูล JSON สำเร็จ!');
+          } else {
+            showToast('ไฟล์ JSON ไม่มีข้อมูลสินค้าที่ถูกต้อง');
+          }
+        } catch (err) {
+          showToast('รูปแบบไฟล์ JSON ไม่ถูกต้อง');
+        }
+        e.target.value = '';
+      };
+      reader.readAsText(file);
+    });
+
+    fileInputExcel.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (typeof XLSX === 'undefined') {
+        showToast('กำลังโหลดไลบรารี โปรดลองใหม่อีกครั้ง');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = new Uint8Array(event.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const json = XLSX.utils.sheet_to_json(worksheet);
+          if (json && json.length > 0) {
+            appProducts = json.map(p => ({
+              id: p.id || generateId(p.category || 'it'),
+              category: p.category || 'it',
+              categoryLabel: p.categoryLabel || 'อุปกรณ์ไอที',
+              name: p.name || 'ไม่มีชื่อ',
+              previewMain: p.previewMain || '',
+              previewSub: p.previewSub || '',
+              description: p.description || '',
+              price: Number(p.price) || 0,
+              qty: Number(p.qty) || 1,
+              status: p.status || 'unsold',
+              receivedDate: p.receivedDate || getTodayISO(),
+              soldDate: p.soldDate || ''
+            }));
+            renderAdminStock();
+            renderReports();
+            showToast('นำเข้าข้อมูล Excel สำเร็จ!');
+          } else {
+            showToast('ไม่พบข้อมูลในไฟล์ Excel');
+          }
+        } catch (err) {
+          showToast('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel');
+        }
+        e.target.value = '';
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    renderProducts();
+    renderCart();
+  </script>
+</body>
+</html>
+
+```
